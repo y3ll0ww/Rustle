@@ -1,2 +1,0 @@
-[global.databases]
-diesel_db = { url = "db/db.sqlite" }

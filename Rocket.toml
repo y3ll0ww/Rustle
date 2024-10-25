@@ -1,0 +1,2 @@
+[global.databases]
+sqlite_db = { url = "sqlite://src/db/rustle.db" }
