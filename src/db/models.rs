@@ -1,3 +1,3 @@
-use super::{DbConn, schemas};
+use super::{Db, schemas};
 
 pub mod users;

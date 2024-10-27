@@ -5,4 +5,4 @@ pub mod models;
 pub mod schemas;
 
 #[database("sqlite_db")]
-pub struct DbConn(diesel::SqliteConnection);
+pub struct Db(diesel::SqliteConnection);

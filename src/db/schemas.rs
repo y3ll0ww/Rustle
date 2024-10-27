@@ -1,9 +1,9 @@
 use super::table;
-//use diesel::prelude::table;
 
 table! {
     users (user_id) {
         user_id -> VarChar,
+        user_role -> VarChar,
         username -> Varchar,
         display_name -> Nullable<Varchar>,
         email -> Varchar,

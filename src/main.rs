@@ -1,13 +1,13 @@
 #[macro_use]
 extern crate rocket;
 
-use db::{DbConn, models::users};
+use db::{Db, models::users};
 
 mod db;
 
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .attach(DbConn::fairing())
-        .mount("/", routes![users::create_user])
+        .attach(Db::fairing())
+        .mount("/users/", routes![users::create_user, users::get_user, users::delete_user])
 }
