@@ -6,6 +6,8 @@ use rocket::{
 };
 use serde_json::json;
 
+use super::*;
+
 #[test]
 fn create_new_user() {
     let client = Client::tracked(crate::rocket()).expect("valid rocket instance");
@@ -47,12 +49,57 @@ fn create_new_user() {
 }
 
 #[test]
+fn test_submit() {
+    let client = Client::tracked(crate::rocket()).expect("valid rocket instance");
+
+    // Create a form with test data
+    let account = Account {
+        username: "test_user",
+        display_name: Some("Test User"),
+        password: Password {
+            first: "strong_password",
+            second: "strong_password",
+        },
+        email: "test@example.com",
+        bio: Some("This is a test bio."),
+        avatar_url: Some("http://example.com/avatar.png"),
+    };
+
+    // Format the form data manually
+    let display_name = account.display_name.unwrap_or("");
+    let bio = account.bio.unwrap_or("");
+    let avatar_url = account.avatar_url.unwrap_or("");
+
+    let f = format!(
+        "username={}&display_name={}&password.first={}&password.second={}&email={}&bio={}&avatar_url={}",
+        account.username,
+        display_name,
+        account.password.first, // Use only the first password for the field
+        account.password.second, // Include the second password field as well
+        account.email,
+        bio,
+        avatar_url,
+    );
+
+    // Send a POST request to the /form route with the form data
+    let response = client
+        .post("/users/form")
+        .body(f) // Use the formatted string as the body
+        .header(ContentType::Form)
+        .dispatch();
+
+    // Assert the response status and body
+    assert_eq!(response.status(), Status::Ok);
+    assert_eq!(response.into_string().unwrap(), "User test_user created");
+}
+
+#[test]
 fn delete_user() {
     let client = Client::tracked(crate::rocket()).expect("valid rocket instance");
 
     // Send POST request to the correct endpoint `/users`
     let response = client
-        .delete("/users/delete/15240908-e7a0-41cd-806e-39bd8b4d8b08")
+        .delete("/users/delete/a99b50c6-02e9-4142-95fe-35c3ccd4f147")
         .dispatch();
 
     // Assert that the response status is 200 (indicating success)
