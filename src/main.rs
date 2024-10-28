@@ -1,13 +1,12 @@
 #[macro_use]
 extern crate rocket;
 
-use db::{api::users, Db};
-
-mod db;
+pub mod api;
+pub mod db;
 
 #[launch]
 fn rocket() -> _ {
     rocket::build()
-        .attach(Db::fairing())
-        .mount("/users/", users::endpoints())
+        .attach(db::Db::fairing())
+        .mount("/users/", api::users::endpoints())
 }
