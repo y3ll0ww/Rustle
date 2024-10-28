@@ -6,8 +6,6 @@ use rocket::{
 };
 use serde_json::json;
 
-use super::*;
-
 #[test]
 fn create_new_user() {
     let client = Client::tracked(crate::rocket()).expect("valid rocket instance");
@@ -53,10 +51,10 @@ fn test_submit() {
     let client = Client::tracked(crate::rocket()).expect("valid rocket instance");
 
     // Create a form with test data
-    let account = Account {
+    let account = crate::users::form::Account {
         username: "test_user",
         display_name: Some("Test User"),
-        password: Password {
+        password: crate::users::form::Password {
             first: "strong_password",
             second: "strong_password",
         },

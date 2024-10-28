@@ -1,7 +1,7 @@
 #[macro_use]
 extern crate rocket;
 
-use db::{Db, models::users};
+use db::{api::users, Db};
 
 mod db;
 
@@ -9,5 +9,5 @@ mod db;
 fn rocket() -> _ {
     rocket::build()
         .attach(Db::fairing())
-        .mount("/users/", routes![users::create_user, users::get_user, users::delete_user, users::submit])
+        .mount("/users/", users::endpoints())
 }
