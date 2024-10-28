@@ -1,5 +1,3 @@
-use super::Db;
-
 pub mod endpoint;
 pub mod form;
 pub mod model;

@@ -5,7 +5,8 @@ use rocket::{form::Form, http::Status, serde::json::Json};
 use rocket_sync_db_pools::diesel;
 use uuid::Uuid;
 
-use super::{form::Account, form::UserRole, model::users, model::User, Db};
+use super::{form::Account, form::UserRole, model::users, model::User};
+use crate::db::Db;
 
 #[post("/form", data = "<form>")]
 pub async fn submit<'r>(db: Db, form: Form<Account<'r>>) -> (Status, String) {
