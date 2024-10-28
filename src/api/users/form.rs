@@ -1,5 +1,3 @@
-use std::fmt::{Display, Formatter};
-
 use argon2::{
     password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
     Argon2,
@@ -15,8 +13,6 @@ pub struct Account<'v> {
     pub password: Password<'v>,
     #[field(validate = contains('@').or_else(msg!("invalid email address")))]
     pub email: &'v str,
-    pub bio: Option<&'v str>,
-    pub avatar_url: Option<&'v str>,
 }
 
 #[derive(Debug, FromForm, Serialize, Deserialize)]
@@ -40,22 +36,5 @@ impl<'v> Password<'v> {
         Ok(argon2
             .hash_password(self.first.as_bytes(), &salt)?
             .to_string())
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub enum UserRole {
-    Admin,
-    User,
-    Guest,
-}
-
-impl Display for UserRole {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match &self {
-            UserRole::Admin => write!(f, "admin"),
-            UserRole::User => write!(f, "user"),
-            UserRole::Guest => write!(f, "guest"),
-        }
     }
 }

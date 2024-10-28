@@ -1,11 +1,13 @@
-use chrono::Utc;
 use diesel::prelude::*;
 
 use rocket::{form::Form, http::Status, serde::json::Json};
 use rocket_sync_db_pools::diesel;
 use uuid::Uuid;
 
-use super::{form::Account, form::UserRole, model::users, model::User};
+use super::{
+    form::Account,
+    model::{users, User},
+};
 use crate::db::Db;
 
 #[post("/form", data = "<form>")]
@@ -20,20 +22,12 @@ pub async fn submit<'r>(db: Db, form: Form<Account<'r>>) -> (Status, String) {
         }
     };
 
-    let timestamp = Utc::now().naive_utc();
-
-    let new_user = User {
-        user_id: Uuid::new_v4().to_string(),
-        user_role: UserRole::User.to_string(),
-        username: form.username.to_string(),
-        display_name: form.display_name.map(|s| s.to_string()),
-        email: form.email.to_string(),
-        password_hash: password,
-        bio: form.bio.map(|s| s.to_string()),
-        avatar_url: form.avatar_url.map(|s| s.to_string()),
-        created_at: timestamp,
-        updated_at: timestamp,
-    };
+    let new_user = User::new(
+        form.username.to_string(),
+        form.display_name.map(|s| s.to_string()),
+        form.email.to_string(),
+        password,
+    );
 
     // Use Diesel to insert the new user
     let result = db

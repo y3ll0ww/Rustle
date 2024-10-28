@@ -61,24 +61,18 @@ fn test_submit() {
             second: "strong_password",
         },
         email: "test@example.com",
-        bio: Some("This is a test bio."),
-        avatar_url: Some("http://example.com/avatar.png"),
     };
 
     // Format the form data manually
     let display_name = account.display_name.unwrap_or("");
-    let bio = account.bio.unwrap_or("");
-    let avatar_url = account.avatar_url.unwrap_or("");
 
     let f = format!(
-        "username={}&display_name={}&password.first={}&password.second={}&email={}&bio={}&avatar_url={}",
+        "username={}&display_name={}&password.first={}&password.second={}&email={}",
         account.username,
         display_name,
-        account.password.first, // Use only the first password for the field
+        account.password.first,  // Use only the first password for the field
         account.password.second, // Include the second password field as well
         account.email,
-        bio,
-        avatar_url,
     );
 
     // Send a POST request to the /form route with the form data
