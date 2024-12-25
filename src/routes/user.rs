@@ -6,15 +6,6 @@ use uuid::Uuid;
 
 use crate::{forms::user::Account, db::Database, models::user::User, schema::user};
 
-pub fn all() -> Vec<rocket::Route> {
-    routes![
-        submit,
-        create_user,
-        get_user,
-        delete_user
-    ]
-}
-
 #[post("/form", data = "<form>")]
 pub async fn submit<'r>(db: Database, form: Form<Account<'r>>) -> (Status, String) {
     let password = match form.password.hash_password() {
@@ -53,7 +44,7 @@ pub async fn submit<'r>(db: Database, form: Form<Account<'r>>) -> (Status, Strin
 }
 
 #[post("/create", format = "json", data = "<user>")]
-pub async fn create_user(db: Database, user: Json<User>) -> String {
+pub async fn create(db: Database, user: Json<User>) -> String {
     let mut new_user = user.into_inner(); // Extract user data from Json
     let username = new_user.username.clone();
     new_user.user_id = Uuid::new_v4().to_string(); // Generate a new UUID
@@ -74,7 +65,7 @@ pub async fn create_user(db: Database, user: Json<User>) -> String {
 }
 
 #[delete("/delete/<id>")]
-pub async fn delete_user(db: Database, id: String) -> String {
+pub async fn delete(db: Database, id: String) -> String {
     let deleted_count = db
         .run(move |conn| diesel::delete(user::table.filter(user::user_id.eq(id))).execute(conn))
         .await
@@ -90,7 +81,7 @@ pub async fn delete_user(db: Database, id: String) -> String {
 }
 
 #[get("/<username>")]
-pub async fn get_user(db: Database, username: String) -> String {
+pub async fn get(db: Database, username: String) -> String {
     let name = username.clone();
     let user: Option<Json<User>> = db
         .run(move |conn| {

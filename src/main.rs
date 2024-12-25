@@ -14,5 +14,5 @@ mod tests;
 fn rocket() -> _ {
     rocket::build()
         .attach(db::Database::fairing())
-        .mount("/user/", routes::user::all())
+        .mount("/user/", routes::user())
 }
