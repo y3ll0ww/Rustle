@@ -6,8 +6,10 @@ use rocket_sync_db_pools::diesel;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::schema::user;
+
 #[derive(Queryable, Insertable, Serialize, Deserialize, Debug)]
-#[diesel(table_name = users)]
+#[diesel(table_name = user)]
 pub struct User {
     pub user_id: String,
     pub user_role: String,
@@ -19,21 +21,6 @@ pub struct User {
     pub avatar_url: Option<String>,
     pub created_at: NaiveDateTime,
     pub updated_at: NaiveDateTime,
-}
-
-table! {
-    users (user_id) {
-        user_id -> VarChar,
-        user_role -> VarChar,
-        username -> Varchar,
-        display_name -> Nullable<Varchar>,
-        email -> Varchar,
-        password_hash -> Varchar,
-        bio -> Nullable<Text>,
-        avatar_url -> Nullable<Varchar>,
-        created_at -> Timestamp,
-        updated_at -> Timestamp,
-    }
 }
 
 impl User {

@@ -1,5 +1,5 @@
-CREATE TABLE users (
-    user_id BLOB PRIMARY KEY,
+CREATE TABLE user (
+    user_id VARCHAR(40) PRIMARY KEY NOT NULL,
     user_role VARCHAR(10) NOT NULL,
     username VARCHAR(50) UNIQUE NOT NULL,
     display_name VARCHAR(100),
@@ -7,6 +7,6 @@ CREATE TABLE users (
     password_hash TEXT NOT NULL,
     bio TEXT,
     avatar_url TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );

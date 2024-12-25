@@ -6,7 +6,7 @@ use rocket::{
 };
 use serde_json::json;
 
-use crate::api::users::form::{Account, Password};
+use crate::forms::user::{Account, Password};
 
 #[test]
 fn create_new_user() {
@@ -21,7 +21,8 @@ fn create_new_user() {
 
     // Construct a JSON payload matching the User structure
     let payload = json!({
-        "user_id": "",  // Will be overwritten by `create_user` function with UUID
+        "user_id": "a99b50c6-02e9-4142-95fe-35c3ccd4f147",  // Will be overwritten by `create_user` function with UUID
+        "user_role": "admin",
         "username": "y3ll0ww",
         "display_name": null,
         "email": "some@abc.nl",
@@ -34,11 +35,11 @@ fn create_new_user() {
 
     // Send POST request to the correct endpoint `/users`
     let response = client
-        .post("/users/create")
+        .post("/user/create")
         .header(ContentType::JSON)
         .body(payload.to_string())
         .dispatch();
-
+println!("{}", payload.to_string());
     // Assert that the response status is 200 (indicating success)
     assert_eq!(response.status(), Status::Ok);
 
@@ -77,7 +78,7 @@ fn test_submit() {
 
     // Send a POST request to the /form route with the form data
     let response = client
-        .post("/users/form")
+        .post("/user/form")
         .body(f) // Use the formatted string as the body
         .header(ContentType::Form)
         .dispatch();
@@ -91,9 +92,9 @@ fn test_submit() {
 fn delete_user() {
     let client = Client::tracked(crate::rocket()).expect("valid rocket instance");
 
-    // Send POST request to the correct endpoint `/users`
+    // Send POST request to the correct endpoint `/user`
     let response = client
-        .delete("/users/delete/a99b50c6-02e9-4142-95fe-35c3ccd4f147")
+        .delete("/user/delete/a99b50c6-02e9-4142-95fe-35c3ccd4f147")
         .dispatch();
 
     // Assert that the response status is 200 (indicating success)

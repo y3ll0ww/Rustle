@@ -4,14 +4,19 @@ use rocket::{form::Form, http::Status, serde::json::Json};
 use rocket_sync_db_pools::diesel;
 use uuid::Uuid;
 
-use super::{
-    form::Account,
-    model::{users, User},
-};
-use crate::db::Db;
+use crate::{forms::user::Account, db::Database, models::user::User, schema::user};
+
+pub fn all() -> Vec<rocket::Route> {
+    routes![
+        submit,
+        create_user,
+        get_user,
+        delete_user
+    ]
+}
 
 #[post("/form", data = "<form>")]
-pub async fn submit<'r>(db: Db, form: Form<Account<'r>>) -> (Status, String) {
+pub async fn submit<'r>(db: Database, form: Form<Account<'r>>) -> (Status, String) {
     let password = match form.password.hash_password() {
         Ok(hash) => hash,
         Err(e) => {
@@ -32,7 +37,7 @@ pub async fn submit<'r>(db: Db, form: Form<Account<'r>>) -> (Status, String) {
     // Use Diesel to insert the new user
     let result = db
         .run(move |c| {
-            diesel::insert_into(users::table)
+            diesel::insert_into(user::table)
                 .values(&new_user) // Clone new_user into the closure
                 .execute(c) // Pass the connection
         })
@@ -48,7 +53,7 @@ pub async fn submit<'r>(db: Db, form: Form<Account<'r>>) -> (Status, String) {
 }
 
 #[post("/create", format = "json", data = "<user>")]
-pub async fn create_user(db: Db, user: Json<User>) -> String {
+pub async fn create_user(db: Database, user: Json<User>) -> String {
     let mut new_user = user.into_inner(); // Extract user data from Json
     let username = new_user.username.clone();
     new_user.user_id = Uuid::new_v4().to_string(); // Generate a new UUID
@@ -56,7 +61,7 @@ pub async fn create_user(db: Db, user: Json<User>) -> String {
     // Use Diesel to insert the new user
     let result = db
         .run(move |c| {
-            diesel::insert_into(users::table)
+            diesel::insert_into(user::table)
                 .values(&new_user) // Clone new_user into the closure
                 .execute(c) // Pass the connection
         })
@@ -69,9 +74,9 @@ pub async fn create_user(db: Db, user: Json<User>) -> String {
 }
 
 #[delete("/delete/<id>")]
-pub async fn delete_user(db: Db, id: String) -> String {
+pub async fn delete_user(db: Database, id: String) -> String {
     let deleted_count = db
-        .run(move |conn| diesel::delete(users::table.filter(users::user_id.eq(id))).execute(conn))
+        .run(move |conn| diesel::delete(user::table.filter(user::user_id.eq(id))).execute(conn))
         .await
         .ok();
 
@@ -85,12 +90,12 @@ pub async fn delete_user(db: Db, id: String) -> String {
 }
 
 #[get("/<username>")]
-pub async fn get_user(db: Db, username: String) -> String {
+pub async fn get_user(db: Database, username: String) -> String {
     let name = username.clone();
     let user: Option<Json<User>> = db
         .run(move |conn| {
-            users::table
-                .filter(users::username.eq(username))
+            user::table
+                .filter(user::username.eq(username))
                 .first(conn)
         })
         .await

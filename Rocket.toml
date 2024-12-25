@@ -1,2 +1,6 @@
+[default]
+address = "127.0.0.1"
+port = 8000
+
 [global.databases]
-sqlite_db = { url = "sqlite://src/db/rustle.db" }
+rustle_db = { url = "sqlite://db/rustle.db" }

@@ -1,4 +1,4 @@
 use rocket_sync_db_pools::{database, diesel};
 
-#[database("sqlite_db")]
-pub struct Db(diesel::SqliteConnection);
+#[database("rustle_db")]
+pub struct Database(diesel::SqliteConnection);
