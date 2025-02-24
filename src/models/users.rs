@@ -6,12 +6,12 @@ use rocket_sync_db_pools::diesel;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::schema::user;
+use crate::schema::users;
 
 #[derive(Queryable, Insertable, Serialize, Deserialize, Debug)]
-#[diesel(table_name = user)]
+#[diesel(table_name = users)]
 pub struct User {
-    pub user_id: String,
+    pub id: String,
     pub user_role: String,
     pub username: String,
     pub display_name: Option<String>,
@@ -33,7 +33,7 @@ impl User {
         let timestamp = Utc::now().naive_utc();
 
         User {
-            user_id: Uuid::new_v4().to_string(),
+            id: Uuid::new_v4().to_string(),
             user_role: UserRole::User.to_string(),
             username,
             display_name,

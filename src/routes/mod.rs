@@ -1,10 +1,10 @@
-pub mod user;
+pub mod users;
 
 pub fn user() -> Vec<rocket::Route> {
     routes![
-        user::submit,
-        user::create,
-        user::get,
-        user::delete
+        users::submit,
+        users::create,
+        users::get,
+        users::delete
     ]
 }

@@ -4,9 +4,28 @@ use argon2::{
 };
 use serde::{Deserialize, Serialize};
 
+use crate::models::users::User;
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct InsertedUser {
+    pub id: String,
+    pub username: String,
+    pub email: String,
+}
+
+impl InsertedUser {
+    pub fn from_user(user: &User) -> Self {
+        InsertedUser {
+            id: user.id.clone(),
+            username: user.username.clone(),
+            email: user.email.clone(),
+        }
+    }
+}
+
 #[derive(Debug, FromForm, Serialize, Deserialize)]
 #[allow(dead_code)]
-pub struct Account<'v> {
+pub struct NewUser<'v> {
     #[field(validate = len(1..))]
     pub username: &'v str,
     pub display_name: Option<&'v str>,

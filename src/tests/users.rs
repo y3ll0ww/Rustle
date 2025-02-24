@@ -6,7 +6,10 @@ use rocket::{
 };
 use serde_json::json;
 
-use crate::forms::user::{Account, Password};
+use crate::{
+    api::ApiResponse,
+    forms::users::{InsertedUser, NewUser, Password},
+};
 
 #[test]
 fn create_new_user() {
@@ -21,7 +24,7 @@ fn create_new_user() {
 
     // Construct a JSON payload matching the User structure
     let payload = json!({
-        "user_id": "a99b50c6-02e9-4142-95fe-35c3ccd4f147",  // Will be overwritten by `create_user` function with UUID
+        "id": "a99b50c6-02e9-4142-95fe-35c3ccd4f147",  // Will be overwritten by `create_user` function with UUID
         "user_role": "admin",
         "username": "y3ll0ww",
         "display_name": null,
@@ -39,7 +42,7 @@ fn create_new_user() {
         .header(ContentType::JSON)
         .body(payload.to_string())
         .dispatch();
-println!("{}", payload.to_string());
+
     // Assert that the response status is 200 (indicating success)
     assert_eq!(response.status(), Status::Ok);
 
@@ -54,7 +57,7 @@ fn test_submit() {
     let client = Client::tracked(crate::rocket()).expect("valid rocket instance");
 
     // Create a form with test data
-    let account = Account {
+    let new_user = NewUser {
         username: "test_user",
         display_name: Some("Test User"),
         password: Password {
@@ -65,15 +68,15 @@ fn test_submit() {
     };
 
     // Format the form data manually
-    let display_name = account.display_name.unwrap_or("");
+    let display_name = new_user.display_name.unwrap_or("");
 
     let f = format!(
         "username={}&display_name={}&password.first={}&password.second={}&email={}",
-        account.username,
+        new_user.username,
         display_name,
-        account.password.first,  // Use only the first password for the field
-        account.password.second, // Include the second password field as well
-        account.email,
+        new_user.password.first,  // Use only the first password for the field
+        new_user.password.second, // Include the second password field as well
+        new_user.email,
     );
 
     // Send a POST request to the /form route with the form data
@@ -83,9 +86,15 @@ fn test_submit() {
         .header(ContentType::Form)
         .dispatch();
 
-    // Assert the response status and body
+    // Assert the response status
     assert_eq!(response.status(), Status::Ok);
-    assert_eq!(response.into_string().unwrap(), "User test_user created");
+
+    // Assert that the return time is InstertedUser
+    let api_response =
+        serde_json::from_str::<ApiResponse<InsertedUser>>(&response.into_string().unwrap())
+            .unwrap();
+
+    assert_eq!(api_response.data.unwrap().username, new_user.username);
 }
 
 #[test]
@@ -94,7 +103,7 @@ fn delete_user() {
 
     // Send POST request to the correct endpoint `/user`
     let response = client
-        .delete("/user/delete/a99b50c6-02e9-4142-95fe-35c3ccd4f147")
+        .delete("/user/delete/9ed0011a-d254-4beb-b989-fe4eb5cab979")
         .dispatch();
 
     // Assert that the response status is 200 (indicating success)
