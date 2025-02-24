@@ -5,7 +5,7 @@ use rocket_sync_db_pools::diesel;
 use uuid::Uuid;
 
 use crate::{
-    api::{ApiResponse, JsonResponse},
+    api::{ApiResponse, Error, Success},
     db::Database,
     forms::users::{InsertedUser, NewUser},
     models::users::User,
@@ -21,13 +21,13 @@ use crate::{
 /// * `form`: A [`Form`] with [`NewUser`] information to create a [`User`].
 ///
 /// ### Returns
-/// * `Ok(JsonResponse<InsertedUser>)`: When `Ok`, it returns a [`JsonResponse`] with the [`InsertedUser`].
-/// * `Err(JsonResponse<User>)`: When `Err`, it returns a [`JsonResponse`] with `None` data.
+/// * `Ok(Success<InsertedUser>)`: When `Ok`, it returns [`Success`] with the [`InsertedUser`].
+/// * `Err(Error<String>)`: When `Err`, it returns an [`Error`] with `None` data.
 #[post("/form", data = "<form>")]
 pub async fn submit<'r>(
     db: Database,
     form: Form<NewUser<'r>>,
-) -> Result<JsonResponse<InsertedUser>, JsonResponse<String>> {
+) -> Result<Success<InsertedUser>, Error<String>> {
     // Hash the provided password
     let password = form.password.hash_password().map_err(|e| {
         ApiResponse::internal_server_error(format!("Couldn't hash password: {}", e))
@@ -93,13 +93,13 @@ pub async fn create(db: Database, user: Json<User>) -> String {
 /// * `id`: The ID from the [`User`] to be deleted.
 ///
 /// ### Returns
-/// * `Ok(JsonResponse<String>)`: When `Ok`, it returns a wrapped in an [`JsonResponse`] with `None` data.
-/// * `Err(JsonRepsonse<String>)`: When `Err`, it returns an [`JsonResponse`] with `None` data.
+/// * `Ok(Success<String>)`: When `Ok`, it returns a wrapped in [`Success`] with `None` data.
+/// * `Err(Error<String>)`: When `Err`, it returns an [`Error`] with `None` data.
 #[delete("/delete/<id>")]
 pub async fn delete(
     db: Database,
     id: String,
-) -> Result<JsonResponse<String>, JsonResponse<String>> {
+) -> Result<Success<String>, Error<String>> {
     let success_msg = format!("User with ID '{}' successfully deleted", id);
     let failed_msg = format!("User with ID '{}' not removed", id);
 
@@ -127,7 +127,7 @@ pub async fn delete(
 pub async fn get(
     db: Database,
     username: String,
-) -> Result<JsonResponse<User>, JsonResponse<String>> {
+) -> Result<Success<User>, Error<String>> {
     let success = format!("User '{username}' found");
 
     db.run(move |conn| {

@@ -12,7 +12,7 @@ use crate::schema::users;
 #[diesel(table_name = users)]
 pub struct User {
     pub id: String,
-    pub user_role: String,
+    pub privilege: i32,
     pub username: String,
     pub display_name: Option<String>,
     pub email: String,
@@ -34,7 +34,7 @@ impl User {
 
         User {
             id: Uuid::new_v4().to_string(),
-            user_role: UserRole::User.to_string(),
+            privilege: UserRole::Reviewer as i32,
             username,
             display_name,
             email,
@@ -47,19 +47,30 @@ impl User {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug, Deserialize, Serialize)]
 pub enum UserRole {
-    Admin,
-    User,
-    Guest,
+    Admin = 3,
+    Manager = 2,
+    Contributor = 1,
+    Reviewer = 0,
 }
 
 impl Display for UserRole {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        match &self {
-            UserRole::Admin => write!(f, "admin"),
-            UserRole::User => write!(f, "user"),
-            UserRole::Guest => write!(f, "guest"),
+        write!(f, "{self:?}")
+    }
+}
+
+impl TryFrom<i32> for UserRole {
+    type Error = String;
+
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        match value {
+            3 => Ok(UserRole::Admin),
+            2 => Ok(UserRole::Manager),
+            1 => Ok(UserRole::Contributor),
+            0 => Ok(UserRole::Reviewer),
+            _ => Err(format!("Invalid UserRole value: {value}")),
         }
     }
 }
