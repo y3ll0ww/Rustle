@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 pub type Success<T> = Json<ApiResponse<T>>;
 pub type Error<T> = Custom<Json<ApiResponse<T>>>;
 
+pub type Null = String;
+
 // Define a custom response type for consistency
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ApiResponse<T> {

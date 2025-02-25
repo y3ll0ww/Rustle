@@ -1,19 +1,26 @@
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 
 use rocket::{
-    http::{ContentType, Status},
+    http::{ContentType, Header, Status},
     local::blocking::Client,
 };
 use serde_json::json;
 
 use crate::{
     api::ApiResponse,
-    forms::users::{InsertedUser, NewUser, Password},
+    forms::users::{InsertedUser, NewUserForm, Password},
 };
+
+const USERNAME: &str = "test_user";
+const PASSWORD: &str = "strong_password";
+
+fn test_client() -> Client {
+    Client::tracked(crate::rocket()).expect("valid rocket instance")
+}
 
 #[test]
 fn create_new_user() {
-    let client = Client::tracked(crate::rocket()).expect("valid rocket instance");
+    let client = test_client();
 
     // Use valid date values for created_at and updated_at fields
     let created_at = NaiveDateTime::new(
@@ -25,7 +32,7 @@ fn create_new_user() {
     // Construct a JSON payload matching the User structure
     let payload = json!({
         "id": "a99b50c6-02e9-4142-95fe-35c3ccd4f147",  // Will be overwritten by `create_user` function with UUID
-        "user_role": "admin",
+        "privilege": 3,
         "username": "y3ll0ww",
         "display_name": null,
         "email": "some@abc.nl",
@@ -54,15 +61,15 @@ fn create_new_user() {
 
 #[test]
 fn test_submit() {
-    let client = Client::tracked(crate::rocket()).expect("valid rocket instance");
+    let client = test_client();
 
     // Create a form with test data
-    let new_user = NewUser {
-        username: "test_user",
+    let new_user = NewUserForm {
+        username: USERNAME,
         display_name: Some("Test User"),
         password: Password {
-            first: "strong_password",
-            second: "strong_password",
+            first: PASSWORD,
+            second: PASSWORD,
         },
         email: "test@example.com",
     };
@@ -99,13 +106,40 @@ fn test_submit() {
 
 #[test]
 fn delete_user() {
-    let client = Client::tracked(crate::rocket()).expect("valid rocket instance");
+    let client = test_client();
 
     // Send POST request to the correct endpoint `/user`
     let response = client
-        .delete("/user/delete/9ed0011a-d254-4beb-b989-fe4eb5cab979")
+        .delete("/user/delete/0772e26b-0569-44e3-b291-033356794047")
         .dispatch();
 
     // Assert that the response status is 200 (indicating success)
     assert_eq!(response.status(), Status::Ok);
+}
+
+#[test]
+fn login_logout_user() {
+    let client = test_client();
+
+    // Login the test user
+    let login_response = client
+        .post("/user/login")
+        .header(ContentType::Form)
+        .body(format!("username={USERNAME}&password={PASSWORD}"))
+        .dispatch();
+
+    assert_eq!(login_response.status(), Status::Ok);
+
+    let token: String = login_response
+        .into_json::<ApiResponse<String>>()
+        .unwrap()
+        .data
+        .unwrap();
+
+    let logout_response = client
+        .post("/user/logout")
+        .header(Header::new("Authorization", format!("Bearer {token}")))
+        .dispatch();
+
+    assert_eq!(logout_response.status(), Status::Ok);
 }

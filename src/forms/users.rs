@@ -1,11 +1,25 @@
 use argon2::{
-    password_hash::{rand_core::OsRng, PasswordHasher, SaltString},
-    Argon2,
+    password_hash::{rand_core::OsRng, Error, PasswordHasher, SaltString},
+    Argon2, PasswordHash, PasswordVerifier,
 };
 use serde::{Deserialize, Serialize};
 
 use crate::models::users::User;
 
+/// This struct represents the information required to create a new [`User`] via a form.
+#[derive(Debug, FromForm, Serialize, Deserialize)]
+#[allow(dead_code)]
+pub struct NewUserForm<'v> {
+    #[field(validate = len(1..))]
+    pub username: &'v str,
+    pub display_name: Option<&'v str>,
+    pub password: Password<'v>,
+    #[field(validate = contains('@').or_else(msg!("invalid email address")))]
+    pub email: &'v str,
+}
+
+/// The information of the newly created user, that is safe to return as response of submitting the
+/// [`form`](NewUserForm) successfully.
 #[derive(Debug, Deserialize, Serialize)]
 pub struct InsertedUser {
     pub id: String,
@@ -14,6 +28,7 @@ pub struct InsertedUser {
 }
 
 impl InsertedUser {
+    /// Creates a new [`InsertedUser`] from the information of a (new) [`User`].
     pub fn from_user(user: &User) -> Self {
         InsertedUser {
             id: user.id.clone(),
@@ -24,14 +39,9 @@ impl InsertedUser {
 }
 
 #[derive(Debug, FromForm, Serialize, Deserialize)]
-#[allow(dead_code)]
-pub struct NewUser<'v> {
-    #[field(validate = len(1..))]
+pub struct LoginForm<'v> {
     pub username: &'v str,
-    pub display_name: Option<&'v str>,
-    pub password: Password<'v>,
-    #[field(validate = contains('@').or_else(msg!("invalid email address")))]
-    pub email: &'v str,
+    pub password: &'v str,
 }
 
 #[derive(Debug, FromForm, Serialize, Deserialize)]
@@ -46,6 +56,12 @@ pub struct Password<'v> {
 }
 
 impl<'v> Password<'v> {
+    pub fn verify_password(input_password: &str, stored_hash: &str) -> Result<bool, Error> {
+        let password = input_password.as_bytes();
+        let hash = PasswordHash::new(stored_hash)?;
+        Ok(Argon2::default().verify_password(password, &hash).is_ok())
+    }
+
     pub fn hash_password(&self) -> Result<String, argon2::password_hash::Error> {
         // Argon2 with default params (Argon2id v19)
         let argon2 = Argon2::default();

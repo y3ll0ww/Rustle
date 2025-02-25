@@ -2,6 +2,7 @@
 extern crate rocket;
 
 pub mod api;
+pub mod auth;
 pub mod db;
 pub mod forms;
 pub mod models;

@@ -5,9 +5,10 @@ use rocket_sync_db_pools::diesel;
 use uuid::Uuid;
 
 use crate::{
-    api::{ApiResponse, Error, Success},
+    api::{ApiResponse, Error, Null, Success},
+    auth::{create_token, AuthenticatedUser},
     db::Database,
-    forms::users::{InsertedUser, NewUser},
+    forms::users::{InsertedUser, LoginForm, NewUserForm, Password},
     models::users::User,
     schema::users,
 };
@@ -18,16 +19,16 @@ use crate::{
 ///
 /// ### Parameters
 /// * `db`: Instance of the [`Database`] connection.
-/// * `form`: A [`Form`] with [`NewUser`] information to create a [`User`].
+/// * `form`: A [`NewUserForm`] for creating a [`User`].
 ///
 /// ### Returns
 /// * `Ok(Success<InsertedUser>)`: When `Ok`, it returns [`Success`] with the [`InsertedUser`].
-/// * `Err(Error<String>)`: When `Err`, it returns an [`Error`] with `None` data.
+/// * `Err(Error<String>)`: When `Err`, it returns an [`Error`] with [`Null`].
 #[post("/form", data = "<form>")]
 pub async fn submit<'r>(
     db: Database,
-    form: Form<NewUser<'r>>,
-) -> Result<Success<InsertedUser>, Error<String>> {
+    form: Form<NewUserForm<'r>>,
+) -> Result<Success<InsertedUser>, Error<Null>> {
     // Hash the provided password
     let password = form.password.hash_password().map_err(|e| {
         ApiResponse::internal_server_error(format!("Couldn't hash password: {}", e))
@@ -93,13 +94,10 @@ pub async fn create(db: Database, user: Json<User>) -> String {
 /// * `id`: The ID from the [`User`] to be deleted.
 ///
 /// ### Returns
-/// * `Ok(Success<String>)`: When `Ok`, it returns a wrapped in [`Success`] with `None` data.
-/// * `Err(Error<String>)`: When `Err`, it returns an [`Error`] with `None` data.
+/// * `Ok(Success<String>)`: When `Ok`, it returns a wrapped in [`Success`] with [`Null`] data.
+/// * `Err(Error<String>)`: When `Err`, it returns an [`Error`] with [`Null`] data.
 #[delete("/delete/<id>")]
-pub async fn delete(
-    db: Database,
-    id: String,
-) -> Result<Success<String>, Error<String>> {
+pub async fn delete(db: Database, id: String) -> Result<Success<Null>, Error<Null>> {
     let success_msg = format!("User with ID '{}' successfully deleted", id);
     let failed_msg = format!("User with ID '{}' not removed", id);
 
@@ -124,10 +122,7 @@ pub async fn delete(
 }
 
 #[get("/<username>")]
-pub async fn get(
-    db: Database,
-    username: String,
-) -> Result<Success<User>, Error<String>> {
+pub async fn get(db: Database, username: String) -> Result<Success<User>, Error<Null>> {
     let success = format!("User '{username}' found");
 
     db.run(move |conn| {
@@ -138,4 +133,45 @@ pub async fn get(
     .await
     .map(|user| ApiResponse::success(success, Some(user)))
     .map_err(|e| ApiResponse::not_found(e.to_string()))
+}
+
+#[post("/login", data = "<credentials>")]
+pub async fn login(
+    db: Database,
+    credentials: Form<LoginForm<'_>>,
+) -> Result<Success<String>, Error<Null>> {
+    let username = credentials.username.to_string();
+
+    let user = db
+        .run(move |conn| {
+            users::table
+                .filter(users::username.eq(username))
+                .first::<User>(conn)
+        })
+        .await
+        .map_err(|_| {
+            ApiResponse::not_found(format!("User '{}' not found", credentials.username))
+        })?;
+
+    let valid =
+        Password::verify_password(credentials.password, &user.password_hash).map_err(|e| {
+            ApiResponse::internal_server_error(format!("Password verification failed: {e}"))
+        })?;
+
+    if !valid {
+        return Err(ApiResponse::bad_request("Invalid password".to_string()));
+    }
+
+    let token = create_token(user.id.clone(), user.privilege)
+        .map_err(|e| ApiResponse::internal_server_error(e))?;
+
+    Ok(ApiResponse::success(
+        "Login successful".to_string(),
+        Some(token),
+    ))
+}
+
+#[post("/logout")]
+pub async fn logout(_user: AuthenticatedUser) -> Success<String> {
+    ApiResponse::success("Logout successful - discard your token".to_string(), None)
 }

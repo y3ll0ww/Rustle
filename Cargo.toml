@@ -7,6 +7,7 @@ edition = "2021"
 argon2 = "0.5.3"
 chrono = { version = "0.4", features = ["serde"] }
 diesel = { version = "2.0.0", features = ["sqlite", "chrono"] }
+jsonwebtoken = "8.1"
 rand = "0.8"
 rocket = { version = "0.5.1", features = ["json", "uuid"] }
 rocket_sync_db_pools = { version = "0.1.0-rc.3", features = ["diesel_sqlite_pool"] }

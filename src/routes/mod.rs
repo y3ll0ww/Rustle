@@ -5,6 +5,8 @@ pub fn user() -> Vec<rocket::Route> {
         users::submit,
         users::create,
         users::get,
-        users::delete
+        users::delete,
+        users::login,
+        users::logout,
     ]
 }
