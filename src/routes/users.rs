@@ -33,7 +33,8 @@ use crate::{
 pub async fn submit<'r>(
     db: Database,
     form: Form<NewUserForm<'r>>,
-) -> Result<Success<InsertedUser>, Error<Null>> {
+    redis_pool: &State<RedisMutex>,
+) -> Result<Success<String>, Error<Null>> {
     // Hash the provided password
     let password = form.password.hash_password().map_err(|e| {
         ApiResponse::internal_server_error(format!("Couldn't hash password: {}", e))
@@ -64,13 +65,24 @@ pub async fn submit<'r>(
         _ => ApiResponse::internal_server_error(format!("Error creating user: {}", e)),
     })?;
 
+    ///////////////////////
+    // Pass user info to create_token for caching
+    let token = create_token(
+        inserted_user.id.clone(),
+        inserted_user.username.clone(), // Add username for caching
+        0,
+        redis_pool,
+    )
+    .await
+    .map_err(|e| ApiResponse::internal_server_error(e))?;
+
     // Return success response
     Ok(ApiResponse::success(
         format!(
             "User '{}' created succesfully",
             inserted_user.username.clone()
         ),
-        Some(inserted_user),
+        Some(token),
     ))
 }
 
