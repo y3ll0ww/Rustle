@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 use crate::schema::users;
 
-#[derive(Queryable, Insertable, Serialize, Deserialize, Debug)]
+#[derive(Clone, Debug, Deserialize, Insertable, Queryable, Serialize)]
 #[diesel(table_name = users)]
 pub struct User {
     pub id: String,

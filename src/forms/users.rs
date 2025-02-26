@@ -4,8 +4,6 @@ use argon2::{
 };
 use serde::{Deserialize, Serialize};
 
-use crate::models::users::User;
-
 /// This struct represents the information required to create a new [`User`] via a form.
 #[derive(Debug, FromForm, Serialize, Deserialize)]
 #[allow(dead_code)]
@@ -23,26 +21,6 @@ impl<'v> NewUserForm<'v> {
             "username={}&password.first={}&password.second={}&email={}",
             self.username, self.password.first, self.password.second, self.email,
         )
-    }
-}
-
-/// The information of the newly created user, that is safe to return as response of submitting the
-/// [`form`](NewUserForm) successfully.
-#[derive(Debug, Deserialize, Serialize)]
-pub struct InsertedUser {
-    pub id: String,
-    pub username: String,
-    pub email: String,
-}
-
-impl InsertedUser {
-    /// Creates a new [`InsertedUser`] from the information of a (new) [`User`].
-    pub fn from_user(user: &User) -> Self {
-        InsertedUser {
-            id: user.id.clone(),
-            username: user.username.clone(),
-            email: user.email.clone(),
-        }
     }
 }
 

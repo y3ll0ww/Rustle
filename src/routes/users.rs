@@ -12,7 +12,7 @@ use crate::{
     api::{ApiResponse, Error, Null, Success},
     auth::{create_token, AuthenticatedUser},
     db::Database,
-    forms::users::{InsertedUser, LoginForm, NewUserForm, Password},
+    forms::users::{LoginForm, NewUserForm, Password},
     models::users::User,
     redis::RedisMutex,
     schema::users,
@@ -36,20 +36,23 @@ pub async fn submit<'r>(
     redis_pool: &State<RedisMutex>,
 ) -> Result<Success<String>, Error<Null>> {
     // Hash the provided password
-    let password = form.password.hash_password().map_err(|e| {
-        ApiResponse::internal_server_error(format!("Couldn't hash password: {}", e))
-    })?;
+    let password_hash = form
+        .password
+        .hash_password()
+        .map_err(|e| ApiResponse::internal_server_error(format!("Couldn't hash password: {e}")))?;
 
     // Create a new User
     let new_user = User::new(
         form.username.to_string(),
         Some(form.username.to_string()),
         form.email.to_string(),
-        password,
+        password_hash,
     );
 
-    // Create a new InsertedUser in case the function executes succesfully
-    let inserted_user = InsertedUser::from_user(&new_user);
+    // Clone information for later use
+    let user_id = new_user.id.clone();
+    let username = new_user.username.clone();
+    let user_privilege = new_user.privilege;
 
     // Add the new User to the database
     db.run(move |conn| {
@@ -65,23 +68,14 @@ pub async fn submit<'r>(
         _ => ApiResponse::internal_server_error(format!("Error creating user: {}", e)),
     })?;
 
-    ///////////////////////
     // Pass user info to create_token for caching
-    let token = create_token(
-        inserted_user.id.clone(),
-        inserted_user.username.clone(), // Add username for caching
-        0,
-        redis_pool,
-    )
-    .await
-    .map_err(|e| ApiResponse::internal_server_error(e))?;
+    let token = create_token(user_id, username.clone(), user_privilege, redis_pool)
+        .await
+        .map_err(|e| ApiResponse::internal_server_error(e))?;
 
     // Return success response
     Ok(ApiResponse::success(
-        format!(
-            "User '{}' created succesfully",
-            inserted_user.username.clone()
-        ),
+        format!("User '{username}' created succesfully"),
         Some(token),
     ))
 }
@@ -120,9 +114,11 @@ pub async fn create(db: Database, user: Json<User>) -> String {
 /// * `Err(Error<String>)`: When `Err`, it returns an [`Error`] with [`Null`] data.
 #[delete("/delete/<id>")]
 pub async fn delete(db: Database, id: String) -> Result<Success<Null>, Error<Null>> {
-    let success_msg = format!("User with ID '{}' successfully deleted", id);
-    let failed_msg = format!("User with ID '{}' not removed", id);
+    // Define the response messages beforehand
+    let success_msg = format!("User with ID '{id}' successfully deleted");
+    let failed_msg = format!("User with ID '{id}' not removed");
 
+    // Delete the records from the database and collect the number of deleted rows
     let deleted_rows = db
         .run(move |conn| diesel::delete(users::table.filter(users::id.eq(id))).execute(conn))
         .await
@@ -133,6 +129,7 @@ pub async fn delete(db: Database, id: String) -> Result<Success<Null>, Error<Nul
             other => ApiResponse::internal_server_error(format!("{}: {}", failed_msg, other)),
         })?;
 
+    // If there are any deleted rows, it means the user is successfully deleted
     if deleted_rows > 0 {
         Ok(ApiResponse::success(success_msg, None))
     } else {
@@ -145,16 +142,8 @@ pub async fn delete(db: Database, id: String) -> Result<Success<Null>, Error<Nul
 
 #[get("/<username>")]
 pub async fn get(db: Database, username: String) -> Result<Success<User>, Error<Null>> {
-    let success = format!("User '{username}' found");
-
-    db.run(move |conn| {
-        users::table
-            .filter(users::username.eq(username))
-            .first::<User>(conn)
-    })
-    .await
-    .map(|user| ApiResponse::success(success, Some(user)))
-    .map_err(|e| ApiResponse::not_found(e.to_string()))
+    // Only get the user from the database
+    get_user(db, username).await
 }
 
 #[post("/login", data = "<credentials>")]
@@ -163,38 +152,34 @@ pub async fn login(
     credentials: Form<LoginForm<'_>>,
     redis_pool: &State<RedisMutex>,
 ) -> Result<Success<String>, Error<Null>> {
-    let username = credentials.username.to_string();
+    // Get the user from the database
+    let user = match &get_user(db, credentials.username.to_string()).await?.data {
+        Some(user) => user.clone(),
+        None => {
+            return Err(ApiResponse::internal_server_error(
+                "No user data".to_string(),
+            ));
+        }
+    };
 
-    let user = db
-        .run(move |conn| {
-            users::table
-                .filter(users::username.eq(username))
-                .first::<User>(conn)
-        })
-        .await
-        .map_err(|_| {
-            ApiResponse::not_found(format!("User '{}' not found", credentials.username))
-        })?;
-
-    let valid =
-        Password::verify_password(credentials.password, &user.password_hash).map_err(|e| {
-            ApiResponse::internal_server_error(format!("Password verification failed: {}", e))
-        })?;
-
-    if !valid {
+    // Validate if the given password is correct
+    if !Password::verify_password(credentials.password, &user.password_hash).map_err(|e| {
+        ApiResponse::internal_server_error(format!("Password verification failed: {}", e))
+    })? {
         return Err(ApiResponse::bad_request("Invalid password".to_string()));
-    }
+    };
 
-    // Pass user info to create_token for caching
+    // Pass user info to create token for caching
     let token = create_token(
         user.id.clone(),
-        user.username.clone(), // Add username for caching
+        user.username.clone(),
         user.privilege,
         redis_pool,
     )
     .await
     .map_err(|e| ApiResponse::internal_server_error(e))?;
 
+    // Return the token
     Ok(ApiResponse::success(
         "Login successful".to_string(),
         Some(token),
@@ -216,4 +201,15 @@ pub async fn logout(user: AuthenticatedUser, redis_pool: &State<RedisMutex>) -> 
         "Logout successful - token and user info removed".to_string(),
         None,
     )
+}
+
+async fn get_user(db: Database, username: String) -> Result<Success<User>, Error<Null>> {
+    db.run(move |conn| {
+        users::table
+            .filter(users::username.eq(username))
+            .first::<User>(conn)
+    })
+    .await
+    .map(|user| ApiResponse::success(format!("User '{}' found", user.username), Some(user)))
+    .map_err(|e| ApiResponse::not_found(e.to_string()))
 }

@@ -1,3 +1,7 @@
+//! Authentication and Authorization Module
+//!
+//! This module handles user authentication, token generation, and Redis-based session management.
+//! It includes JWT-based authentication and role-based access control.
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, TokenData, Validation};
 use redis::AsyncCommands;
 use rocket::http::Status;
@@ -9,15 +13,29 @@ use crate::models::users::UserRole;
 use crate::redis::RedisMutex;
 
 pub const USER_KEY: &str = "user:";
+const TOKEN_VALIDITY_HRS: i64 = 24;
 
+/// Represents the JWT claims stored in a token.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    pub sub: String,    // User ID
-    pub role: UserRole, // User role
-    pub exp: usize,     // Expiration timestamp
+    /// The subject of the token (User ID).
+    pub sub: String,
+    /// The role of the user.
+    pub role: UserRole,
+    /// Expiration timestamp (Unix epoch).
+    pub exp: usize,
 }
 
 impl Claims {
+    /// Validates and fetches token data from Redis.
+    ///
+    /// # Arguments
+    /// * `redis` - Redis connection.
+    /// * `token` - The JWT token to validate.
+    ///
+    /// # Returns
+    /// * `Ok(TokenData<Claims>)` if the token is valid.
+    /// * `Err((Status, String))` if token validation fails.
     pub async fn fetch_token_data(
         redis: &mut redis::aio::Connection,
         token: &str,
@@ -53,6 +71,7 @@ impl Claims {
     }
 }
 
+/// Represents user information stored in Redis.
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserInfo {
     pub id: String,
@@ -61,6 +80,15 @@ pub struct UserInfo {
 }
 
 impl UserInfo {
+    /// Fetches user information from Redis.
+    ///
+    /// # Arguments
+    /// * `redis` - Redis connection.
+    /// * `user_id` - User ID to retrieve data for.
+    ///
+    /// # Returns
+    /// * `Ok(UserInfo)` if user data is found.
+    /// * `Err(String)` if fetching fails.
     pub async fn fetch_user_info(
         redis: &mut redis::aio::Connection,
         user_id: &str,
@@ -77,6 +105,7 @@ impl UserInfo {
     }
 }
 
+/// Represents an authenticated user extracted from a valid JWT token.
 pub struct AuthenticatedUser {
     pub id: String,
     pub username: String,
@@ -88,6 +117,16 @@ pub struct AuthenticatedUser {
 impl<'r> FromRequest<'r> for AuthenticatedUser {
     type Error = String;
 
+    /// Extracts an authenticated user from an incoming request.
+    ///
+    /// This function:
+    /// 1. Extracts the `Authorization` header.
+    /// 2. Validates the JWT token using Redis.
+    /// 3. Fetches user info from Redis.
+    ///
+    /// # Returns
+    /// * `Outcome::Success(AuthenticatedUser)` if authentication is successful.
+    /// * `Outcome::Error` if the authentication fails.
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
         // Extract token from headers
         let token = match request.headers().get_one("Authorization") {
@@ -125,6 +164,17 @@ impl<'r> FromRequest<'r> for AuthenticatedUser {
     }
 }
 
+/// Creates and stores a JWT token for a user.
+///
+/// # Arguments
+/// * `user_id` - The user ID.
+/// * `username` - The username.
+/// * `privilege` - The user's role privilege.
+/// * `redis_pool` - The Redis connection pool.
+///
+/// # Returns
+/// * `Ok(String)` containing the JWT token if successful.
+/// * `Err(String)` if token generation fails.
 pub async fn create_token(
     user_id: String,
     username: String,
@@ -132,7 +182,7 @@ pub async fn create_token(
     redis_pool: &State<RedisMutex>,
 ) -> Result<String, String> {
     let expiration = chrono::Utc::now()
-        .checked_add_signed(chrono::Duration::hours(24))
+        .checked_add_signed(chrono::Duration::hours(TOKEN_VALIDITY_HRS))
         .expect("valid timestamp")
         .timestamp() as usize;
 
@@ -158,7 +208,7 @@ pub async fn create_token(
 
     // Store the token -> user_id mapping
     let _: () = redis
-        .set_ex(&token, &user_id, 24 * 3600) // Store user_id as the value
+        .set_ex(&token, &user_id, 24 * 3600)
         .await
         .map_err(|e| format!("Redis set token failed: {}", e))?;
 
@@ -180,6 +230,16 @@ pub async fn create_token(
     Ok(token)
 }
 
+/// Retrieves a Redis connection from the request state.
+///
+/// # Arguments
+/// 
+/// * `request` - The incoming HTTP request.
+///
+/// # Returns
+/// 
+/// * `Ok(redis::aio::Connection)` if successful.
+/// * `Err((Status, String))` if an error occurs.
 async fn get_cache(request: &Request<'_>) -> Result<redis::aio::Connection, (Status, String)> {
     // Get Redis connection
     let redis_pool = match request.guard::<&State<RedisMutex>>().await {
