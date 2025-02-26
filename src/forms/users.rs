@@ -12,10 +12,18 @@ use crate::models::users::User;
 pub struct NewUserForm<'v> {
     #[field(validate = len(1..))]
     pub username: &'v str,
-    pub display_name: Option<&'v str>,
     pub password: Password<'v>,
     #[field(validate = contains('@').or_else(msg!("invalid email address")))]
     pub email: &'v str,
+}
+
+impl<'v> NewUserForm<'v> {
+    pub fn body(&self) -> String {
+        format!(
+            "username={}&password.first={}&password.second={}&email={}",
+            self.username, self.password.first, self.password.second, self.email,
+        )
+    }
 }
 
 /// The information of the newly created user, that is safe to return as response of submitting the
@@ -42,6 +50,12 @@ impl InsertedUser {
 pub struct LoginForm<'v> {
     pub username: &'v str,
     pub password: &'v str,
+}
+
+impl<'v> LoginForm<'v> {
+    pub fn body(&self) -> String {
+        format!("username={}&password={}", self.username, self.password,)
+    }
 }
 
 #[derive(Debug, FromForm, Serialize, Deserialize)]

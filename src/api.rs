@@ -35,6 +35,10 @@ impl<T> ApiResponse<T> {
         Self::error(Status::BadRequest, message, None)
     }
 
+    pub fn conflict(message: String, data: T) -> Error<T> {
+        Self::error(Status::Conflict, message, Some(data))
+    }
+
     pub fn not_found(message: String) -> Error<T> {
         Self::error(Status::NotFound, message, None)
     }

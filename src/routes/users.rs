@@ -1,6 +1,10 @@
-use diesel::prelude::*;
+use diesel::{
+    prelude::*,
+    result::{DatabaseErrorKind, Error as DieselError},
+};
 
-use rocket::{form::Form, serde::json::Json};
+use redis::AsyncCommands;
+use rocket::{form::Form, serde::json::Json, State};
 use rocket_sync_db_pools::diesel;
 use uuid::Uuid;
 
@@ -10,6 +14,7 @@ use crate::{
     db::Database,
     forms::users::{InsertedUser, LoginForm, NewUserForm, Password},
     models::users::User,
+    redis::RedisMutex,
     schema::users,
 };
 
@@ -37,7 +42,7 @@ pub async fn submit<'r>(
     // Create a new User
     let new_user = User::new(
         form.username.to_string(),
-        form.display_name.map(|s| s.to_string()),
+        Some(form.username.to_string()),
         form.email.to_string(),
         password,
     );
@@ -52,7 +57,12 @@ pub async fn submit<'r>(
             .execute(conn)
     })
     .await
-    .map_err(|e| ApiResponse::internal_server_error(format!("Error creating user: {}", e)))?;
+    .map_err(|e| match e {
+        DieselError::DatabaseError(DatabaseErrorKind::UniqueViolation, _) => {
+            return ApiResponse::conflict("User already exists".to_string(), e.to_string());
+        }
+        _ => ApiResponse::internal_server_error(format!("Error creating user: {}", e)),
+    })?;
 
     // Return success response
     Ok(ApiResponse::success(
@@ -139,6 +149,7 @@ pub async fn get(db: Database, username: String) -> Result<Success<User>, Error<
 pub async fn login(
     db: Database,
     credentials: Form<LoginForm<'_>>,
+    redis_pool: &State<RedisMutex>,
 ) -> Result<Success<String>, Error<Null>> {
     let username = credentials.username.to_string();
 
@@ -155,15 +166,22 @@ pub async fn login(
 
     let valid =
         Password::verify_password(credentials.password, &user.password_hash).map_err(|e| {
-            ApiResponse::internal_server_error(format!("Password verification failed: {e}"))
+            ApiResponse::internal_server_error(format!("Password verification failed: {}", e))
         })?;
 
     if !valid {
         return Err(ApiResponse::bad_request("Invalid password".to_string()));
     }
 
-    let token = create_token(user.id.clone(), user.privilege)
-        .map_err(|e| ApiResponse::internal_server_error(e))?;
+    // Pass user info to create_token for caching
+    let token = create_token(
+        user.id.clone(),
+        user.username.clone(), // Add username for caching
+        user.privilege,
+        redis_pool,
+    )
+    .await
+    .map_err(|e| ApiResponse::internal_server_error(e))?;
 
     Ok(ApiResponse::success(
         "Login successful".to_string(),
@@ -172,6 +190,18 @@ pub async fn login(
 }
 
 #[post("/logout")]
-pub async fn logout(_user: AuthenticatedUser) -> Success<String> {
-    ApiResponse::success("Logout successful - discard your token".to_string(), None)
+pub async fn logout(user: AuthenticatedUser, redis_pool: &State<RedisMutex>) -> Success<String> {
+    let mut redis = redis_pool.lock().await.get_connection().await.unwrap();
+
+    // Remove token from Redis
+    let _: () = redis.del(&user.token).await.unwrap();
+
+    // Remove user info from Redis
+    let user_key = format!("user:{}", user.id);
+    let _: () = redis.del(user_key).await.unwrap();
+
+    ApiResponse::success(
+        "Logout successful - token and user info removed".to_string(),
+        None,
+    )
 }
