@@ -1,6 +1,7 @@
 [default]
 address = "127.0.0.1"
 port = 8000
+secret_key = "BquiyC07WQ27ldPF0FuVmqS6arSPs76MwBu895qQnjM="
 
-[global.databases]
+[default.databases]
 rustle_db = { url = "sqlite://db/rustle.db" }

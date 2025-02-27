@@ -10,7 +10,7 @@
 //! 
 //! ### 2. Run Redis server
 //! ```bash
-//! redis-server ==deamonize yes
+//! redis-server --daemonize yes
 //! ```
 //! > To verify: `redis-cli ping`
 use redis::Client;

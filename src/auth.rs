@@ -13,6 +13,7 @@ use crate::models::users::UserRole;
 use crate::redis::RedisMutex;
 
 pub const USER_KEY: &str = "user:";
+pub const AUTH_TOKEN: &str = "auth_token";
 const TOKEN_VALIDITY_HRS: i64 = 24;
 
 /// Represents the JWT claims stored in a token.

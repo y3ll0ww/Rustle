@@ -196,7 +196,7 @@ fn delete_existing_user_by_id() {
     let client = test_client();
 
     // User ID: Change depending on which user tester wants to delete
-    let user_id = "fe0b96a1-d86f-4f00-93b1-d708b777cb88";
+    let user_id = "48c3627d-be33-4959-810f-724cc2bf6b59";
 
     // Send delete request
     let response = client.delete(format!("/user/delete/{user_id}")).dispatch();
