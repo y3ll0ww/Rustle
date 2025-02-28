@@ -1,9 +1,9 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    user (user_id) {
-        user_id -> Text,
-        user_role -> Text,
+    users (id) {
+        id -> Text,
+        privilege -> Integer,
         username -> Text,
         display_name -> Nullable<Text>,
         email -> Text,
