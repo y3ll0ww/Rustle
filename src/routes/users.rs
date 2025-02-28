@@ -3,20 +3,34 @@ use diesel::{
     result::{DatabaseErrorKind, Error as DieselError},
 };
 
-use redis::AsyncCommands;
-use rocket::{form::Form, serde::json::Json, State};
+use rocket::{
+    form::Form,
+    http::{Cookie, CookieJar},
+    serde::json::Json,
+};
 use rocket_sync_db_pools::diesel;
 use uuid::Uuid;
 
 use crate::{
     api::{ApiResponse, Error, Null, Success},
-    auth::{create_token, AuthenticatedUser},
+    auth::{token_user_info, JwtGuard, TOKEN_COOKIE, USER_COOKIE},
     db::Database,
     forms::users::{LoginForm, NewUserForm, Password},
     models::users::User,
-    redis::RedisMutex,
     schema::users,
 };
+
+#[get("/")]
+pub async fn all(db: Database) -> Result<Success<Vec<User>>, Error<Null>> {
+    db.run(move |conn| {
+        users::table.get_results::<User>(conn)
+            //.filter(users::username.eq(username))
+            //.first::<User>(conn)
+    })
+    .await
+    .map(|user| ApiResponse::success("Returning all users".to_string(), Some(user)))
+    .map_err(|e| ApiResponse::not_found(e.to_string()))
+}
 
 /// This function allows for the creation of a new [`User`] by using a form.
 ///
@@ -30,11 +44,11 @@ use crate::{
 /// * `Ok(Success<InsertedUser>)`: When `Ok`, it returns [`Success`] with the [`InsertedUser`].
 /// * `Err(Error<String>)`: When `Err`, it returns an [`Error`] with [`Null`].
 #[post("/form", data = "<form>")]
-pub async fn submit<'r>(
+pub async fn register<'r>(
     db: Database,
     form: Form<NewUserForm<'r>>,
-    redis_pool: &State<RedisMutex>,
-) -> Result<Success<String>, Error<Null>> {
+    cookies: &CookieJar<'_>,
+) -> Result<Success<Null>, Error<Null>> {
     // Hash the provided password
     let password_hash = form
         .password
@@ -52,7 +66,7 @@ pub async fn submit<'r>(
     // Clone information for later use
     let user_id = new_user.id.clone();
     let username = new_user.username.clone();
-    let user_privilege = new_user.privilege;
+    let privilege = new_user.privilege;
 
     // Add the new User to the database
     db.run(move |conn| {
@@ -68,37 +82,13 @@ pub async fn submit<'r>(
         _ => ApiResponse::internal_server_error(format!("Error creating user: {}", e)),
     })?;
 
-    // Pass user info to create_token for caching
-    let token = create_token(user_id, username.clone(), user_privilege, redis_pool)
-        .await
-        .map_err(|e| ApiResponse::internal_server_error(e))?;
+    generate_and_add_cookies(user_id, username.clone(), privilege, cookies).await?;
 
     // Return success response
     Ok(ApiResponse::success(
         format!("User '{username}' created succesfully"),
-        Some(token),
+        None,
     ))
-}
-
-#[post("/create", format = "json", data = "<user>")]
-pub async fn create(db: Database, user: Json<User>) -> String {
-    let mut new_user = user.into_inner(); // Extract user data from Json
-    let username = new_user.username.clone();
-    new_user.id = Uuid::new_v4().to_string(); // Generate a new UUID
-
-    // Use Diesel to insert the new user
-    let result = db
-        .run(move |c| {
-            diesel::insert_into(users::table)
-                .values(&new_user) // Clone new_user into the closure
-                .execute(c) // Pass the connection
-        })
-        .await;
-
-    match result {
-        Ok(_) => format!("User {username} created"),
-        Err(e) => format!("Error creating user: {e}"), // Print error details
-    }
 }
 
 /// Deletes a [`User`] from the database.
@@ -112,7 +102,7 @@ pub async fn create(db: Database, user: Json<User>) -> String {
 /// ### Returns
 /// * `Ok(Success<String>)`: When `Ok`, it returns a wrapped in [`Success`] with [`Null`] data.
 /// * `Err(Error<String>)`: When `Err`, it returns an [`Error`] with [`Null`] data.
-#[delete("/delete/<id>")]
+#[delete("/<id>/delete")]
 pub async fn delete(db: Database, id: String) -> Result<Success<Null>, Error<Null>> {
     // Define the response messages beforehand
     let success_msg = format!("User with ID '{id}' successfully deleted");
@@ -150,8 +140,8 @@ pub async fn get(db: Database, username: String) -> Result<Success<User>, Error<
 pub async fn login(
     db: Database,
     credentials: Form<LoginForm<'_>>,
-    redis_pool: &State<RedisMutex>,
-) -> Result<Success<String>, Error<Null>> {
+    cookies: &CookieJar<'_>,
+) -> Result<Success<Null>, Error<Null>> {
     // Get the user from the database
     let user = match &get_user(db, credentials.username.to_string()).await?.data {
         Some(user) => user.clone(),
@@ -169,33 +159,16 @@ pub async fn login(
         return Err(ApiResponse::bad_request("Invalid password".to_string()));
     };
 
-    // Pass user info to create token for caching
-    let token = create_token(
-        user.id.clone(),
-        user.username.clone(),
-        user.privilege,
-        redis_pool,
-    )
-    .await
-    .map_err(|e| ApiResponse::internal_server_error(e))?;
+    generate_and_add_cookies(user.id, user.username, user.privilege, cookies).await?;
 
     // Return the token
-    Ok(ApiResponse::success(
-        "Login successful".to_string(),
-        Some(token),
-    ))
+    Ok(ApiResponse::success("Login successful".to_string(), None))
 }
 
 #[post("/logout")]
-pub async fn logout(user: AuthenticatedUser, redis_pool: &State<RedisMutex>) -> Success<String> {
-    let mut redis = redis_pool.lock().await.get_connection().await.unwrap();
-
-    // Remove token from Redis
-    let _: () = redis.del(&user.token).await.unwrap();
-
-    // Remove user info from Redis
-    let user_key = format!("user:{}", user.id);
-    let _: () = redis.del(user_key).await.unwrap();
+pub fn logout(cookies: &CookieJar<'_>, _guard: JwtGuard) -> Success<String> {
+    cookies.remove_private(TOKEN_COOKIE);
+    cookies.remove_private(USER_COOKIE);
 
     ApiResponse::success(
         "Logout successful - token and user info removed".to_string(),
@@ -212,4 +185,45 @@ async fn get_user(db: Database, username: String) -> Result<Success<User>, Error
     .await
     .map(|user| ApiResponse::success(format!("User '{}' found", user.username), Some(user)))
     .map_err(|e| ApiResponse::not_found(e.to_string()))
+}
+
+#[post("/create", format = "json", data = "<user>")]
+pub async fn create(db: Database, user: Json<User>) -> String {
+    let mut new_user = user.into_inner(); // Extract user data from Json
+    let username = new_user.username.clone();
+    new_user.id = Uuid::new_v4().to_string(); // Generate a new UUID
+
+    // Use Diesel to insert the new user
+    let result = db
+        .run(move |c| {
+            diesel::insert_into(users::table)
+                .values(&new_user) // Clone new_user into the closure
+                .execute(c) // Pass the connection
+        })
+        .await;
+
+    match result {
+        Ok(_) => format!("User {username} created"),
+        Err(e) => format!("Error creating user: {e}"), // Print error details
+    }
+}
+
+async fn generate_and_add_cookies(
+    user_id: String,
+    username: String,
+    privilege: i32,
+    cookies: &CookieJar<'_>,
+) -> Result<(), Error<String>> {
+    // Pass user info to create token for caching
+    let (token, user_info) = token_user_info(user_id.clone(), username.clone(), privilege)
+        .await
+        .map_err(|e| ApiResponse::internal_server_error(e))?;
+
+    let token_cookie = Cookie::new(TOKEN_COOKIE, token);
+    let user_cookie = Cookie::new(USER_COOKIE, user_info);
+
+    cookies.add_private(token_cookie);
+    cookies.add_private(user_cookie);
+
+    Ok(())
 }

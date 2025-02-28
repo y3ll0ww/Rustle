@@ -42,7 +42,7 @@ pub fn redis_fairing() -> impl rocket::fairing::Fairing {
         match RedisPool::new(REDIS_URL) {
             Ok(pool) => rocket.manage(Arc::new(Mutex::new(pool))),
             Err(e) => {
-                // QWERTY perhaps panic here.
+                // QWERTY perhaps panic here instead of returning limited rocket.
                 eprintln!("Failed to initialize Redis: {}", e);
                 rocket
             }
