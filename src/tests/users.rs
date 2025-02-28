@@ -157,7 +157,7 @@ fn delete_existing_user_by_id() {
     assert_eq!(response.status(), Status::Ok);
 }
 
-fn default_login(client: &Client) {
+pub fn default_login(client: &Client) {
     // Create a form with test data
     let login = LoginForm {
         username: USERNAME,

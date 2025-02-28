@@ -1,5 +1,6 @@
 use rocket::local::blocking::Client;
 
+pub mod teams;
 pub mod users;
 
 pub fn test_client() -> Client {

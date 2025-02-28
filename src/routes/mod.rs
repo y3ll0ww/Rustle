@@ -1,4 +1,11 @@
+pub mod teams;
 pub mod users;
+
+pub fn teams() -> Vec<rocket::Route> {
+    routes![
+        teams::overview,
+    ]
+}
 
 // Routes should be as follows:
 // * /user               -> GET    (List users)
@@ -9,7 +16,7 @@ pub mod users;
 // * /user/logout        -> POST   (Logout user)
 // * /user/register      -> POST   (Register user)
 
-pub fn user() -> Vec<rocket::Route> {
+pub fn users() -> Vec<rocket::Route> {
     routes![
         users::all,
         users::register,
