@@ -6,7 +6,7 @@ use rocket::{
 };
 
 use crate::{
-    auth::{TOKEN_COOKIE, USER_COOKIE},
+    cookies::{TOKEN_COOKIE, USER_COOKIE},
     forms::users::{LoginForm, NewUserForm, Password},
     models::users::User,
     tests::test_client,

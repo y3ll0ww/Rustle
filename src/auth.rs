@@ -3,15 +3,17 @@
 //! This module handles user authentication, token generation, and Redis-based session management.
 //! It includes JWT-based authentication and role-based access control.
 use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, TokenData, Validation};
-use rocket::{http::Status, request::{FromRequest, Outcome}, Request};
+use rocket::{
+    http::Status,
+    request::{FromRequest, Outcome},
+    Request,
+};
 use serde::{Deserialize, Serialize};
 
-use crate::models::users::UserRole;
+use crate::{cookies::TOKEN_COOKIE, models::users::UserRole};
 
 const TOKEN_VALIDITY_HRS: i64 = 24;
 
-pub const TOKEN_COOKIE: &str = "auth_token";
-pub const USER_COOKIE: &str = "user";
 // QWERTY find better solution for handling secret key
 pub const SECRET: &str = "BquiyC07WQ27ldPF0FuVmqS6arSPs76MwBu895qQnjM=";
 
@@ -32,9 +34,11 @@ impl<'r> FromRequest<'r> for JwtGuard {
             None => match request.headers().get_one("Authorization") {
                 Some(header_value) if header_value.starts_with("Bearer ") => {
                     header_value[7..].to_string() // Extract the token part (skip "Bearer ")
-                },
-                _ => return Outcome::Error((Status::Unauthorized, "No token provided".to_string()))
-            }
+                }
+                _ => {
+                    return Outcome::Error((Status::Unauthorized, "No token provided".to_string()))
+                }
+            },
         };
 
         // Validate the token by decoding it and checking the expiration
@@ -73,7 +77,6 @@ impl Claims {
         })
     }
 }
-
 
 /// Represents user information stored in Redis.
 #[derive(Debug, Serialize, Deserialize)]

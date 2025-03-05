@@ -1,14 +1,16 @@
-use redis::redis_fairing;
+use cache::redis_fairing;
+use routes::{TEAMS, USERS};
 
 #[macro_use]
 extern crate rocket;
 
 pub mod api;
 pub mod auth;
+pub mod cache;
+pub mod cookies;
 pub mod db;
 pub mod forms;
 pub mod models;
-pub mod redis;
 pub mod routes;
 pub mod schema;
 #[cfg(test)]
@@ -19,6 +21,6 @@ fn rocket() -> _ {
     rocket::custom(rocket::Config::figment())
         .attach(db::Database::fairing())
         .attach(redis_fairing())
-        .mount("/team/", routes::teams())
-        .mount("/user/", routes::users())
+        .mount(TEAMS, routes::teams())
+        .mount(USERS, routes::users())
 }

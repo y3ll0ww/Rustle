@@ -1,10 +1,11 @@
 pub mod teams;
 pub mod users;
 
+pub const TEAMS: &str = "/teams/";
+pub const USERS: &str = "/user/";
+
 pub fn teams() -> Vec<rocket::Route> {
-    routes![
-        teams::overview,
-    ]
+    routes![teams::new, teams::overview, teams::get_team, teams::delete,]
 }
 
 // Routes should be as follows:

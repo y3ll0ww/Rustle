@@ -3,17 +3,14 @@ use diesel::{
     result::{DatabaseErrorKind, Error as DieselError},
 };
 
-use rocket::{
-    form::Form,
-    http::{Cookie, CookieJar},
-    serde::json::Json,
-};
+use rocket::{form::Form, http::CookieJar, serde::json::Json};
 use rocket_sync_db_pools::diesel;
 use uuid::Uuid;
 
 use crate::{
     api::{ApiResponse, Error, Null, Success},
-    auth::{token_user_info, JwtGuard, TOKEN_COOKIE, USER_COOKIE},
+    auth::JwtGuard,
+    cookies::{users::generate_and_add_cookies, TOKEN_COOKIE, USER_COOKIE},
     db::Database,
     forms::users::{LoginForm, NewUserForm, Password},
     models::users::User,
@@ -24,8 +21,8 @@ use crate::{
 pub async fn all(db: Database) -> Result<Success<Vec<User>>, Error<Null>> {
     db.run(move |conn| {
         users::table.get_results::<User>(conn)
-            //.filter(users::username.eq(username))
-            //.first::<User>(conn)
+        //.filter(users::username.eq(username))
+        //.first::<User>(conn)
     })
     .await
     .map(|user| ApiResponse::success("Returning all users".to_string(), Some(user)))
@@ -43,7 +40,7 @@ pub async fn all(db: Database) -> Result<Success<Vec<User>>, Error<Null>> {
 /// ### Returns
 /// * `Ok(Success<InsertedUser>)`: When `Ok`, it returns [`Success`] with the [`InsertedUser`].
 /// * `Err(Error<String>)`: When `Err`, it returns an [`Error`] with [`Null`].
-#[post("/form", data = "<form>")]
+#[post("/register", data = "<form>")]
 pub async fn register<'r>(
     db: Database,
     form: Form<NewUserForm<'r>>,
@@ -58,7 +55,7 @@ pub async fn register<'r>(
     // Create a new User
     let new_user = User::new(
         form.username.to_string(),
-        Some(form.username.to_string()),
+        None,
         form.email.to_string(),
         password_hash,
     );
@@ -206,24 +203,4 @@ pub async fn create(db: Database, user: Json<User>) -> String {
         Ok(_) => format!("User {username} created"),
         Err(e) => format!("Error creating user: {e}"), // Print error details
     }
-}
-
-async fn generate_and_add_cookies(
-    user_id: String,
-    username: String,
-    privilege: i32,
-    cookies: &CookieJar<'_>,
-) -> Result<(), Error<String>> {
-    // Pass user info to create token for caching
-    let (token, user_info) = token_user_info(user_id.clone(), username.clone(), privilege)
-        .await
-        .map_err(|e| ApiResponse::internal_server_error(e))?;
-
-    let token_cookie = Cookie::new(TOKEN_COOKIE, token);
-    let user_cookie = Cookie::new(USER_COOKIE, user_info);
-
-    cookies.add_private(token_cookie);
-    cookies.add_private(user_cookie);
-
-    Ok(())
 }
