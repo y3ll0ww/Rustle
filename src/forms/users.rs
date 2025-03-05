@@ -15,7 +15,7 @@ pub struct NewUserForm<'v> {
     pub email: &'v str,
 }
 
-impl<'v> NewUserForm<'v> {
+impl NewUserForm<'_> {
     pub fn body(&self) -> String {
         format!(
             "username={}&password.first={}&password.second={}&email={}",
@@ -30,7 +30,7 @@ pub struct LoginForm<'v> {
     pub password: &'v str,
 }
 
-impl<'v> LoginForm<'v> {
+impl LoginForm<'_> {
     pub fn body(&self) -> String {
         format!("username={}&password={}", self.username, self.password,)
     }
@@ -47,7 +47,7 @@ pub struct Password<'v> {
     pub second: &'v str,
 }
 
-impl<'v> Password<'v> {
+impl Password<'_> {
     pub fn verify_password(input_password: &str, stored_hash: &str) -> Result<bool, Error> {
         let password = input_password.as_bytes();
         let hash = PasswordHash::new(stored_hash)?;

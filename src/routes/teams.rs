@@ -68,7 +68,7 @@ pub async fn new(
             .execute(conn)
     })
     .await
-    .map_err(|e| ApiResponse::from_error(e))?;
+    .map_err(ApiResponse::from_error)?;
 
     // Return success response
     Ok(ApiResponse::success(success_message, None))
@@ -112,10 +112,7 @@ pub async fn get_team(
     let redis = redis.lock().await;
 
     // Step 1: Check the team update stored in cookies
-    let team_update_from_cookie = match get_team_update(&id, cookies) {
-        Ok(cookie_value) => cookie_value,
-        _ => None,
-    };
+    let team_update_from_cookie = get_team_update(&id, cookies).unwrap_or_default();
 
     // Step 2: Get the team update from the database
     let team_id = id.clone();
@@ -124,7 +121,7 @@ pub async fn get_team(
             team_updates::table
                 .filter(team_updates::team_id.eq(&team_id))
                 .first::<TeamUpdate>(conn)
-                .map_err(|e| ApiResponse::from_error(e))
+                .map_err(ApiResponse::from_error)
         })
         .await?;
 
@@ -158,7 +155,7 @@ pub async fn get_team(
             let team = teams::table
                 .filter(teams::id.eq(&team_id))
                 .first::<Team>(conn)
-                .map_err(|e| ApiResponse::from_error(e))?;
+                .map_err(ApiResponse::from_error)?;
 
             let members = team_members::table
                 .inner_join(users::table.on(users::id.eq(team_members::user_id)))
@@ -171,7 +168,7 @@ pub async fn get_team(
                     team_members::team_privilege,
                 ))
                 .load::<TeamMemberInfo>(conn)
-                .map_err(|e| ApiResponse::from_error(e))?;
+                .map_err(ApiResponse::from_error)?;
 
             Ok(TeamWithMembers { team, members })
         })
@@ -206,7 +203,7 @@ pub async fn delete(
             teams::table
                 .filter(teams::id.eq(&team_id))
                 .first::<Team>(conn)
-                .map_err(|e| ApiResponse::from_error(e))
+                .map_err(ApiResponse::from_error)
         })
         .await?;
 
@@ -234,7 +231,7 @@ pub async fn delete(
     let deleted_rows = db
         .run(move |conn| diesel::delete(teams::table.filter(teams::id.eq(&team_id))).execute(conn))
         .await
-        .map_err(|e| ApiResponse::from_error(e))?;
+        .map_err(ApiResponse::from_error)?;
 
     if deleted_rows == 0 {
         return Err(ApiResponse::internal_server_error(

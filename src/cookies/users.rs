@@ -16,7 +16,7 @@ pub async fn generate_and_add_cookies(
     // Pass user info to create token for caching
     let (token, user_info) = token_user_info(user_id.clone(), username.clone(), privilege)
         .await
-        .map_err(|e| ApiResponse::internal_server_error(e))?;
+        .map_err(ApiResponse::internal_server_error)?;
 
     let token_cookie = Cookie::new(TOKEN_COOKIE, token);
     let user_cookie = Cookie::new(USER_COOKIE, user_info);
@@ -28,5 +28,5 @@ pub async fn generate_and_add_cookies(
 }
 
 pub async fn get_user_info(cookies: &CookieJar<'_>) -> Result<UserInfo, Error<String>> {
-    Ok(get_cookie::<UserInfo>(USER_COOKIE, cookies)?)
+    get_cookie::<UserInfo>(USER_COOKIE, cookies)
 }

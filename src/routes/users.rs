@@ -41,9 +41,9 @@ pub async fn all(db: Database) -> Result<Success<Vec<User>>, Error<Null>> {
 /// * `Ok(Success<InsertedUser>)`: When `Ok`, it returns [`Success`] with the [`InsertedUser`].
 /// * `Err(Error<String>)`: When `Err`, it returns an [`Error`] with [`Null`].
 #[post("/register", data = "<form>")]
-pub async fn register<'r>(
+pub async fn register(
     db: Database,
-    form: Form<NewUserForm<'r>>,
+    form: Form<NewUserForm<'_>>,
     cookies: &CookieJar<'_>,
 ) -> Result<Success<Null>, Error<Null>> {
     // Hash the provided password
@@ -74,7 +74,7 @@ pub async fn register<'r>(
     .await
     .map_err(|e| match e {
         DieselError::DatabaseError(DatabaseErrorKind::UniqueViolation, _) => {
-            return ApiResponse::conflict("User already exists".to_string(), e.to_string());
+            ApiResponse::conflict("User already exists".to_string(), e.to_string())
         }
         _ => ApiResponse::internal_server_error(format!("Error creating user: {}", e)),
     })?;

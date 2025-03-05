@@ -29,7 +29,7 @@ impl<'r> FromRequest<'r> for JwtGuard {
         let token_cookie = cookies.get_private(TOKEN_COOKIE);
 
         let token = match token_cookie {
-            Some(cookie) => format!("{}", cookie.value()),
+            Some(cookie) => cookie.value().to_string(),
             // If no token is found in cookies, look for it in the Authorization header
             None => match request.headers().get_one("Authorization") {
                 Some(header_value) if header_value.starts_with("Bearer ") => {
