@@ -4,8 +4,6 @@ use super::*;
 pub async fn list_all_users(db: Database) -> Result<Success<Vec<User>>, Error<Null>> {
     db.run(move |conn| {
         users::table.get_results::<User>(conn)
-        //.filter(users::username.eq(username))
-        //.first::<User>(conn)
     })
     .await
     .map(|user| ApiResponse::success("Returning all users".to_string(), Some(user)))

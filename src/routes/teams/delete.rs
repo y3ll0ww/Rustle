@@ -1,6 +1,9 @@
 use super::*;
 
-/// Deletes a new team.
+/// Deletes a [`Team`] and related [`TeamUpdate`]s and [`TeamMember`]s.
+/// 
+/// The tables [`team_updates::table`] and [`team_members::table`] are linked with [`teams::table`]
+/// and are cascaded on deletion.
 ///
 /// ## Permissions
 /// Request user ID must be the same as [`Team::owner_id`].

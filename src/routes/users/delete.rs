@@ -1,40 +1,56 @@
+use crate::{cookies::users::get_user_info, models::users::UserRole};
+
 use super::*;
 
 /// Deletes a [`User`] from the database.
 ///
-/// **Route**: `./delete/<id>`
+/// ## Permissions
+/// - Request user has [`UserRole::Admin`]
+/// - OR request user ID is the same as the user ID defined in the request
 ///
-/// ### Parameters
-/// * `db`: Instance of the [`Database`] connection.
-/// * `id`: The ID from the [`User`] to be deleted.
+/// ## Request
+/// * Method: `DELETE`
+/// * Data: `id: String`
+/// * Guarded by JWT token
+/// * Database access
+/// * Cookies: [`USER_COOKIE`]
 ///
-/// ### Returns
-/// * `Ok(Success<String>)`: When `Ok`, it returns a wrapped in [`Success`] with [`Null`] data.
-/// * `Err(Error<String>)`: When `Err`, it returns an [`Error`] with [`Null`] data.
-#[delete("/<id>/delete")]
-pub async fn delete_user_by_id(id: String, db: Database) -> Result<Success<Null>, Error<Null>> {
+/// ## Response
+/// * **200 OK**: Nothing returned.
+/// * **401 Unauthorized**:
+///   - No [`TOKEN_COOKIE`]
+///   - Request user is not [`UserRole::Admin`] (optional).
+///   - Request user not the same user (optional).
+/// * **404 Not found**: No [`User`] found in [`users::table`].
+/// * **500 Server Error**: Any database operation fails.
+pub async fn delete_user_by_id(
+    id: String,
+    _guard: JwtGuard,
+    db: Database,
+    cookies: &CookieJar<'_>,
+) -> Result<Success<Null>, Error<Null>> {
+    // Get user cookie
+    let user = get_user_info(cookies).await?;
+
+    // Return early if the user to delete is not self or admin
+    if user.role != UserRole::Admin || user.id != id {
+        return Err(ApiResponse::unauthorized("No permission to delete user".to_string()))
+    }
+
     // Define the response messages beforehand
     let success_msg = format!("User with ID '{id}' successfully deleted");
-    let failed_msg = format!("User with ID '{id}' not removed");
+    let failed_msg = format!("User with ID '{id}' not found");
 
     // Delete the records from the database and collect the number of deleted rows
     let deleted_rows = db
         .run(move |conn| diesel::delete(users::table.filter(users::id.eq(id))).execute(conn))
         .await
-        .map_err(|e| match e {
-            diesel::result::Error::DatabaseError(kind, info) => {
-                ApiResponse::bad_request(format!("{}: {:?} - {:?}", failed_msg, kind, info))
-            }
-            other => ApiResponse::internal_server_error(format!("{}: {}", failed_msg, other)),
-        })?;
+        .map_err(ApiResponse::from_error)?;
 
     // If there are any deleted rows, it means the user is successfully deleted
     if deleted_rows > 0 {
         Ok(ApiResponse::success(success_msg, None))
     } else {
-        Err(ApiResponse::not_found(format!(
-            "{}: No user found with that ID",
-            failed_msg
-        )))
+        Err(ApiResponse::not_found(failed_msg))
     }
 }

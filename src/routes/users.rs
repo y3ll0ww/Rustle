@@ -51,8 +51,13 @@ async fn get_user(username: String, db: Database) -> Result<Success<User>, Error
 }
 
 #[delete("/<id>/delete")]
-async fn delete_user(id: String, db: Database) -> Result<Success<Null>, Error<Null>> {
-    delete::delete_user_by_id(id, db).await
+async fn delete_user(
+    id: String,
+    guard: JwtGuard,
+    db: Database,
+    cookies: &CookieJar<'_>,
+) -> Result<Success<Null>, Error<Null>> {
+    delete::delete_user_by_id(id, guard, db, cookies).await
 }
 
 #[post("/login", data = "<credentials>")]
