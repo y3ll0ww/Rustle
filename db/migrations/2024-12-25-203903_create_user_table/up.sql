@@ -1,5 +1,5 @@
 CREATE TABLE users (
-    id VARCHAR(20) PRIMARY KEY NOT NULL,
+    id TEXT PRIMARY KEY NOT NULL,
     privilege INTEGER NOT NULL DEFAULT 0,
     username VARCHAR(40) UNIQUE NOT NULL,
     display_name VARCHAR(40),

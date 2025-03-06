@@ -2,20 +2,72 @@
 //!
 //! This module handles user authentication, token generation, and Redis-based session management.
 //! It includes JWT-based authentication and role-based access control.
-use jsonwebtoken::{decode, encode, DecodingKey, EncodingKey, Header, TokenData, Validation};
-use rocket::{http::Status, request::{FromRequest, Outcome}, Request};
+use base64::{engine::general_purpose, Engine};
+use jsonwebtoken::{encode, EncodingKey, Header, TokenData};
+use rocket::{
+    http::{Cookie, CookieJar, SameSite, Status},
+    request::{FromRequest, Outcome},
+    Request,
+};
 use serde::{Deserialize, Serialize};
 
-use crate::models::users::UserRole;
+use crate::{cookies::TOKEN_COOKIE, models::users::UserRole};
 
 const TOKEN_VALIDITY_HRS: i64 = 24;
 
-pub const TOKEN_COOKIE: &str = "auth_token";
-pub const USER_COOKIE: &str = "user";
 // QWERTY find better solution for handling secret key
 pub const SECRET: &str = "BquiyC07WQ27ldPF0FuVmqS6arSPs76MwBu895qQnjM=";
 
-pub struct JwtGuard;
+pub struct JwtGuard {
+    claims: Claims,
+}
+
+impl JwtGuard {
+    pub fn get_user(&self) -> AuthorizedUser {
+        self.claims.sub.clone()
+    }
+
+    pub async fn secure(
+        user_id: String,
+        username: String,
+        privilege: i32,
+        cookies: &CookieJar<'_>,
+    ) -> Result<(), String> {
+        let token =
+            Self::generate_token(AuthorizedUser::new(user_id, username, privilege)?).await?;
+
+        let cookie = Cookie::build((TOKEN_COOKIE, token))
+            .http_only(true) // Prevent JavaScript access (mitigates XSS)
+            .same_site(SameSite::Strict) // Prevent CSRF attacks
+            .secure(true) // Only send cookie over HTTPS
+            .path("/"); // Available site-wide
+
+        cookies.add_private(cookie);
+
+        Ok(())
+    }
+
+    async fn generate_token(user: AuthorizedUser) -> Result<String, String> {
+        let expiration = chrono::Utc::now()
+            .checked_add_signed(chrono::Duration::hours(TOKEN_VALIDITY_HRS))
+            .expect("valid timestamp")
+            .timestamp() as usize;
+
+        let claims = Claims {
+            sub: user,
+            exp: expiration,
+        };
+
+        let token = encode(
+            &Header::default(),
+            &claims,
+            &EncodingKey::from_secret(SECRET.as_bytes()),
+        )
+        .map_err(|e| format!("Failed to create token: {e}"))?;
+
+        Ok(token)
+    }
+}
 
 #[async_trait]
 impl<'r> FromRequest<'r> for JwtGuard {
@@ -27,19 +79,23 @@ impl<'r> FromRequest<'r> for JwtGuard {
         let token_cookie = cookies.get_private(TOKEN_COOKIE);
 
         let token = match token_cookie {
-            Some(cookie) => format!("{}", cookie.value()),
+            Some(cookie) => cookie.value().to_string(),
             // If no token is found in cookies, look for it in the Authorization header
             None => match request.headers().get_one("Authorization") {
                 Some(header_value) if header_value.starts_with("Bearer ") => {
                     header_value[7..].to_string() // Extract the token part (skip "Bearer ")
-                },
-                _ => return Outcome::Error((Status::Unauthorized, "No token provided".to_string()))
-            }
+                }
+                _ => {
+                    return Outcome::Error((Status::Unauthorized, "No token provided".to_string()))
+                }
+            },
         };
 
         // Validate the token by decoding it and checking the expiration
         match Claims::decode_and_validate(&token) {
-            Ok(_) => Outcome::Success(JwtGuard),
+            Ok(decoded) => Outcome::Success(JwtGuard {
+                claims: decoded.claims,
+            }),
             Err(e) => Outcome::Error(e),
         }
     }
@@ -49,83 +105,63 @@ impl<'r> FromRequest<'r> for JwtGuard {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
     /// The subject of the token (User ID).
-    pub sub: String,
-    /// The role of the user.
-    pub role: UserRole,
+    pub sub: AuthorizedUser,
     /// Expiration timestamp (Unix epoch).
     pub exp: usize,
 }
 
 impl Claims {
-    /// This function now only decodes the JWT and checks its expiration, with no Redis involved.
-    pub fn decode_and_validate(token: &str) -> Result<TokenData<Self>, (Status, String)> {
-        // Decode the token using the secret key
-        decode::<Claims>(
-            token,
-            &DecodingKey::from_secret(SECRET.as_bytes()),
-            &Validation::default(),
+    /// This function decodes the JWT and checks its expiration.
+    pub fn decode_and_validate(token: &str) -> Result<TokenData<Claims>, (Status, String)> {
+        // Get the payload part from the token:
+        // 0 = header
+        // 1 = payload
+        // 2 = signature
+        let token_payload = token.split('.').collect::<Vec<&str>>()[1];
+
+        // Deserialize the payload properly (own implementation because of character escaping)
+        let decoded_payload = String::from_utf8_lossy(
+            &general_purpose::STANDARD
+                .decode(token_payload)
+                .map_err(|e| (Status::Unauthorized, e.to_string()))?,
         )
-        .map_err(|e| {
+        .to_string();
+
+        // Deserialize the payload to Claims struct
+        let claims = serde_json::from_str::<Claims>(&decoded_payload).map_err(|e| {
             (
                 Status::Unauthorized,
-                format!("Invalid token '{token}': {e}"),
+                format!("Failed to parse claims: {}", e),
             )
+        })?;
+
+        // Validate expiration date
+        if claims.exp < chrono::Utc::now().timestamp() as usize {
+            return Err((Status::Unauthorized, "Token has expired".to_string()));
+        }
+
+        // If everything looks good, return the claims in the TokenData struct
+        Ok(TokenData {
+            claims,
+            header: Default::default(),
         })
     }
 }
 
-
-/// Represents user information stored in Redis.
-#[derive(Debug, Serialize, Deserialize)]
-pub struct UserInfo {
+/// Represents user information stored in Redis. COOKIES: qwerty
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AuthorizedUser {
     pub id: String,
     pub username: String,
     pub role: UserRole,
 }
 
-/// Generates a JWT token and a [`UserInfo`] JSON, and returns them in a tuple of Strings.
-///
-/// # Arguments
-/// * `user_id` - The user ID.
-/// * `username` - The username.
-/// * `privilege` - The user's role privilege.
-///
-/// # Returns
-/// * `Ok((String, String))` containing the JWT token and a serialize [`UserInfo`] if successful.
-/// * `Err(String)` if token generation or deserialization fails, or if the [`UserRole`] cannot be
-///   downcasted from the privilege field.
-pub async fn token_user_info(
-    user_id: String,
-    username: String,
-    privilege: i32,
-) -> Result<(String, String), String> {
-    let expiration = chrono::Utc::now()
-        .checked_add_signed(chrono::Duration::hours(TOKEN_VALIDITY_HRS))
-        .expect("valid timestamp")
-        .timestamp() as usize;
-
-    let claims = Claims {
-        sub: user_id.clone(),
-        role: UserRole::try_from(privilege)?,
-        exp: expiration,
-    };
-
-    let token = encode(
-        &Header::default(),
-        &claims,
-        &EncodingKey::from_secret(SECRET.as_bytes()),
-    )
-    .map_err(|e| format!("Failed to create token: {}", e))?;
-
-    // Cache user info
-    let user_info = UserInfo {
-        id: user_id.clone(),
-        username,
-        role: UserRole::try_from(privilege)?,
-    };
-
-    let user_info_json = serde_json::to_string(&user_info)
-        .map_err(|e| format!("Failed to serialize user info: {}", e))?;
-
-    Ok((token, user_info_json))
+impl AuthorizedUser {
+    pub fn new(id: String, username: String, privilege: i32) -> Result<Self, String> {
+        Ok(AuthorizedUser {
+            id,
+            username,
+            role: UserRole::try_from(privilege)?,
+        })
+    }
 }

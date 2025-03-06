@@ -6,7 +6,7 @@ use rocket::{
 };
 
 use crate::{
-    auth::{TOKEN_COOKIE, USER_COOKIE},
+    cookies::TOKEN_COOKIE,
     forms::users::{LoginForm, NewUserForm, Password},
     models::users::User,
     tests::test_client,
@@ -157,7 +157,7 @@ fn delete_existing_user_by_id() {
     assert_eq!(response.status(), Status::Ok);
 }
 
-fn default_login(client: &Client) {
+pub fn default_login(client: &Client) {
     // Create a form with test data
     let login = LoginForm {
         username: USERNAME,
@@ -181,14 +181,11 @@ fn assert_authorized_cookies(response: LocalResponse<'_>, available: bool) {
     // Get the cookies after the response
     let cookies = response.cookies();
     let token_cookie = cookies.get_private(TOKEN_COOKIE);
-    let user_info_cookie = cookies.get_private(USER_COOKIE);
 
     // Perform the assertions on the cookies based on provided boolean
     if available {
         assert!(token_cookie.is_some());
-        assert!(user_info_cookie.is_some());
     } else {
         assert!(token_cookie.is_none());
-        assert!(user_info_cookie.is_none());
     }
 }
