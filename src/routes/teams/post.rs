@@ -10,7 +10,7 @@ use super::*;
 /// * Guarded by JWT token
 /// * Data: [`NewTeamForm`]
 /// * Database access
-/// * Cookies: [`USER_COOKIE`](crate::cookies::USER_COOKIE), [`TEAM_COOKIE`]
+/// * Cookies: [`TEAM_COOKIE`]
 /// * Cache: [`team_cache_key`] with [`TEAM_CACHE_TTL`]
 ///
 /// ## Response
@@ -27,16 +27,16 @@ use super::*;
 /// * **500 Server Error**: Any database operation fails.
 pub async fn create_new_team_by_form(
     form: Form<NewTeamForm>,
-    _guard: JwtGuard,
+    guard: JwtGuard,
     db: Database,
     cookies: &CookieJar<'_>,
     redis: &State<RedisMutex>,
 ) -> Result<Success<Null>, Error<Null>> {
     // Get user information from cookies
-    let user_info = get_user_info(cookies).await?;
+    let user = guard.get_user();
 
     // Step 1: Validate user permissions
-    if (user_info.role.clone() as i32) < UserRole::Manager as i32 {
+    if (user.role.clone() as i32) < UserRole::Manager as i32 {
         return Err(ApiResponse::unauthorized(
             "User not allowed to create teams".to_string(),
         ));
@@ -44,7 +44,7 @@ pub async fn create_new_team_by_form(
 
     // Create a new Team
     let new_team = Team::new(
-        user_info.id.clone(),
+        user.id.clone(),
         form.team_name.clone(),
         form.description.clone(),
     );
@@ -52,7 +52,7 @@ pub async fn create_new_team_by_form(
     // Create a new team member
     let owner_membership = TeamMember {
         team_id: new_team.id.clone(),
-        user_id: user_info.id.clone(),
+        user_id: user.id.clone(),
         team_privilege: TeamRole::Owner as i32,
     };
 
@@ -65,7 +65,7 @@ pub async fn create_new_team_by_form(
     // Create some variables from which types will go out of scope
     let success_message = format!("Team created: '{}'", form.team_name);
     let team_id = new_team.id.clone();
-    let user = user_info.clone();
+    let user = user.clone();
     let team_update_clone = team_update.clone();
 
     // Step 2: Add new team to database

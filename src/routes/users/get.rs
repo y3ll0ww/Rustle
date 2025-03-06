@@ -2,12 +2,10 @@ use super::*;
 
 #[get("/")]
 pub async fn list_all_users(db: Database) -> Result<Success<Vec<User>>, Error<Null>> {
-    db.run(move |conn| {
-        users::table.get_results::<User>(conn)
-    })
-    .await
-    .map(|user| ApiResponse::success("Returning all users".to_string(), Some(user)))
-    .map_err(|e| ApiResponse::not_found(e.to_string()))
+    db.run(move |conn| users::table.get_results::<User>(conn))
+        .await
+        .map(|user| ApiResponse::success("Returning all users".to_string(), Some(user)))
+        .map_err(|e| ApiResponse::not_found(e.to_string()))
 }
 
 #[get("/<username>")]

@@ -10,10 +10,10 @@ use uuid::Uuid;
 use crate::{
     api::{ApiResponse, Error, Null, Success},
     auth::JwtGuard,
-    cookies::{users::generate_and_add_cookies, TOKEN_COOKIE, USER_COOKIE},
+    cookies::TOKEN_COOKIE,
     db::Database,
     forms::users::{LoginForm, NewUserForm, Password},
-    models::users::User,
+    models::users::{User, UserRole},
     schema::users,
 };
 
@@ -55,9 +55,8 @@ async fn delete_user(
     id: String,
     guard: JwtGuard,
     db: Database,
-    cookies: &CookieJar<'_>,
 ) -> Result<Success<Null>, Error<Null>> {
-    delete::delete_user_by_id(id, guard, db, cookies).await
+    delete::delete_user_by_id(id, guard, db).await
 }
 
 #[post("/login", data = "<credentials>")]

@@ -25,7 +25,11 @@ pub async fn login_by_form(
         return Err(ApiResponse::bad_request("Invalid password".to_string()));
     };
 
-    generate_and_add_cookies(user.id, user.username, user.privilege, cookies).await?;
+    JwtGuard::secure(user.id, user.username, user.privilege, cookies)
+        .await
+        .map_err(ApiResponse::internal_server_error)?;
+
+    //generate_and_add_cookies(user.id, user.username, user.privilege, cookies).await?;
 
     // Return the token
     Ok(ApiResponse::success("Login successful".to_string(), None))
@@ -33,7 +37,6 @@ pub async fn login_by_form(
 
 pub fn logout(_guard: JwtGuard, cookies: &CookieJar<'_>) -> Success<String> {
     cookies.remove_private(TOKEN_COOKIE);
-    cookies.remove_private(USER_COOKIE);
 
     ApiResponse::success(
         "Logout successful - token and user info removed".to_string(),
@@ -90,7 +93,11 @@ pub async fn create_new_user_by_form(
         _ => ApiResponse::internal_server_error(format!("Error creating user: {}", e)),
     })?;
 
-    generate_and_add_cookies(user_id, username.clone(), privilege, cookies).await?;
+    JwtGuard::secure(user_id, username.clone(), privilege, cookies)
+        .await
+        .map_err(ApiResponse::internal_server_error)?;
+
+    //generate_and_add_cookies(user_id, username.clone(), privilege, cookies).await?;
 
     // Return success response
     Ok(ApiResponse::success(

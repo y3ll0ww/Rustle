@@ -4,10 +4,8 @@ use serde::de::DeserializeOwned;
 use crate::api::{ApiResponse, Error};
 
 pub mod teams;
-pub mod users;
 
 pub const TOKEN_COOKIE: &str = "auth_token";
-pub const USER_COOKIE: &str = "user";
 pub const TEAM_COOKIE: &str = "team";
 
 /// Retrieves a deserialized copy of the data from the cookie.

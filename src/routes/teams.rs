@@ -12,7 +12,6 @@ use crate::{
     },
     cookies::{
         teams::{add_team_update_cookie, get_team_update},
-        users::get_user_info,
         TEAM_COOKIE,
     },
     db::Database,
@@ -38,12 +37,8 @@ pub fn routes() -> Vec<rocket::Route> {
 }
 
 #[get("/")]
-async fn overview(
-    guard: JwtGuard,
-    db: Database,
-    cookies: &CookieJar<'_>,
-) -> Result<Success<Vec<Team>>, Error<Null>> {
-    get::get_teams_by_user_id(guard, db, cookies).await
+async fn overview(guard: JwtGuard, db: Database) -> Result<Success<Vec<Team>>, Error<Null>> {
+    get::get_teams_by_user_id(guard, db).await
 }
 
 #[get("/<id>")]

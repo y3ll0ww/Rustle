@@ -1,9 +1,9 @@
 use super::*;
 
 /// Deletes a [`Team`] and related [`TeamUpdate`]s and [`TeamMember`]s.
-/// 
-/// The tables [`team_updates::table`] and [`team_members::table`] are linked with [`teams::table`]
-/// and are cascaded on deletion.
+///
+/// The tables [`team_updates::table`] and [`team_members::table`] are linked to [`teams::table`]
+/// and are cascaded upon deletion.
 ///
 /// ## Permissions
 /// Request user ID must be the same as [`Team::owner_id`].
@@ -13,7 +13,7 @@ use super::*;
 /// * Guarded by JWT token
 /// * Data: `id: String`
 /// * Database access
-/// * Cookies: [`USER_COOKIE`](crate::cookies::USER_COOKIE), [`TEAM_COOKIE`]
+/// * Cookies: [`TEAM_COOKIE`]
 /// * Cache: [`team_cache_key`] with [`TEAM_CACHE_TTL`]
 ///
 /// ## Response
@@ -25,13 +25,13 @@ use super::*;
 /// * **500 Server Error**: Any database operation fails.
 pub async fn delete_team_by_id(
     id: String,
-    _guard: JwtGuard,
+    guard: JwtGuard,
     db: Database,
     cookies: &CookieJar<'_>,
     redis: &State<RedisMutex>,
 ) -> Result<Success<Null>, Error<Null>> {
     // Get user cookie
-    let user_id = get_user_info(cookies).await.map(|user_info| user_info.id)?;
+    let user_id = guard.get_user().id;
 
     // 1. Get the team from database
     let team_id = id.clone();

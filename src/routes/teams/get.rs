@@ -6,18 +6,16 @@ use super::*;
 /// * Method: `GET`
 /// * Guarded by JWT token
 /// * Database access
-/// * Cookies: [`USER_COOKIE`](crate::cookies::USER_COOKIE)
 ///
 /// ## Response
 /// * **200 Created**: Returns a vector of [`Team`]s.
 /// * **401 Unauthorized**: No [`TOKEN_COOKIE`](crate::cookies::TOKEN_COOKIE).
 /// * **500 Server Error**: Any database operation fails.
 pub async fn get_teams_by_user_id(
-    _guard: JwtGuard,
+    guard: JwtGuard,
     db: Database,
-    cookies: &CookieJar<'_>,
 ) -> Result<Success<Vec<Team>>, Error<Null>> {
-    let user_id = get_user_info(cookies).await.map(|user_info| user_info.id)?;
+    let user_id = guard.get_user().id;
 
     // Set the success message
     let success_message = format!("Teams for user '{user_id}'");

@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 argon2 = "0.5.3"
+base64 = "0.22.1"
 chrono = { version = "0.4", features = ["serde"] }
 diesel = { version = "2.0.0", features = ["sqlite", "chrono"] }
 jsonwebtoken = "8.1"

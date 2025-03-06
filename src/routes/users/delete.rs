@@ -1,5 +1,3 @@
-use crate::{cookies::users::get_user_info, models::users::UserRole};
-
 use super::*;
 
 /// Deletes a [`User`] from the database.
@@ -13,7 +11,6 @@ use super::*;
 /// * Data: `id: String`
 /// * Guarded by JWT token
 /// * Database access
-/// * Cookies: [`USER_COOKIE`]
 ///
 /// ## Response
 /// * **200 OK**: Nothing returned.
@@ -25,16 +22,17 @@ use super::*;
 /// * **500 Server Error**: Any database operation fails.
 pub async fn delete_user_by_id(
     id: String,
-    _guard: JwtGuard,
+    guard: JwtGuard,
     db: Database,
-    cookies: &CookieJar<'_>,
 ) -> Result<Success<Null>, Error<Null>> {
     // Get user cookie
-    let user = get_user_info(cookies).await?;
+    let user = guard.get_user();
 
     // Return early if the user to delete is not self or admin
     if user.role != UserRole::Admin || user.id != id {
-        return Err(ApiResponse::unauthorized("No permission to delete user".to_string()))
+        return Err(ApiResponse::unauthorized(
+            "No permission to delete user".to_string(),
+        ));
     }
 
     // Define the response messages beforehand
