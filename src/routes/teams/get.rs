@@ -64,7 +64,7 @@ pub async fn get_team_by_id(
     let redis = redis.lock().await;
 
     // Step 1: Check the team update stored in cookies
-    let team_update_from_cookie = get_team_update(&id, cookies).unwrap_or_default();
+    let team_update_from_cookie = get_team_update_cookie(&id, cookies).unwrap_or_default();
 
     // Step 2: Get the team update from the database
     let team_id = id.clone();

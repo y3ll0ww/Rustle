@@ -10,10 +10,7 @@ use crate::{
         teams::{team_cache_key, TEAM_CACHE_TTL},
         RedisMutex,
     },
-    cookies::{
-        teams::{add_team_update_cookie, get_team_update},
-        TEAM_COOKIE,
-    },
+    cookies::teams::{add_team_update_cookie, get_team_update_cookie, remove_team_update_cookie},
     db::Database,
     forms::teams::NewTeamForm,
     models::{
