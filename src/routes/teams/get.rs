@@ -4,11 +4,13 @@ use super::*;
 ///
 /// ## Request
 /// * Method: `GET`
+/// * Guarded by JWT token
 /// * Database access
 /// * Cookies: [`USER_COOKIE`](crate::cookies::USER_COOKIE)
 ///
 /// ## Response
 /// * **200 Created**: Returns a vector of [`Team`]s.
+/// * **401 Unauthorized**: No [`TOKEN_COOKIE`](crate::cookies::TOKEN_COOKIE).
 /// * **500 Server Error**: Any database operation fails.
 pub async fn get_teams_by_user_id(
     _guard: JwtGuard,
@@ -36,7 +38,24 @@ pub async fn get_teams_by_user_id(
     Ok(ApiResponse::success(success_message, Some(teams)))
 }
 
-#[get("/<id>")]
+/// Returns information about a team, including its members.
+///
+/// ## Request
+/// * Method: `GET`
+/// * Guarded by JWT token
+/// * Database access
+/// * Cookies: [`USER_COOKIE`](crate::cookies::USER_COOKIE)
+/// * Cache: [`team_cache_key`] with [`TEAM_CACHE_TTL`]
+///
+/// ## Response
+/// * **200 Created**: Returns [`TeamWithMembers`].
+///   - If there is a [`TeamUpdate`] in the cookie and the timestamp is the same as the timestamp
+///     retrieved from the database, it returns from the **cache** (if it exists).
+///   - If not; it retrieves from the database, adds the [`TeamUpdate`] to the cookies and the
+///     [`TeamWithMembers`] to the cache (which it also returns in the response).
+/// * **401 Unauthorized**: No [`TOKEN_COOKIE`](crate::cookies::TOKEN_COOKIE).
+/// * **404 Not found**: No [`TeamUpdate`], [`TeamMember`]s or [`Team`] in the database.
+/// * **500 Server Error**: Any database operation fails.
 pub async fn get_team_by_id(
     id: String,
     _guard: JwtGuard,

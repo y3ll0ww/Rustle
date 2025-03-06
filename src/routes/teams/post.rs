@@ -7,21 +7,24 @@ use super::*;
 ///
 /// ## Request
 /// * Method: `POST`
+/// * Guarded by JWT token
 /// * Data: [`NewTeamForm`]
 /// * Database access
-/// * Cookies: [`USER_COOKIE`]
+/// * Cookies: [`USER_COOKIE`](crate::cookies::USER_COOKIE), [`TEAM_COOKIE`]
+/// * Cache: [`team_cache_key`] with [`TEAM_CACHE_TTL`]
 ///
 /// ## Response
-/// * **201 Created**:
+/// * **201 Created**: Nothing returned.
 ///   - [`Team`] added to [`teams::table`] with request user as `owner_id`.
 ///   - Request user (from cookie) added as [`TeamMember`] with [`TeamRole::Owner`] to
 ///     [`team_members::table`].
 ///   - [`TeamUpdate`] added to [`team_updates::table`] with `updated_at`.
 ///   - [`TeamUpdate`] is added as a cookie.
 ///   - [`TeamWithMembers`] added to the **Redis** cache (ignore if fail).
-/// * **401 Unauthorized**: Request user is not [`UserRole::Manager`] or higher.
+/// * **401 Unauthorized**:
+///   - No [`TOKEN_COOKIE`](crate::cookies::TOKEN_COOKIE).
+///   - Request user is not [`UserRole::Manager`] or higher.
 /// * **500 Server Error**: Any database operation fails.
-#[post("/new", data = "<form>")]
 pub async fn create_new_team_by_form(
     form: Form<NewTeamForm>,
     _guard: JwtGuard,

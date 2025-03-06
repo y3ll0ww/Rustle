@@ -1,5 +1,25 @@
 use super::*;
 
+/// Deletes a new team.
+///
+/// ## Permissions
+/// Request user ID must be the same as [`Team::owner_id`].
+///
+/// ## Request
+/// * Method: `DELETE`
+/// * Guarded by JWT token
+/// * Data: `id: String`
+/// * Database access
+/// * Cookies: [`USER_COOKIE`](crate::cookies::USER_COOKIE), [`TEAM_COOKIE`]
+/// * Cache: [`team_cache_key`] with [`TEAM_CACHE_TTL`]
+///
+/// ## Response
+/// * **200 OK**: Nothing returned.
+/// * **401 Unauthorized**:
+///   - No [`TOKEN_COOKIE`](crate::cookies::TOKEN_COOKIE).
+///   - Request user is not the [`owner`](Team::owner_id) of the team.
+/// * **404 Not found**: No [`Team`] found in [`teams::table`].
+/// * **500 Server Error**: Any database operation fails.
 pub async fn delete_team_by_id(
     id: String,
     _guard: JwtGuard,
