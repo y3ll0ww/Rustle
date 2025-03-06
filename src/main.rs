@@ -21,6 +21,6 @@ fn rocket() -> _ {
     rocket::custom(rocket::Config::figment())
         .attach(db::Database::fairing())
         .attach(redis_fairing())
-        .mount(TEAMS, routes::teams())
-        .mount(USERS, routes::users())
+        .mount(TEAMS, routes::teams::routes())
+        .mount(USERS, routes::users::routes())
 }

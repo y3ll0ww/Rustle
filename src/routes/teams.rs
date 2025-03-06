@@ -24,9 +24,9 @@ use crate::{
     schema::{team_members, team_updates, teams, users},
 };
 
-pub mod delete;
-pub mod get;
-pub mod post;
+mod delete;
+mod get;
+mod post;
 
 // * /teams               -> GET
 // * /teams/new           -> POST
@@ -34,11 +34,11 @@ pub mod post;
 // * /teams/<id>/update   -> PUT
 // * /teams/<id>/delete   -> DELETE
 pub fn routes() -> Vec<rocket::Route> {
-    routes![overview, new, get_team, delete_team]
+    routes![overview, new_team, get_team, delete_team]
 }
 
 #[get("/")]
-pub async fn overview(
+async fn overview(
     guard: JwtGuard,
     db: Database,
     cookies: &CookieJar<'_>,
@@ -47,7 +47,7 @@ pub async fn overview(
 }
 
 #[get("/<id>")]
-pub async fn get_team(
+async fn get_team(
     id: String,
     guard: JwtGuard,
     db: Database,
@@ -58,7 +58,7 @@ pub async fn get_team(
 }
 
 #[post("/new", data = "<form>")]
-pub async fn new(
+async fn new_team(
     form: Form<NewTeamForm>,
     guard: JwtGuard,
     db: Database,
@@ -69,7 +69,7 @@ pub async fn new(
 }
 
 #[delete("/<id>/delete")]
-pub async fn delete_team(
+async fn delete_team(
     id: String,
     guard: JwtGuard,
     db: Database,
