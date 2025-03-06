@@ -16,7 +16,7 @@ fn new_team_by_form() {
     // Create a form with test data
     let new_user = NewTeamForm {
         team_name: "Team name".to_string(),
-        description: "".to_string(),
+        description: None,
     };
 
     // Send submit request
@@ -37,7 +37,7 @@ fn view_all_teams_of_default_user() {
     // Log in
     default_login(&client);
 
-    let response = client.get(format!("{TEAMS}overview")).dispatch();
+    let response = client.get(format!("{TEAMS}")).dispatch();
 
     // Assert the login request was successful
     assert_eq!(response.status(), Status::Ok);
@@ -49,7 +49,7 @@ fn view_all_teams_of_default_user() {
 fn view_all_teams_without_logging_in() {
     let client = test_client();
 
-    let response = client.get(format!("{TEAMS}overview")).dispatch();
+    let response = client.get(format!("{TEAMS}")).dispatch();
 
     // Assert the login request was successful
     assert_eq!(response.status(), Status::Unauthorized);

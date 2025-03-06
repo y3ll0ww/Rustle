@@ -78,8 +78,8 @@ impl Claims {
     }
 }
 
-/// Represents user information stored in Redis.
-#[derive(Debug, Serialize, Deserialize)]
+/// Represents user information stored in Redis. COOKIES: qwerty
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct UserInfo {
     pub id: String,
     pub username: String,

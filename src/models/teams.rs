@@ -44,7 +44,7 @@ pub struct TeamMember {
     pub team_privilege: i32,
 }
 
-#[derive(Deserialize, Insertable, Queryable, Serialize)]
+#[derive(Clone, Deserialize, Insertable, Queryable, Serialize)]
 #[diesel(table_name = team_updates)]
 pub struct TeamUpdate {
     pub team_id: String,

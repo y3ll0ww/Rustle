@@ -6,14 +6,15 @@ use serde::{Deserialize, Serialize};
 pub struct NewTeamForm {
     #[field(validate = len(1..))]
     pub team_name: String,
-    pub description: String,
+    pub description: Option<String>,
 }
 
 impl NewTeamForm {
     pub fn body(&self) -> String {
         format!(
             "team_name={}&description={}",
-            self.team_name, self.description,
+            self.team_name,
+            self.description.as_deref().unwrap_or_default(),
         )
     }
 }

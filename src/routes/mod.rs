@@ -5,7 +5,12 @@ pub const TEAMS: &str = "/teams/";
 pub const USERS: &str = "/user/";
 
 pub fn teams() -> Vec<rocket::Route> {
-    routes![teams::new, teams::overview, teams::get_team, teams::delete,]
+    routes![
+        teams::new,
+        teams::overview,
+        teams::get_team,
+        teams::delete_team,
+    ]
 }
 
 // Routes should be as follows:
@@ -27,4 +32,10 @@ pub fn users() -> Vec<rocket::Route> {
         users::login,
         users::logout,
     ]
+}
+
+pub fn all_routes() -> Vec<rocket::Route> {
+    let routes = [users(), teams::routes()];
+
+    routes.into_iter().flatten().collect()
 }

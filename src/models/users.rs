@@ -47,10 +47,10 @@ impl User {
     }
 }
 
-#[derive(Debug, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum UserRole {
-    Admin = 3,
-    Manager = 2,
+    Admin = 10,
+    Manager = 5,
     Contributor = 1,
     Reviewer = 0,
 }
