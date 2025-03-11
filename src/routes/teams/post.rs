@@ -1,3 +1,10 @@
+use chrono::Utc;
+
+use crate::{
+    cache::teams::{set_team_cache, update_team_cache},
+    forms::teams::UpdateTeamForm,
+};
+
 use super::*;
 
 /// Creates a new team.
@@ -114,16 +121,102 @@ pub async fn create_new_team_by_form(
     add_team_update_cookie(team_update, cookies)?;
 
     // Step 4: Add the team information to the cache
-    let _ = redis
-        .lock()
-        .await
-        .set_to_cache(
-            &team_cache_key(&team_id),
-            &cache_team_with_members,
-            TEAM_CACHE_TTL,
-        )
-        .await;
+    set_team_cache(redis, &team_id, &cache_team_with_members).await;
 
     // Return success response
     Ok(ApiResponse::success(success_message, None))
 }
+
+pub async fn update_team_by_form(
+    id: String,
+    form: Form<UpdateTeamForm>,
+    guard: JwtGuard,
+    db: Database,
+    cookies: &CookieJar<'_>,
+    redis: &State<RedisMutex>,
+) -> Result<Success<Null>, Error<Null>> {
+    // User must be a manager
+    let minimal_user_role = UserRole::Manager;
+    let minimal_team_role = TeamRole::Contributor;
+
+    // Get user information from cookies
+    let user = guard.get_user();
+    
+    // Copy some values to prevent borrowing issues
+    let team_id = id.clone();
+    let form_clone = form.clone();
+
+    // Perform database actions
+    let team_update = db
+        .run(move |conn| {
+            // Step 1: Get the user information from the team members table
+            let team_member = team_members::table
+                .filter(team_members::team_id.eq(&team_id))
+                .filter(team_members::user_id.eq(&user.id))
+                .first::<TeamMember>(conn)
+                .map_err(ApiResponse::from_error)?;
+
+            // Step 2: Validate if the user has permission to update the team
+            if team_member.team_privilege < minimal_team_role as i32
+                && (user.role as i32) < minimal_user_role as i32
+            {
+                return Err(ApiResponse::unauthorized(
+                    "No permission to update team information".to_string(),
+                ));
+            }
+
+            // Set the current timestamp
+            let timestamp = Utc::now().naive_utc();
+
+            // Step 3: Update the team table with information from the form
+            if diesel::update(teams::table.filter(teams::id.eq(&team_id)))
+                .set((&*form, teams::updated_at.eq(timestamp)))
+                .execute(conn)
+                .map_err(ApiResponse::from_error)?
+                == 0
+            {
+                return Err(ApiResponse::not_found("No teams to update".to_string()));
+            };
+
+            // Step 4: Update the team updates table to reflect the change
+            if diesel::update(team_updates::table.filter(team_updates::team_id.eq(&team_id)))
+                .set(team_updates::last_updated.eq(timestamp))
+                .execute(conn)
+                .map_err(ApiResponse::from_error)?
+                == 0
+            {
+                return Err(ApiResponse::not_found(
+                    "No team updates to update".to_string(),
+                ));
+            };
+
+            Ok(TeamUpdate {
+                team_id,
+                last_updated: timestamp.to_string(),
+            })
+        })
+        .await?;
+    
+    // Step 5: Update the team in the cache
+    if update_team_cache(redis, &id, Some(form_clone), None).await {
+        // Step 6: If cache has been updated, update the cookie too
+        add_team_update_cookie(team_update, cookies)?;
+    }
+
+    // Return a success response
+    Ok(ApiResponse::success(
+        "Team updated successfully".to_string(),
+        None,
+    ))
+}
+
+//pub id: String,
+//pub owner_id: String,
+//pub team_name: String,
+//pub team_description: Option<String>,
+//pub image_url: Option<String>,
+//pub created_at: NaiveDateTime,
+//pub updated_at: NaiveDateTime,
+
+// Change owner
+// Add member

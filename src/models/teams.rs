@@ -6,7 +6,7 @@ use rocket_sync_db_pools::diesel;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::schema::{team_members, team_updates, teams};
+use crate::{forms::teams::UpdateTeamForm, schema::{team_members, team_updates, teams}};
 
 #[derive(Clone, Debug, Deserialize, Insertable, Queryable, Serialize)]
 #[diesel(table_name = teams)]
@@ -32,6 +32,20 @@ impl Team {
             image_url: None,
             created_at: timestamp,
             updated_at: timestamp,
+        }
+    }
+
+    pub fn update(&mut self, update_team_form: UpdateTeamForm) {
+        if let Some(team_name) = update_team_form.team_name {
+            self.team_name = team_name
+        }
+
+        if let Some(description) = update_team_form.team_description {
+            self.team_description = Some(description)
+        }
+
+        if let Some(image_url) = update_team_form.image_url {
+            self.image_url = Some(image_url)
         }
     }
 }
