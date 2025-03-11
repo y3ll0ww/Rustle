@@ -12,7 +12,7 @@ use crate::{
     },
     cookies::teams::{add_team_update_cookie, get_team_update_cookie, remove_team_update_cookie},
     db::Database,
-    forms::teams::NewTeamForm,
+    forms::teams::{NewTeamForm, UpdateTeamForm},
     models::{
         teams::{Team, TeamMember, TeamMemberInfo, TeamRole, TeamUpdate, TeamWithMembers},
         users::UserRole,
@@ -30,7 +30,7 @@ mod post;
 // * /teams/<id>/update   -> PUT
 // * /teams/<id>/delete   -> DELETE
 pub fn routes() -> Vec<rocket::Route> {
-    routes![overview, new_team, get_team, delete_team]
+    routes![overview, new_team, get_team, update_team, delete_team]
 }
 
 #[get("/")]
@@ -58,6 +58,18 @@ async fn new_team(
     redis: &State<RedisMutex>,
 ) -> Result<Success<Null>, Error<Null>> {
     post::create_new_team_by_form(form, guard, db, cookies, redis).await
+}
+
+#[post("/<id>/update", data = "<form>")]
+async fn update_team(
+    id: String,
+    form: Form<UpdateTeamForm>,
+    guard: JwtGuard,
+    db: Database,
+    cookies: &CookieJar<'_>,
+    redis: &State<RedisMutex>,
+) -> Result<Success<Null>, Error<Null>> {
+    post::update_team_by_form(id, form, guard, db, cookies, redis).await
 }
 
 #[delete("/<id>/delete")]
