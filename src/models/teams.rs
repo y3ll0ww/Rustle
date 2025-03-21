@@ -11,8 +11,8 @@ use crate::{forms::teams::UpdateTeamForm, schema::{team_members, team_updates, t
 #[derive(Clone, Debug, Deserialize, Insertable, Queryable, Serialize)]
 #[diesel(table_name = teams)]
 pub struct Team {
-    pub id: String,
-    pub owner_id: String,
+    pub id: Uuid,
+    pub owner_id: Uuid,
     pub team_name: String,
     pub team_description: Option<String>,
     pub image_url: Option<String>,
@@ -21,11 +21,11 @@ pub struct Team {
 }
 
 impl Team {
-    pub fn new(owner_id: String, team_name: String, team_description: Option<String>) -> Self {
+    pub fn new(owner_id: Uuid, team_name: String, team_description: Option<String>) -> Self {
         let timestamp = Utc::now().naive_utc();
 
         Team {
-            id: Uuid::new_v4().to_string(),
+            id: Uuid::new_v4(),
             owner_id,
             team_name,
             team_description,
@@ -53,25 +53,25 @@ impl Team {
 #[derive(Insertable, Queryable, Serialize)]
 #[diesel(table_name = team_members)]
 pub struct TeamMember {
-    pub team_id: String,
-    pub user_id: String,
-    pub team_privilege: i32,
+    pub team_id: Uuid,
+    pub user_id: Uuid,
+    pub team_role: i16,
 }
 
 #[derive(Clone, Deserialize, Insertable, Queryable, Serialize)]
 #[diesel(table_name = team_updates)]
 pub struct TeamUpdate {
-    pub team_id: String,
-    pub last_updated: String,
+    pub team_id: Uuid,
+    pub last_updated: NaiveDateTime,
 }
 
 #[derive(Deserialize, Queryable, Serialize)]
 pub struct TeamMemberInfo {
-    pub user_id: String,
+    pub user_id: Uuid,
     pub username: String,
     pub display_name: Option<String>,
     pub avatar_url: Option<String>,
-    pub team_privilege: i32,
+    pub team_role: i16,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -100,10 +100,10 @@ impl Display for TeamRole {
     }
 }
 
-impl TryFrom<i32> for TeamRole {
+impl TryFrom<i16> for TeamRole {
     type Error = String;
 
-    fn try_from(value: i32) -> Result<Self, Self::Error> {
+    fn try_from(value: i16) -> Result<Self, Self::Error> {
         match value {
             10 => Ok(TeamRole::Owner),
             5 => Ok(TeamRole::Master),

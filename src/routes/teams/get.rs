@@ -55,7 +55,7 @@ pub async fn get_teams_by_user_id(
 /// * **404 Not found**: No [`TeamUpdate`], [`TeamMember`]s or [`Team`] in the database.
 /// * **500 Server Error**: Any database operation fails.
 pub async fn get_team_by_id(
-    id: String,
+    id: Uuid,
     _guard: JwtGuard,
     db: Database,
     cookies: &CookieJar<'_>,
@@ -117,7 +117,7 @@ pub async fn get_team_by_id(
                     users::username,
                     users::display_name,
                     users::avatar_url,
-                    team_members::team_privilege,
+                    team_members::team_role,
                 ))
                 .load::<TeamMemberInfo>(conn)
                 .map_err(ApiResponse::from_error)?;

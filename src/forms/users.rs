@@ -5,8 +5,7 @@ use argon2::{
 use serde::{Deserialize, Serialize};
 
 /// This struct represents the information required to create a new [`User`] via a form.
-#[derive(Debug, FromForm, Serialize, Deserialize)]
-#[allow(dead_code)]
+#[derive(Debug, Deserialize, FromForm, Serialize)]
 pub struct NewUserForm<'v> {
     #[field(validate = len(1..))]
     pub username: &'v str,

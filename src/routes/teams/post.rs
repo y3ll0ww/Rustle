@@ -1,10 +1,10 @@
-use chrono::Utc;
-
-use crate::{
-    cache::teams::{set_team_cache, update_team_cache},
-    forms::teams::UpdateTeamForm,
-};
-
+//use chrono::Utc;
+//
+//use crate::{
+//    cache::teams::{set_team_cache, update_team_cache},
+//    forms::teams::UpdateTeamForm,
+//};
+//
 use super::*;
 
 /// Creates a new team.
@@ -60,13 +60,13 @@ pub async fn create_new_team_by_form(
     let owner_membership = TeamMember {
         team_id: new_team.id.clone(),
         user_id: user.id.clone(),
-        team_privilege: TeamRole::Owner as i32,
+        team_role: TeamRole::Owner as i16,
     };
 
     // Create a new team update
     let team_update = TeamUpdate {
         team_id: new_team.id.clone(),
-        last_updated: new_team.updated_at.to_string(),
+        last_updated: new_team.updated_at,
     };
 
     // Create some variables from which types will go out of scope
@@ -92,7 +92,7 @@ pub async fn create_new_team_by_form(
                     username: user.username,
                     display_name,
                     avatar_url,
-                    team_privilege: owner_membership.team_privilege,
+                    team_role: owner_membership.team_role,
                 }],
             };
 
@@ -128,7 +128,7 @@ pub async fn create_new_team_by_form(
 }
 
 pub async fn update_team_by_form(
-    id: String,
+    id: Uuid,
     form: Form<UpdateTeamForm>,
     guard: JwtGuard,
     db: Database,
@@ -157,8 +157,8 @@ pub async fn update_team_by_form(
                 .map_err(ApiResponse::from_error)?;
 
             // Step 2: Validate if the user has permission to update the team
-            if team_member.team_privilege < minimal_team_role as i32
-                && (user.role as i32) < minimal_user_role as i32
+            if team_member.team_role < minimal_team_role as i16
+                && (user.role as i16) < minimal_user_role as i16
             {
                 return Err(ApiResponse::unauthorized(
                     "No permission to update team information".to_string(),
@@ -192,7 +192,7 @@ pub async fn update_team_by_form(
 
             Ok(TeamUpdate {
                 team_id,
-                last_updated: timestamp.to_string(),
+                last_updated: timestamp,
             })
         })
         .await?;

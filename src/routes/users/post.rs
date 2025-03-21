@@ -6,7 +6,7 @@ pub async fn login_by_form(
     cookies: &CookieJar<'_>,
 ) -> Result<Success<Null>, Error<Null>> {
     // Get the user from the database
-    let user = match &get_user_from_db(db, credentials.username.to_string())
+    let user = match &get_user_from_db(db, credentials.username)
         .await?
         .data
     {
@@ -19,17 +19,16 @@ pub async fn login_by_form(
     };
 
     // Validate if the given password is correct
-    if !Password::verify_password(credentials.password, &user.password_hash).map_err(|e| {
+    if !Password::verify_password(credentials.password, &user.password).map_err(|e| {
         ApiResponse::internal_server_error(format!("Password verification failed: {}", e))
     })? {
         return Err(ApiResponse::bad_request("Invalid password".to_string()));
     };
 
-    JwtGuard::secure(user.id, user.username, user.privilege, cookies)
+    // Add the user to the JWT guard
+    JwtGuard::secure(&user, cookies)
         .await
         .map_err(ApiResponse::internal_server_error)?;
-
-    //generate_and_add_cookies(user.id, user.username, user.privilege, cookies).await?;
 
     // Return the token
     Ok(ApiResponse::success("Login successful".to_string(), None))
@@ -67,41 +66,36 @@ pub async fn create_new_user_by_form(
         .map_err(|e| ApiResponse::internal_server_error(format!("Couldn't hash password: {e}")))?;
 
     // Create a new User
-    let new_user = User::new(
-        form.username.to_string(),
-        None,
-        form.email.to_string(),
-        password_hash,
-    );
-
-    // Clone information for later use
-    let user_id = new_user.id.clone();
-    let username = new_user.username.clone();
-    let privilege = new_user.privilege;
+    let new_user = NewUser {
+        username: form.username.to_string(),
+        email: form.email.to_string(),
+        password: password_hash,
+        role: None,
+    };
 
     // Add the new User to the database
-    db.run(move |conn| {
-        diesel::insert_into(users::table)
-            .values(&new_user)
-            .execute(conn)
-    })
-    .await
-    .map_err(|e| match e {
-        DieselError::DatabaseError(DatabaseErrorKind::UniqueViolation, _) => {
-            ApiResponse::conflict("User already exists".to_string(), e.to_string())
-        }
-        _ => ApiResponse::internal_server_error(format!("Error creating user: {}", e)),
-    })?;
+    let inserted_user: User = db
+        .run(move |conn| {
+            diesel::insert_into(users::table)
+                .values(&new_user)
+                .get_result(conn)
+        })
+        .await
+        .map_err(|e| match e {
+            DieselError::DatabaseError(DatabaseErrorKind::UniqueViolation, _) => {
+                ApiResponse::conflict("User already exists".to_string(), e.to_string())
+            }
+            _ => ApiResponse::internal_server_error(format!("Error creating user: {}", e)),
+        })?;
 
-    JwtGuard::secure(user_id, username.clone(), privilege, cookies)
+    // Add the user to the JWT guard
+    JwtGuard::secure(&inserted_user, cookies)
         .await
         .map_err(ApiResponse::internal_server_error)?;
 
-    //generate_and_add_cookies(user_id, username.clone(), privilege, cookies).await?;
-
     // Return success response
     Ok(ApiResponse::success(
-        format!("User '{username}' created succesfully"),
+        format!("User '{}' created succesfully", inserted_user.username),
         None,
     ))
 }
@@ -109,7 +103,7 @@ pub async fn create_new_user_by_form(
 pub async fn inject_user(user: Json<User>, db: Database) -> String {
     let mut new_user = user.into_inner(); // Extract user data from Json
     let username = new_user.username.clone();
-    new_user.id = Uuid::new_v4().to_string(); // Generate a new UUID
+    new_user.id = Uuid::new_v4(); // Generate a new UUID
 
     // Use Diesel to insert the new user
     let result = db

@@ -1,9 +1,12 @@
+use std::str::FromStr;
+
 use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 
 use rocket::{
     http::{ContentType, Status},
     local::blocking::{Client, LocalResponse},
 };
+use uuid::Uuid;
 
 use crate::{
     cookies::TOKEN_COOKIE,
@@ -30,12 +33,12 @@ fn inject_admin_user() {
 
     // Construct a JSON payload matching the User structure
     let user = User {
-        id: "a99b50c6-02e9-4142-95fe-35c3ccd4f147".to_string(),
-        privilege: 3,
+        id: Uuid::from_str("a99b50c6-02e9-4142-95fe-35c3ccd4f147").unwrap(),
+        role: 10,
         username: "y3ll0ww".to_string(),
         display_name: None,
         email: "some@abc.nl".to_string(),
-        password_hash: "password".to_string(),
+        password: "password".to_string(),
         bio: None,
         avatar_url: None,
         created_at,
@@ -84,7 +87,7 @@ fn submit_new_user_by_form() {
 
     // Send submit request
     let response = client
-        .post("/user/form")
+        .post("/user/register")
         .body(new_user.body()) // Use the formatted string as the body
         .header(ContentType::Form)
         .dispatch();
@@ -147,14 +150,65 @@ fn logout_without_being_logged_in() {
 fn delete_existing_user_by_id() {
     let client = test_client();
 
+    // Login required
+    default_login(&client);
+
     // User ID: Change depending on which user tester wants to delete
-    let user_id = "9dde281e-a986-4411-ad48-b4d037ed22f4";
+    let user_id = "1fca2643-ec64-488d-b822-fe85b489114e";
 
     // Send delete request
     let response = client.delete(format!("/user/{user_id}/delete")).dispatch();
 
     // Assert the delete request was successful
     assert_eq!(response.status(), Status::Ok);
+}
+
+#[test]
+fn get_user_by_username() {
+    let client = test_client();
+
+    // Login required
+    default_login(&client);
+
+    // Send get request
+    let response = client.get(format!("/user/{USERNAME}")).dispatch();
+
+    // Copy the status for later assertion
+    let status = response.status().clone();
+
+    // Extract the data to print it to the screen
+    let data = response.into_string();
+
+    // Assert the delete request was successful
+    assert_eq!(status, Status::Ok);
+
+    // Print the data to the screen
+    assert!(data.is_some());
+    println!("{:?}", data.unwrap());
+}
+
+#[test]
+fn get_all_users() {
+    let client = test_client();
+
+    // Login required
+    default_login(&client);
+
+    // Send get request
+    let response = client.get(format!("/user")).dispatch();
+
+    // Copy the status for later assertion
+    let status = response.status().clone();
+
+    // Extract the data to print it to the screen
+    let data = response.into_string();
+
+    // Assert the delete request was successful
+    assert_eq!(status, Status::Ok);
+
+    // Print the data to the screen
+    assert!(data.is_some());
+    println!("{:?}", data.unwrap());
 }
 
 pub fn default_login(client: &Client) {

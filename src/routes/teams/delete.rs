@@ -24,7 +24,7 @@ use super::*;
 /// * **404 Not found**: No [`Team`] found in [`teams::table`].
 /// * **500 Server Error**: Any database operation fails.
 pub async fn delete_team_by_id(
-    id: String,
+    id: Uuid,
     guard: JwtGuard,
     db: Database,
     cookies: &CookieJar<'_>,

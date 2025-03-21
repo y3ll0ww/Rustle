@@ -10,8 +10,9 @@ use rocket::{
     Request,
 };
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
-use crate::{cookies::TOKEN_COOKIE, models::users::UserRole};
+use crate::{cookies::TOKEN_COOKIE, models::users::{User, UserRole}};
 
 const TOKEN_VALIDITY_HRS: i64 = 24;
 
@@ -28,13 +29,11 @@ impl JwtGuard {
     }
 
     pub async fn secure(
-        user_id: String,
-        username: String,
-        privilege: i32,
+        user: &User,
         cookies: &CookieJar<'_>,
     ) -> Result<(), String> {
         let token =
-            Self::generate_token(AuthorizedUser::new(user_id, username, privilege)?).await?;
+            Self::generate_token(AuthorizedUser::new(user.id, &user.username, user.role)?).await?;
 
         let cookie = Cookie::build((TOKEN_COOKIE, token))
             .http_only(true) // Prevent JavaScript access (mitigates XSS)
@@ -151,17 +150,17 @@ impl Claims {
 /// Represents user information stored in Redis. COOKIES: qwerty
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AuthorizedUser {
-    pub id: String,
+    pub id: Uuid,
     pub username: String,
     pub role: UserRole,
 }
 
 impl AuthorizedUser {
-    pub fn new(id: String, username: String, privilege: i32) -> Result<Self, String> {
+    pub fn new(id: Uuid, username: &str, role: i16) -> Result<Self, String> {
         Ok(AuthorizedUser {
             id,
-            username,
-            role: UserRole::try_from(privilege)?,
+            username: username.to_string(),
+            role: UserRole::try_from(role)?,
         })
     }
 }
