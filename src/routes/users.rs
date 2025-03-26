@@ -13,7 +13,7 @@ use crate::{
     cookies::TOKEN_COOKIE,
     db::Database,
     forms::users::{LoginForm, NewUserForm, Password},
-    models::users::{User, UserRole},
+    models::users::{NewUser, PublicUser, User, UserRole},
     schema::users,
 };
 
@@ -41,18 +41,22 @@ pub fn routes() -> Vec<rocket::Route> {
 }
 
 #[get("/")]
-async fn all_users(db: Database) -> Result<Success<Vec<User>>, Error<Null>> {
-    get::list_all_users(db).await
+async fn all_users(guard: JwtGuard, db: Database) -> Result<Success<Vec<PublicUser>>, Error<Null>> {
+    get::list_all_users(guard, db).await
 }
 
 #[get("/<username>")]
-async fn get_user(username: String, db: Database) -> Result<Success<User>, Error<Null>> {
-    get::get_user_by_username(username, db).await
+async fn get_user(
+    username: String,
+    guard: JwtGuard,
+    db: Database,
+) -> Result<Success<PublicUser>, Error<Null>> {
+    get::get_user_by_username(username, guard, db).await
 }
 
 #[delete("/<id>/delete")]
 async fn delete_user(
-    id: String,
+    id: Uuid,
     guard: JwtGuard,
     db: Database,
 ) -> Result<Success<Null>, Error<Null>> {
@@ -87,7 +91,9 @@ async fn inject_new_user(user: Json<User>, db: Database) -> String {
     post::inject_user(user, db).await
 }
 
-async fn get_user_from_db(db: Database, username: String) -> Result<Success<User>, Error<Null>> {
+async fn get_user_from_db(db: Database, username: &str) -> Result<Success<User>, Error<Null>> {
+    let username = username.to_string();
+
     db.run(move |conn| {
         users::table
             .filter(users::username.eq(username))

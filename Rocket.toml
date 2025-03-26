@@ -3,4 +3,4 @@ address = "127.0.0.1"
 port = 8000
 
 [default.databases]
-rustle_db = { url = "sqlite://db/rustle.db" }
+rustle_db = { url = "postgres://admin:SYqujNZNmvEw2Ajk@localhost/rustle" }

@@ -1,13 +1,14 @@
+use chrono::Utc;
 use diesel::prelude::*;
-
 use rocket::{form::Form, http::CookieJar, State};
 use rocket_sync_db_pools::diesel;
+use uuid::Uuid;
 
 use crate::{
     api::{ApiResponse, Error, Null, Success},
     auth::JwtGuard,
     cache::{
-        teams::{team_cache_key, TEAM_CACHE_TTL},
+        teams::{set_team_cache, team_cache_key, update_team_cache, TEAM_CACHE_TTL},
         RedisMutex,
     },
     cookies::teams::{add_team_update_cookie, get_team_update_cookie, remove_team_update_cookie},
@@ -40,7 +41,7 @@ async fn overview(guard: JwtGuard, db: Database) -> Result<Success<Vec<Team>>, E
 
 #[get("/<id>")]
 async fn get_team(
-    id: String,
+    id: Uuid,
     guard: JwtGuard,
     db: Database,
     cookies: &CookieJar<'_>,
@@ -62,7 +63,7 @@ async fn new_team(
 
 #[post("/<id>/update", data = "<form>")]
 async fn update_team(
-    id: String,
+    id: Uuid,
     form: Form<UpdateTeamForm>,
     guard: JwtGuard,
     db: Database,
@@ -74,7 +75,7 @@ async fn update_team(
 
 #[delete("/<id>/delete")]
 async fn delete_team(
-    id: String,
+    id: Uuid,
     guard: JwtGuard,
     db: Database,
     cookies: &CookieJar<'_>,

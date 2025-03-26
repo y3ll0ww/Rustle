@@ -1,10 +1,10 @@
-use chrono::Utc;
-
-use crate::{
-    cache::teams::{set_team_cache, update_team_cache},
-    forms::teams::UpdateTeamForm,
-};
-
+//use chrono::Utc;
+//
+//use crate::{
+//    cache::teams::{set_team_cache, update_team_cache},
+//    forms::teams::UpdateTeamForm,
+//};
+//
 use super::*;
 
 /// Creates a new team.
@@ -51,27 +51,27 @@ pub async fn create_new_team_by_form(
 
     // Create a new Team
     let new_team = Team::new(
-        user.id.clone(),
+        user.id,
         form.team_name.clone(),
         form.description.clone(),
     );
 
     // Create a new team member
     let owner_membership = TeamMember {
-        team_id: new_team.id.clone(),
-        user_id: user.id.clone(),
-        team_privilege: TeamRole::Owner as i32,
+        team_id: new_team.id,
+        user_id: user.id,
+        team_role: TeamRole::Owner as i16,
     };
 
     // Create a new team update
     let team_update = TeamUpdate {
-        team_id: new_team.id.clone(),
-        last_updated: new_team.updated_at.to_string(),
+        team_id: new_team.id,
+        last_updated: new_team.updated_at,
     };
 
     // Create some variables from which types will go out of scope
     let success_message = format!("Team created: '{}'", form.team_name);
-    let team_id = new_team.id.clone();
+    let team_id = new_team.id;
     let user = user.clone();
     let team_update_clone = team_update.clone();
 
@@ -92,7 +92,7 @@ pub async fn create_new_team_by_form(
                     username: user.username,
                     display_name,
                     avatar_url,
-                    team_privilege: owner_membership.team_privilege,
+                    team_role: owner_membership.team_role,
                 }],
             };
 
@@ -128,7 +128,7 @@ pub async fn create_new_team_by_form(
 }
 
 pub async fn update_team_by_form(
-    id: String,
+    id: Uuid,
     form: Form<UpdateTeamForm>,
     guard: JwtGuard,
     db: Database,
@@ -141,9 +141,9 @@ pub async fn update_team_by_form(
 
     // Get user information from cookies
     let user = guard.get_user();
-    
+
     // Copy some values to prevent borrowing issues
-    let team_id = id.clone();
+    let team_id = id;
     let form_clone = form.clone();
 
     // Perform database actions
@@ -157,8 +157,8 @@ pub async fn update_team_by_form(
                 .map_err(ApiResponse::from_error)?;
 
             // Step 2: Validate if the user has permission to update the team
-            if team_member.team_privilege < minimal_team_role as i32
-                && (user.role as i32) < minimal_user_role as i32
+            if team_member.team_role < minimal_team_role as i16
+                && (user.role as i16) < minimal_user_role as i16
             {
                 return Err(ApiResponse::unauthorized(
                     "No permission to update team information".to_string(),
@@ -192,11 +192,11 @@ pub async fn update_team_by_form(
 
             Ok(TeamUpdate {
                 team_id,
-                last_updated: timestamp.to_string(),
+                last_updated: timestamp,
             })
         })
         .await?;
-    
+
     // Step 5: Update the team in the cache
     if update_team_cache(redis, &id, Some(form_clone), None).await {
         // Step 6: If cache has been updated, update the cookie too

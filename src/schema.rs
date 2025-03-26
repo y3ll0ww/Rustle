@@ -2,24 +2,25 @@
 
 diesel::table! {
     team_members (team_id, user_id) {
-        team_id -> Text,
-        user_id -> Text,
-        team_privilege -> Integer,
+        team_id -> Uuid,
+        user_id -> Uuid,
+        team_role -> Int2,
     }
 }
 
 diesel::table! {
     team_updates (team_id) {
-        team_id -> Text,
+        team_id -> Uuid,
         last_updated -> Timestamp,
     }
 }
 
 diesel::table! {
     teams (id) {
-        id -> Text,
-        owner_id -> Text,
-        team_name -> Text,
+        id -> Uuid,
+        owner_id -> Uuid,
+        #[max_length = 40]
+        team_name -> Varchar,
         team_description -> Nullable<Text>,
         image_url -> Nullable<Text>,
         created_at -> Timestamp,
@@ -29,12 +30,15 @@ diesel::table! {
 
 diesel::table! {
     users (id) {
-        id -> Text,
-        privilege -> Integer,
-        username -> Text,
-        display_name -> Nullable<Text>,
-        email -> Text,
-        password_hash -> Text,
+        id -> Uuid,
+        role -> Int2,
+        #[max_length = 40]
+        username -> Varchar,
+        #[max_length = 40]
+        display_name -> Nullable<Varchar>,
+        #[max_length = 100]
+        email -> Varchar,
+        password -> Text,
         bio -> Nullable<Text>,
         avatar_url -> Nullable<Text>,
         created_at -> Timestamp,
