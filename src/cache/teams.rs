@@ -19,7 +19,7 @@ pub async fn set_team_cache(redis: &State<RedisMutex>, team_id: &Uuid, team: &Te
     let _ = redis
         .lock()
         .await
-        .set_to_cache(&team_cache_key(&team_id), &team, TEAM_CACHE_TTL)
+        .set_to_cache(&team_cache_key(team_id), &team, TEAM_CACHE_TTL)
         .await;
 }
 
@@ -33,7 +33,7 @@ pub async fn update_team_cache(
     if let Some(team_from_cache) = redis
         .lock()
         .await
-        .get_from_cache::<TeamWithMembers>(&team_cache_key(&team_id))
+        .get_from_cache::<TeamWithMembers>(&team_cache_key(team_id))
         .await
         .unwrap_or(None)
     {
@@ -53,7 +53,7 @@ pub async fn update_team_cache(
             .lock()
             .await
             .set_to_cache(
-                &team_cache_key(&team_id),
+                &team_cache_key(team_id),
                 &team_with_members,
                 TEAM_CACHE_TTL,
             )

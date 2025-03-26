@@ -10,7 +10,7 @@ pub async fn list_all_users(
         .await
         .map_err(|e| ApiResponse::not_found(e.to_string()))?
         .iter()
-        .map(|user| PublicUser::from(user))
+        .map(PublicUser::from)
         .collect();
 
     //let public_users: Vec<PublicUser> = users.iter().map(|user| PublicUser::from(user)).collect();
@@ -30,7 +30,7 @@ pub async fn get_user_by_username(
     match &get_user_from_db(db, &username).await?.data {
         Some(data) => Ok(ApiResponse::success(
             format!("User '{username}'"),
-            Some(PublicUser::from(&data)),
+            Some(PublicUser::from(data)),
         )),
         None => Err(ApiResponse::internal_server_error(format!(
             "User '{username}' found but unwrap failed."

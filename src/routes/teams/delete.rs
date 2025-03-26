@@ -34,7 +34,7 @@ pub async fn delete_team_by_id(
     let user_id = guard.get_user().id;
 
     // 1. Get the team from database
-    let team_id = id.clone();
+    let team_id = id;
     let team = db
         .run(move |conn| {
             teams::table
@@ -64,7 +64,7 @@ pub async fn delete_team_by_id(
     // 5. Remove the team from the database
     //    - Delete on cascade for team_members table
     //    - Delete on cascade for team_updates table
-    let team_id = id.clone();
+    let team_id = id;
     let deleted_rows = db
         .run(move |conn| diesel::delete(teams::table.filter(teams::id.eq(&team_id))).execute(conn))
         .await

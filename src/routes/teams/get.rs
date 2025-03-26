@@ -67,7 +67,7 @@ pub async fn get_team_by_id(
     let team_update_from_cookie = get_team_update_cookie(&id, cookies).unwrap_or_default();
 
     // Step 2: Get the team update from the database
-    let team_id = id.clone();
+    let team_id = id;
     let team_update_from_db = db
         .run(move |conn| {
             team_updates::table
@@ -101,7 +101,7 @@ pub async fn get_team_by_id(
     }
 
     // Step 4: Get the team information including team members from the database
-    let team_id = id.clone();
+    let team_id = id;
     let team_from_database = db
         .run(move |conn| {
             let team = teams::table

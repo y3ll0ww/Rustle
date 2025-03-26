@@ -51,27 +51,27 @@ pub async fn create_new_team_by_form(
 
     // Create a new Team
     let new_team = Team::new(
-        user.id.clone(),
+        user.id,
         form.team_name.clone(),
         form.description.clone(),
     );
 
     // Create a new team member
     let owner_membership = TeamMember {
-        team_id: new_team.id.clone(),
-        user_id: user.id.clone(),
+        team_id: new_team.id,
+        user_id: user.id,
         team_role: TeamRole::Owner as i16,
     };
 
     // Create a new team update
     let team_update = TeamUpdate {
-        team_id: new_team.id.clone(),
+        team_id: new_team.id,
         last_updated: new_team.updated_at,
     };
 
     // Create some variables from which types will go out of scope
     let success_message = format!("Team created: '{}'", form.team_name);
-    let team_id = new_team.id.clone();
+    let team_id = new_team.id;
     let user = user.clone();
     let team_update_clone = team_update.clone();
 
@@ -143,7 +143,7 @@ pub async fn update_team_by_form(
     let user = guard.get_user();
 
     // Copy some values to prevent borrowing issues
-    let team_id = id.clone();
+    let team_id = id;
     let form_clone = form.clone();
 
     // Perform database actions
