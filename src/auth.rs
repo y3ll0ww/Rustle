@@ -12,7 +12,10 @@ use rocket::{
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{cookies::TOKEN_COOKIE, models::users::{User, UserRole}};
+use crate::{
+    cookies::TOKEN_COOKIE,
+    models::users::{User, UserRole},
+};
 
 const TOKEN_VALIDITY_HRS: i64 = 24;
 
@@ -28,10 +31,7 @@ impl JwtGuard {
         self.claims.sub.clone()
     }
 
-    pub async fn secure(
-        user: &User,
-        cookies: &CookieJar<'_>,
-    ) -> Result<(), String> {
+    pub async fn secure(user: &User, cookies: &CookieJar<'_>) -> Result<(), String> {
         let token =
             Self::generate_token(AuthorizedUser::new(user.id, &user.username, user.role)?).await?;
 

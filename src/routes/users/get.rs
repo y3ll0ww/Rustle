@@ -1,7 +1,10 @@
 use super::*;
 
 #[get("/")]
-pub async fn list_all_users(_guard: JwtGuard, db: Database) -> Result<Success<Vec<PublicUser>>, Error<Null>> {
+pub async fn list_all_users(
+    _guard: JwtGuard,
+    db: Database,
+) -> Result<Success<Vec<PublicUser>>, Error<Null>> {
     let users: Vec<PublicUser> = db
         .run(move |conn| users::table.get_results::<User>(conn))
         .await

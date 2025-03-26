@@ -46,7 +46,11 @@ async fn all_users(guard: JwtGuard, db: Database) -> Result<Success<Vec<PublicUs
 }
 
 #[get("/<username>")]
-async fn get_user(username: String, guard: JwtGuard, db: Database) -> Result<Success<PublicUser>, Error<Null>> {
+async fn get_user(
+    username: String,
+    guard: JwtGuard,
+    db: Database,
+) -> Result<Success<PublicUser>, Error<Null>> {
     get::get_user_by_username(username, guard, db).await
 }
 

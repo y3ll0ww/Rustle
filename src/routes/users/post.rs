@@ -6,10 +6,7 @@ pub async fn login_by_form(
     cookies: &CookieJar<'_>,
 ) -> Result<Success<Null>, Error<Null>> {
     // Get the user from the database
-    let user = match &get_user_from_db(db, credentials.username)
-        .await?
-        .data
-    {
+    let user = match &get_user_from_db(db, credentials.username).await?.data {
         Some(user) => user.clone(),
         None => {
             return Err(ApiResponse::internal_server_error(

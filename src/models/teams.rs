@@ -6,7 +6,10 @@ use rocket_sync_db_pools::diesel;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{forms::teams::UpdateTeamForm, schema::{team_members, team_updates, teams}};
+use crate::{
+    forms::teams::UpdateTeamForm,
+    schema::{team_members, team_updates, teams},
+};
 
 #[derive(Clone, Debug, Deserialize, Insertable, Queryable, Serialize)]
 #[diesel(table_name = teams)]

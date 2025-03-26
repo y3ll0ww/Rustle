@@ -141,7 +141,7 @@ pub async fn update_team_by_form(
 
     // Get user information from cookies
     let user = guard.get_user();
-    
+
     // Copy some values to prevent borrowing issues
     let team_id = id.clone();
     let form_clone = form.clone();
@@ -196,7 +196,7 @@ pub async fn update_team_by_form(
             })
         })
         .await?;
-    
+
     // Step 5: Update the team in the cache
     if update_team_cache(redis, &id, Some(form_clone), None).await {
         // Step 6: If cache has been updated, update the cookie too
