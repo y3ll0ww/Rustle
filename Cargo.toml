@@ -9,6 +9,7 @@ base64 = "0.22.1"
 chrono = { version = "0.4", features = ["serde"] }
 diesel = { version = "2.0.0", features = ["postgres", "chrono", "uuid"] }
 jsonwebtoken = "8.1"
+lettre = "0.11"
 rand = "0.8"
 redis = { version = "0.23", features = ["tokio-comp"] }
 rocket = { version = "0.5.1", features = ["json", "uuid", "secrets"] }

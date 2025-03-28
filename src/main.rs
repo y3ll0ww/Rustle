@@ -9,6 +9,7 @@ pub mod auth;
 pub mod cache;
 pub mod cookies;
 pub mod db;
+pub mod email;
 pub mod forms;
 pub mod models;
 pub mod routes;
