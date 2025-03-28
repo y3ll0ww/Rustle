@@ -4,7 +4,7 @@ pub mod smtp;
 pub mod templates;
 
 use builder::MailBuilder;
-use lettre::{transport::smtp::response::Response, Message};
+use lettre::transport::smtp::response::Response;
 use smtp::Smtp;
 use templates::MailTemplate;
 
@@ -44,25 +44,13 @@ impl MailClient {
         recipient: &PublicUser,
         team_name: &str,
     ) -> Result<Response, String> {
+        // Get the invitation template
         let template = MailTemplate::invitation(inviter, recipient, team_name)?;
-        let message = self.mail.from_template(recipient, template)?;
-        self.send(message)
-    }
 
-    /// Sends a generated email with the provided information.
-    ///
-    /// # Parameters
-    ///
-    /// * [`recipient`](PublicUser): The information for the receiver of the email.
-    /// * [`subject`](String): The subject of the email.
-    /// * [`body`](String): The content body of the email.
-    ///
-    /// # Returns
-    ///
-    /// * [`Response`]: The response when the email gets sent successfully.
-    /// * [`String`]: The error for building or sending the message, converted to a string.
-    pub fn send(&self, message: Message) -> Result<Response, String> {
-        // Send the message using SMTP configuration
+        // Generate the message
+        let message = self.mail.from_template(recipient, template)?;
+
+        // Send the message
         self.smtp.send(message)
     }
 }
