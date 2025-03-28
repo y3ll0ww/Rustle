@@ -1,9 +1,10 @@
+pub mod assets;
 pub mod builder;
 pub mod smtp;
 pub mod templates;
 
 use builder::MailBuilder;
-use lettre::transport::smtp::response::Response;
+use lettre::{transport::smtp::response::Response, Message};
 use smtp::Smtp;
 use templates::MailTemplate;
 
@@ -16,13 +17,13 @@ pub struct MailClient {
 
 impl MailClient {
     /// Constructs a new [`MailClient`].
-    /// 
+    ///
     /// # Parameters
-    /// 
+    ///
     /// * [`mail`](MailBuilder): For building the message to be send with particular information.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * [`Self`](MailClient): An instance of `Self` with the [`default`](Smtp::default) settings
     ///   for [`SMTP`](Smtp).
     pub fn new(mail: MailBuilder) -> Self {
@@ -37,52 +38,32 @@ impl MailClient {
         Self::new(MailBuilder::new("noreply"))
     }
 
-    /// Uses a [`template`](MailTemplate) email to be [`send`](Self::send).
-    /// 
-    /// # Parameters
-    /// 
-    /// * [`recipient`](PublicUser): The information for the receiver of the email.
-    /// * [`template`](MailTemplate): The content of the email to be send.
-    /// 
-    /// # Returns
-    /// 
-    /// This function returns the [`send`](Self::send) function.
-    pub fn send_template(
+    pub fn send_invitation(
         &self,
+        inviter: &PublicUser,
         recipient: &PublicUser,
-        template: MailTemplate,
+        team_name: &str,
     ) -> Result<Response, String> {
-        self.send(recipient, &template.subject, template.body())
+        let template = MailTemplate::invitation(inviter, recipient, team_name)?;
+        let message = self.mail.from_template(recipient, template)?;
+        self.send(message)
     }
 
     /// Sends a generated email with the provided information.
-    /// 
+    ///
     /// # Parameters
-    /// 
+    ///
     /// * [`recipient`](PublicUser): The information for the receiver of the email.
     /// * [`subject`](String): The subject of the email.
     /// * [`body`](String): The content body of the email.
-    /// 
+    ///
     /// # Returns
-    /// 
+    ///
     /// * [`Response`]: The response when the email gets sent successfully.
     /// * [`String`]: The error for building or sending the message, converted to a string.
-    pub fn send(
-        &self,
-        recipient: &PublicUser,
-        subject: &str,
-        body: String,
-    ) -> Result<Response, String> {
-        // Build the message to send
-        let message = self
-            .mail
-            .build(recipient)
-            .subject(subject)
-            .body(body)
-            .map_err(|e| e.to_string())?;
-
+    pub fn send(&self, message: Message) -> Result<Response, String> {
         // Send the message using SMTP configuration
-        self.smtp.send(message).map_err(|e| e.to_string())
+        self.smtp.send(message)
     }
 }
 
@@ -112,9 +93,8 @@ fn send_mail_test() {
         updated_at: chrono::Utc::now().naive_utc(),
     };
 
-    let template = templates::MailTemplate::invitation(&inviter, &recipient, "ATT Test Tool");
+    let result = MailClient::no_reply().send_invitation(&inviter, &recipient, "ATT Test Tool");
 
-    let result = MailClient::no_reply().send_template(&recipient, template);
     println!("{result:?}");
     assert!(result.is_ok());
 }

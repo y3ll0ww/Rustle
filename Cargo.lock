@@ -1963,6 +1963,7 @@ dependencies = [
  "lettre",
  "rand 0.8.5",
  "redis",
+ "regex",
  "rocket",
  "rocket_sync_db_pools",
  "serde",
