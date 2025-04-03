@@ -30,18 +30,22 @@ impl MailBuilder {
         Ok(Message::builder()
             .date_now()
             .header(ContentType::TEXT_HTML)
-            .from(self.from_mailbox()?)
-            .to(Self::to_mailbox(recipient)?))
+            .from(self.sender_mailbox()?)
+            .to(Self::receiver_mailbox(recipient)?))
     }
 
-    pub fn from_template(&self, recipient: &PublicUser, template: MailTemplate) -> Result<Message, String> {
+    pub fn from_template(
+        &self,
+        recipient: &PublicUser,
+        template: MailTemplate,
+    ) -> Result<Message, String> {
         self.builder(recipient)?
             .subject(template.subject.clone())
             .multipart(template.generate()?)
             .map_err(|e| e.to_string())
     }
 
-    fn from_mailbox(&self) -> Result<Mailbox, String> {
+    fn sender_mailbox(&self) -> Result<Mailbox, String> {
         let address =
             Address::new(self.user.clone(), self.domain.clone()).map_err(|e| e.to_string())?;
 
@@ -53,7 +57,7 @@ impl MailBuilder {
         Ok(mailbox)
     }
 
-    fn to_mailbox(recipient: &PublicUser) -> Result<Mailbox, String> {
+    fn receiver_mailbox(recipient: &PublicUser) -> Result<Mailbox, String> {
         let address = Address::from_str(&recipient.email).map_err(|e| e.to_string())?;
 
         let mailbox = Mailbox {

@@ -33,7 +33,7 @@ pub enum FileType<'a> {
     Jpg(&'a str),
 }
 
-impl<'a> FileType<'a> {
+impl FileType<'_> {
     fn name(&self) -> &str {
         match self {
             FileType::Png(val) | FileType::Jpg(val) => val,

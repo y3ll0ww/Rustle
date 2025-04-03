@@ -12,7 +12,7 @@ pub trait Asset {
 
     fn read_attachment(file_name: &str) -> Result<Body, String> {
         fs::read(format!("{}/attachments/{file_name}", Self::path_root()))
-            .map(|image| Body::new(image))
+            .map(Body::new)
             .map_err(|e| e.to_string())
     }
 

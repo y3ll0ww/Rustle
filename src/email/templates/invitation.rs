@@ -16,7 +16,7 @@ impl MailTemplate {
 
         Ok(MailTemplate {
             subject: format!("{inviter_name} invited you to join {team_name}"),
-            content: HtmlElement::invitation(&recipient, &inviter, "ATT Test Tool")?,
+            content: HtmlElement::invitation(recipient, inviter, "ATT Test Tool")?,
         })
     }
 }
