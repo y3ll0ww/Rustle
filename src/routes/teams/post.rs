@@ -154,7 +154,7 @@ pub async fn update_team_by_form(
 
             // Step 2: Validate if the user has permission to update the team
             if team_member.team_role < minimal_team_role as i16
-                && (user.role as i16) < minimal_user_role as i16
+                && (i16::from(user.role)) < i16::from(minimal_user_role)
             {
                 return Err(ApiResponse::unauthorized(
                     "No permission to update team information".to_string(),

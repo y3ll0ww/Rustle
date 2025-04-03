@@ -57,9 +57,12 @@ impl MailClient {
 
 #[test]
 fn send_mail_test() {
+    use crate::models::users::{UserRole, UserStatus};
+
     let recipient = PublicUser {
         id: uuid::Uuid::new_v4(),
-        role: 0,
+        role: i16::from(UserRole::Reviewer),
+        status: i16::from(UserStatus::Invited),
         username: String::from("mohammad_nouranian"),
         display_name: Some(String::from("Mohammad Nouranian")),
         email: String::from("mohammad_nouranian@legrand_ext.com"),
@@ -71,7 +74,8 @@ fn send_mail_test() {
 
     let inviter = PublicUser {
         id: uuid::Uuid::new_v4(),
-        role: 10,
+        role: i16::from(UserRole::Admin),
+        status: i16::from(UserStatus::Active),
         username: String::from("André Cybulski"),
         display_name: None,
         email: String::from("andre_cybulski@ecotap.eu"),

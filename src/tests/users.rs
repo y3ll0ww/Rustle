@@ -11,7 +11,7 @@ use uuid::Uuid;
 use crate::{
     cookies::TOKEN_COOKIE,
     forms::users::{LoginForm, NewUserForm, Password},
-    models::users::User,
+    models::users::{User, UserRole, UserStatus},
     tests::test_client,
 };
 
@@ -34,7 +34,8 @@ fn inject_admin_user() {
     // Construct a JSON payload matching the User structure
     let user = User {
         id: Uuid::from_str("a99b50c6-02e9-4142-95fe-35c3ccd4f147").unwrap(),
-        role: 10,
+        role: i16::from(UserRole::Admin),
+        status: i16::from(UserStatus::Active),
         username: "y3ll0ww".to_string(),
         display_name: None,
         email: "some@abc.nl".to_string(),

@@ -32,6 +32,7 @@ diesel::table! {
     users (id) {
         id -> Uuid,
         role -> Int2,
+        status -> Int2,
         #[max_length = 40]
         username -> Varchar,
         #[max_length = 40]
@@ -51,4 +52,9 @@ diesel::joinable!(team_members -> users (user_id));
 diesel::joinable!(team_updates -> teams (team_id));
 diesel::joinable!(teams -> users (owner_id));
 
-diesel::allow_tables_to_appear_in_same_query!(team_members, team_updates, teams, users,);
+diesel::allow_tables_to_appear_in_same_query!(
+    team_members,
+    team_updates,
+    teams,
+    users,
+);
