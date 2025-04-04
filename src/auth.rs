@@ -14,7 +14,7 @@ use uuid::Uuid;
 
 use crate::{
     cookies::TOKEN_COOKIE,
-    models::users::{User, UserRole},
+    models::users::{PublicUser, User, UserRole},
 };
 
 const TOKEN_VALIDITY_HRS: i64 = 24;
@@ -27,13 +27,12 @@ pub struct JwtGuard {
 }
 
 impl JwtGuard {
-    pub fn get_user(&self) -> AuthorizedUser {
+    pub fn get_user(&self) -> PublicUser {
         self.claims.sub.clone()
     }
 
     pub async fn secure(user: &User, cookies: &CookieJar<'_>) -> Result<(), String> {
-        let token =
-            Self::generate_token(AuthorizedUser::new(user.id, &user.username, user.role)?).await?;
+        let token = Self::generate_token(PublicUser::from(&user)).await?;
 
         let cookie = Cookie::build((TOKEN_COOKIE, token))
             .http_only(true) // Prevent JavaScript access (mitigates XSS)
@@ -46,7 +45,7 @@ impl JwtGuard {
         Ok(())
     }
 
-    async fn generate_token(user: AuthorizedUser) -> Result<String, String> {
+    async fn generate_token(user: PublicUser) -> Result<String, String> {
         let expiration = chrono::Utc::now()
             .checked_add_signed(chrono::Duration::hours(TOKEN_VALIDITY_HRS))
             .expect("valid timestamp")
@@ -104,7 +103,7 @@ impl<'r> FromRequest<'r> for JwtGuard {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
     /// The subject of the token (User ID).
-    pub sub: AuthorizedUser,
+    pub sub: PublicUser,
     /// Expiration timestamp (Unix epoch).
     pub exp: usize,
 }

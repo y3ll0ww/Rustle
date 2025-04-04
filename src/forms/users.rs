@@ -2,7 +2,10 @@ use argon2::{
     password_hash::{rand_core::OsRng, Error, PasswordHasher, SaltString},
     Argon2, PasswordHash, PasswordVerifier,
 };
+use regex::Regex;
+use rocket::form;
 use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 /// This struct represents the information required to create a new [`User`] via a form.
 #[derive(Debug, Deserialize, FromForm, Serialize)]
@@ -23,6 +26,57 @@ impl NewUserForm<'_> {
     }
 }
 
+#[derive(Debug, FromForm)]
+pub struct InvitedMultipleUsersForm<'v> {
+    // Allow at most 10 invites per request
+    #[field(validate = len(1..=10))]
+    pub users: Vec<InvitedUserForm<'v>>,
+    pub space: &'v str,
+}
+
+#[derive(Debug, FromForm)]
+pub struct InvitedUserForm<'v> {
+    #[field(validate = InvitedUserForm::validate_name())]
+    pub first_name: &'v str,
+    #[field(validate = InvitedUserForm::validate_name())]
+    pub last_name: &'v str,
+    // TODO!: better email validator
+    #[field(validate = contains('@').or_else(msg!("invalid email address")))]
+    pub email: &'v str,
+}
+
+impl InvitedUserForm<'_> {
+    fn validate_name<'v>(value: &str) -> form::Result<'v, ()> {
+        // Regex for alphabetic characters and whitespaces only
+        let re = Regex::new(r"^[a-zA-Z ]*$").unwrap();
+
+        // Check if the value complies to the regex
+        if !re.is_match(value) {
+            Err(form::Error::validation(
+                "Can only contain characters and spaces.",
+            ))?
+        }
+
+        // Check if the length is within allowed range
+        let min_length = 1;
+        let max_length = 20;
+        if value.len() < min_length || value.len() > max_length {
+            return Err(form::Error::validation(format!(
+                "Must be between {min_length} and {max_length} characters long."
+            )))?;
+        }
+
+        Ok(())
+    }
+
+    pub fn body(&self) -> String {
+        format!(
+            "first_name={}&last_name={}&email={}",
+            self.first_name, self.last_name, self.email
+        )
+    }
+}
+
 #[derive(Debug, FromForm, Serialize, Deserialize)]
 pub struct LoginForm<'v> {
     pub username: &'v str,
@@ -39,14 +93,26 @@ impl LoginForm<'_> {
 pub struct Password<'v> {
     #[field(validate = len(6..))]
     #[field(validate = eq(self.second))]
-    #[allow(unused)]
     pub first: &'v str,
-    #[allow(unused)]
     #[field(validate = eq(self.first))]
     pub second: &'v str,
 }
 
 impl Password<'_> {
+    pub fn generate() -> Result<String, argon2::password_hash::Error> {
+        // Generate a UUID
+        let uuid = Uuid::new_v4().to_string();
+        
+        // Create a password instance
+        let password = Password {
+            first: &uuid,
+            second: &uuid,
+        };
+        
+        // Hash it
+        password.hash_password()
+    }
+
     pub fn verify_password(input_password: &str, stored_hash: &str) -> Result<bool, Error> {
         let password = input_password.as_bytes();
         let hash = PasswordHash::new(stored_hash)?;

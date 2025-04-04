@@ -1,3 +1,7 @@
+use diesel::sql_types::Jsonb;
+
+use crate::{email::MailClient, forms::users::InvitedMultipleUsersForm};
+
 use super::*;
 
 pub async fn login_by_form(
@@ -40,6 +44,84 @@ pub fn logout(_guard: JwtGuard, cookies: &CookieJar<'_>) -> Success<String> {
     )
 }
 
+pub async fn invite_new_user_by_form(
+    guard: JwtGuard,
+    form: Form<InvitedMultipleUsersForm<'_>>,
+    db: Database,
+) -> Result<Success<Null>, Error<Null>> {
+    let mut new_users = Vec::new();
+
+    for user in &form.users {
+        // Define the username and the display name
+        let display_name = format!("{} {}", user.first_name, user.last_name);
+        let username = display_name.to_lowercase().replace(' ', "_");
+
+        // Generate a hashed password
+        let password = Password::generate().map_err(|e| {
+            ApiResponse::internal_server_error(format!("Coudn't hash password: {e}"))
+        })?;
+
+        // Add a new user to be processed
+        new_users.push(User::new(
+            username,
+            Some(display_name),
+            user.email.to_string(),
+            password,
+        ));
+    }
+
+    // Insert all new users in a single transaction
+    let users_to_database = new_users.clone();
+    //let entries = db
+    //    .run(move |conn| {
+    //        diesel::insert_into(users::table)
+    //            .values(users_to_database)
+    //            .execute(conn)
+    //            .map_err(|e| e.to_string())
+    //    })
+    //    .await
+    //    .map_err(ApiResponse::internal_server_error)?;
+    let entries = db
+        .run(move |conn| {
+            // Create a raw SQL query to call your custom PostgreSQL function
+            let users_to_insert = serde_json::to_value(&users_to_database)
+                .map_err(|e| format!("Serialization error: {}", e))?;
+
+            // Convert the users to a format that PostgreSQL can handle as an array (this depends on your data format)
+            let query = r#"
+            SELECT insert_users_if_unique($1::users[]);
+        "#;
+
+        diesel::sql_query(query)
+                .bind::<Jsonb, _>(users_to_insert) // Bind the serialized JSON data
+                .execute(conn)
+                .map_err(|e| e.to_string())
+
+         //   diesel::sql_query(query)
+         //       .bind::<diesel::sql_types::Text, _>(users_to_insert)
+         //       .execute(conn)
+         //       .map_err(|e| e.to_string())
+        })
+        .await
+        .map_err(ApiResponse::internal_server_error)?;
+
+    // Send an invitation email to the new users
+    let inviter = guard.get_user();
+    for user in new_users {
+        let recipient = PublicUser::from(&user);
+
+        MailClient::no_reply()
+            .send_invitation(&inviter, &recipient, form.space)
+            .map_err(|e| ApiResponse::internal_server_error(format!("Coudn't send email: {e}")))?;
+    }
+
+    // Return success response
+    Ok(ApiResponse::success(
+        format!("{entries} users invited"),
+        None,
+    ))
+}
+
 /// This function allows for the creation of a new [`User`] by using a form.
 ///
 /// **Route**: `./form`
@@ -65,9 +147,9 @@ pub async fn create_new_user_by_form(
     // Create a new User
     let new_user = NewUser {
         username: form.username.to_string(),
+        display_name: form.username.to_string(),
         email: form.email.to_string(),
         password: password_hash,
-        role: None,
     };
 
     // Add the new User to the database

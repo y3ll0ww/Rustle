@@ -29,7 +29,7 @@ pub async fn delete_user_by_id(
     let user = guard.get_user();
 
     // Return early if the user to delete is not self or admin
-    if user.role != UserRole::Admin && user.id != id {
+    if user.role != i16::from(UserRole::Admin) && user.id != id {
         return Err(ApiResponse::unauthorized(
             "No permission to delete user".to_string(),
         ));
