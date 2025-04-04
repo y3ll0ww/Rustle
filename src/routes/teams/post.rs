@@ -50,11 +50,7 @@ pub async fn create_new_team_by_form(
     }
 
     // Create a new Team
-    let new_team = Team::new(
-        user.id,
-        form.team_name.clone(),
-        form.description.clone(),
-    );
+    let new_team = Team::new(user.id, form.team_name.clone(), form.description.clone());
 
     // Create a new team member
     let owner_membership = TeamMember {

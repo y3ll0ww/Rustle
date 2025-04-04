@@ -84,6 +84,10 @@ impl PublicUser {
             updated_at: user.updated_at,
         }
     }
+
+    pub fn get_name(&self) -> String {
+        self.display_name.clone().unwrap_or(self.username.clone())
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]

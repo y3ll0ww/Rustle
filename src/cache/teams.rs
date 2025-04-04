@@ -52,11 +52,7 @@ pub async fn update_team_cache(
         let _ = redis
             .lock()
             .await
-            .set_to_cache(
-                &team_cache_key(team_id),
-                &team_with_members,
-                TEAM_CACHE_TTL,
-            )
+            .set_to_cache(&team_cache_key(team_id), &team_with_members, TEAM_CACHE_TTL)
             .await;
 
         return true;
