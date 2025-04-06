@@ -1,6 +1,5 @@
-use diesel::sql_types::Jsonb;
-
 use crate::{email::MailClient, forms::users::InvitedMultipleUsersForm};
+use diesel::RunQueryDsl;
 
 use super::*;
 
@@ -44,11 +43,22 @@ pub fn logout(_guard: JwtGuard, cookies: &CookieJar<'_>) -> Success<String> {
     )
 }
 
-pub async fn invite_new_user_by_form(
+pub async fn invite_new_users_by_form(
     guard: JwtGuard,
     form: Form<InvitedMultipleUsersForm<'_>>,
     db: Database,
 ) -> Result<Success<Null>, Error<Null>> {
+    // 1) Extract all the users from the form
+    //    a) Create display_name and username based on first and last name
+    //    b) Create a hashed password based on a generated UUID
+    // 2) Get a list of all the users in the database that have similar usernames as the ones in
+    //    the newly created list of users
+    //    a) Where users match any of the following names: "full_username"
+    //    b) Take the current usernames into consideration
+    // 3) Assign a username with a counter "_1",  "_2", "_3" etc.
+    // 4) Insert all the users in one transaction batch; rollback at error
+
+
     let mut new_users = Vec::new();
 
     for user in &form.users {
@@ -57,7 +67,7 @@ pub async fn invite_new_user_by_form(
         let username = display_name.to_lowercase().replace(' ', "_");
 
         // Generate a hashed password
-        let password = Password::generate().map_err(|e| {
+        let password = Password::generate(None).map_err(|e| {
             ApiResponse::internal_server_error(format!("Coudn't hash password: {e}"))
         })?;
 
@@ -70,40 +80,61 @@ pub async fn invite_new_user_by_form(
         ));
     }
 
+    println!("{new_users:?}");
+
     // Insert all new users in a single transaction
-    let users_to_database = new_users.clone();
-    //let entries = db
-    //    .run(move |conn| {
-    //        diesel::insert_into(users::table)
-    //            .values(users_to_database)
-    //            .execute(conn)
-    //            .map_err(|e| e.to_string())
-    //    })
-    //    .await
-    //    .map_err(ApiResponse::internal_server_error)?;
+    let mut users_to_database = new_users.clone();
     let entries = db
         .run(move |conn| {
-            // Create a raw SQL query to call your custom PostgreSQL function
-            let users_to_insert = serde_json::to_value(&users_to_database)
-                .map_err(|e| format!("Serialization error: {}", e))?;
+            // Start the transaction manually
+            conn.build_transaction().read_write().run(|conn| {
+                let mut users_inserted = 0;
+                use crate::schema::users;
 
-            // Convert the users to a format that PostgreSQL can handle as an array (this depends on your data format)
-            let query = r#"
-            SELECT insert_users_if_unique($1::users[]);
-        "#;
+                for user in users_to_database.iter_mut() {
+                    let mut attempt = 0;
+                    let mut inserted = false;
 
-        diesel::sql_query(query)
-                .bind::<Jsonb, _>(users_to_insert) // Bind the serialized JSON data
-                .execute(conn)
-                .map_err(|e| e.to_string())
+                    while !inserted {
+                        let base_username = if attempt == 0 {
+                            user.username.to_string()
+                        } else {
+                            format!("{}_{}", user.username, attempt)
+                        };
 
-         //   diesel::sql_query(query)
-         //       .bind::<diesel::sql_types::Text, _>(users_to_insert)
-         //       .execute(conn)
-         //       .map_err(|e| e.to_string())
+                        user.username = base_username.clone();
+
+                        match diesel::insert_into(users::dsl::users)
+                            .values(user.clone())
+                            .on_conflict(users::username)
+                            .do_nothing()
+                            .execute(conn)
+                        {
+                            Ok(0) => {
+                                attempt += 1;
+                                if attempt > 100 {
+                                    return Err(DieselError::DatabaseError(
+                                        DatabaseErrorKind::UniqueViolation,
+                                        Box::new(format!(
+                                            "Username '{base_username}' taken too many times"
+                                        )),
+                                    ));
+                                }
+                            }
+                            Ok(num) => {
+                                users_inserted += num;
+                                inserted = true;
+                            }
+                            Err(e) => return Err(e),
+                        }
+                    }
+                }
+
+                Ok(users_inserted)
+            })
         })
         .await
-        .map_err(ApiResponse::internal_server_error)?;
+        .map_err(|e| ApiResponse::internal_server_error(e.to_string()))?;
 
     // Send an invitation email to the new users
     let inviter = guard.get_user();

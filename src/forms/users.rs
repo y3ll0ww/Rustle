@@ -34,6 +34,23 @@ pub struct InvitedMultipleUsersForm<'v> {
     pub space: &'v str,
 }
 
+impl InvitedMultipleUsersForm<'_> {
+    pub fn body(&self) -> String {
+        // Add the space field and replace any whitespaces
+        let mut body = format!("space={}", self.space).replace(' ', "+");
+
+        // Iterate over users and add their bodies
+        for (i, user) in self.users.iter().enumerate() {
+            let user_index = format!("&users[{i}].");
+            let user_body = user.body().replace('&', &user_index);
+            body.push_str(&format!("{user_index}{user_body}"));
+        }
+        
+        // Return
+        body
+    }
+}
+
 #[derive(Debug, FromForm)]
 pub struct InvitedUserForm<'v> {
     #[field(validate = InvitedUserForm::validate_name())]
@@ -74,6 +91,7 @@ impl InvitedUserForm<'_> {
             "first_name={}&last_name={}&email={}",
             self.first_name, self.last_name, self.email
         )
+        .replace(' ', "+")
     }
 }
 
@@ -99,16 +117,19 @@ pub struct Password<'v> {
 }
 
 impl Password<'_> {
-    pub fn generate() -> Result<String, argon2::password_hash::Error> {
-        // Generate a UUID
-        let uuid = Uuid::new_v4().to_string();
-        
+    pub fn generate(password: Option<&str>) -> Result<String, argon2::password_hash::Error> {
+        // Use input or a generated UUID
+        let password = match password {
+            Some(password) => password.to_string(),
+            None => Uuid::new_v4().to_string(),
+        };
+
         // Create a password instance
         let password = Password {
-            first: &uuid,
-            second: &uuid,
+            first: &password,
+            second: &password,
         };
-        
+
         // Hash it
         password.hash_password()
     }

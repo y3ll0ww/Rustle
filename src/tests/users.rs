@@ -10,13 +10,16 @@ use uuid::Uuid;
 
 use crate::{
     cookies::TOKEN_COOKIE,
-    forms::users::{LoginForm, NewUserForm, Password},
+    forms::users::{InvitedMultipleUsersForm, InvitedUserForm, LoginForm, NewUserForm, Password},
     models::users::{User, UserRole, UserStatus},
     tests::test_client,
 };
 
 const USERNAME: &str = "test_user";
 const PASSWORD: &str = "strong_password";
+
+const ADMIN_USERNAME: &str = "admin";
+const ADMIN_PASSWORD: &str = "admin_password123";
 
 #[test]
 fn inject_admin_user() {
@@ -36,10 +39,10 @@ fn inject_admin_user() {
         id: Uuid::from_str("a99b50c6-02e9-4142-95fe-35c3ccd4f147").unwrap(),
         role: i16::from(UserRole::Admin),
         status: i16::from(UserStatus::Active),
-        username: "y3ll0ww".to_string(),
+        username: ADMIN_USERNAME.to_string(),
         display_name: None,
         email: "some@abc.nl".to_string(),
-        password: "password".to_string(),
+        password: Password::generate(Some(ADMIN_PASSWORD)).unwrap(),
         bio: None,
         avatar_url: None,
         created_at,
@@ -61,7 +64,7 @@ fn inject_admin_user() {
     // Optionally, check the response body for success message
     let response_body = response.into_string().unwrap();
     println!("{response_body}");
-    assert!(response_body.contains("User y3ll0ww created"));
+    assert!(response_body.contains(&format!("User {ADMIN_USERNAME} created")));
 }
 
 /// Creates a new user in the database using form data.
@@ -98,6 +101,54 @@ fn submit_new_user_by_form() {
 
     // Assert that the cookies are added
     assert_authorized_cookies(response, true);
+}
+
+#[test]
+fn invite_new_users_by_form() {
+    let client = test_client();
+
+    default_login(&client);
+
+    // Create a form with test data
+    let invitation = InvitedMultipleUsersForm {
+        space: "Some space",
+        users: vec![
+            InvitedUserForm {
+                first_name: "Jelle",
+                last_name: "van Geel",
+                email: "jelle.vangeel@teamrockstars.com",
+            },
+            InvitedUserForm {
+                first_name: "John",
+                last_name: "Doe",
+                email: "john_doe@teamrockstars.com",
+            },
+            InvitedUserForm {
+                first_name: "John",
+                last_name: "Doe",
+                email: "johnny_doey@teamrockstars.com",
+            },
+        ],
+    };
+
+    println!("Invitation body: {}", invitation.body());
+
+    // Send submit request
+    let response = client
+        .post("/user/invite")
+        .body(invitation.body())
+        .header(ContentType::Form)
+        .dispatch();
+
+    let status = response.status().clone();
+
+    println!("{:?}", response.into_string());
+
+    // Assert the submit request was successful
+    assert_eq!(status, Status::Ok);
+
+    // Assert that the cookies are added
+    //assert_authorized_cookies(response, true);
 }
 
 /// Logging in and logging out a user.
@@ -152,10 +203,10 @@ fn delete_existing_user_by_id() {
     let client = test_client();
 
     // Login required
-    default_login(&client);
+    admin_login(&client);
 
     // User ID: Change depending on which user tester wants to delete
-    let user_id = "1fca2643-ec64-488d-b822-fe85b489114e";
+    let user_id = "7ec8a625-b3cd-458c-97ee-77201c41f66e";
 
     // Send delete request
     let response = client.delete(format!("/user/{user_id}/delete")).dispatch();
@@ -212,17 +263,29 @@ fn get_all_users() {
     println!("{:?}", data.unwrap());
 }
 
+pub fn admin_login(client: &Client) {
+    let login_form = LoginForm {
+        username: ADMIN_USERNAME,
+        password: ADMIN_PASSWORD,
+    };
+
+    login(client, login_form)
+}
+
 pub fn default_login(client: &Client) {
-    // Create a form with test data
-    let login = LoginForm {
+    let login_form = LoginForm {
         username: USERNAME,
         password: PASSWORD,
     };
 
+    login(client, login_form)
+}
+
+fn login(client: &Client, login_form: LoginForm) {
     let login_response = client
         .post("/user/login")
         .header(ContentType::Form)
-        .body(login.body())
+        .body(login_form.body())
         .dispatch();
 
     // Assert the login request was successful

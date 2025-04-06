@@ -12,7 +12,7 @@ use crate::{
     auth::JwtGuard,
     cookies::TOKEN_COOKIE,
     db::Database,
-    forms::users::{LoginForm, NewUserForm, Password},
+    forms::users::{InvitedMultipleUsersForm, LoginForm, NewUserForm, Password},
     models::users::{NewUser, PublicUser, User, UserRole},
     schema::users,
 };
@@ -28,6 +28,7 @@ mod post;
 // * /user/login         -> POST
 // * /user/logout        -> POST
 // * /user/register      -> POST
+// * /user/invite        -> POST
 pub fn routes() -> Vec<rocket::Route> {
     routes![
         all_users,
@@ -36,6 +37,7 @@ pub fn routes() -> Vec<rocket::Route> {
         login,
         logout,
         register,
+        invite_new_users,
         inject_new_user,
     ]
 }
@@ -84,6 +86,15 @@ async fn register(
     cookies: &CookieJar<'_>,
 ) -> Result<Success<Null>, Error<Null>> {
     post::create_new_user_by_form(form, db, cookies).await
+}
+
+#[post("/invite", data = "<form>")]
+async fn invite_new_users(
+    guard: JwtGuard,
+    form: Form<InvitedMultipleUsersForm<'_>>,
+    db: Database,
+) -> Result<Success<Null>, Error<Null>> {
+    post::invite_new_users_by_form(guard, form, db).await
 }
 
 #[post("/create", format = "json", data = "<user>")]
