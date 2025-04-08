@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::{email::MailClient, forms::users::InvitedMultipleUsersForm};
 use diesel::RunQueryDsl;
 
@@ -60,11 +62,14 @@ pub async fn invite_new_users_by_form(
 
 
     let mut new_users = Vec::new();
+    let mut base_usernames = HashSet::new();
 
     for user in &form.users {
         // Define the username and the display name
         let display_name = format!("{} {}", user.first_name, user.last_name);
         let username = display_name.to_lowercase().replace(' ', "_");
+
+        base_usernames.insert(username.clone());
 
         // Generate a hashed password
         let password = Password::generate(None).map_err(|e| {
@@ -79,62 +84,126 @@ pub async fn invite_new_users_by_form(
             password,
         ));
     }
+///////////////////////////////////////////////////////////////////////////////////////////////
+    //.filter(sql("username ~ '^john_doe(_[0-9]+)?$'"))
 
-    println!("{new_users:?}");
+    // Query database for exact + numbered variants
+    let username_pattern = format!("^({})(_[0-9]+)?$",
+        base_usernames.iter().map(|name| regex::escape(name)).collect::<Vec<_>>().join("|"));
 
-    // Insert all new users in a single transaction
-    let mut users_to_database = new_users.clone();
-    let entries = db
-        .run(move |conn| {
-            // Start the transaction manually
+    println!("Username Pattern: {username_pattern}");
+
+    let existing_usernames: HashSet<String> = db.run({
+        let regex = username_pattern.clone();
+        move |conn| {
+            diesel::sql_query("SELECT useraname FROM users WHERE useraname ~ $1")
+                .bind::<diesel::sql_types::Text, _>(&regex)
+                .load::<(String,)>(conn)
+                .map(|usernames| usernames.into_iter().map(|u| u.0).collect())
+        }
+    })
+    .await
+    .map_err(|e| ApiResponse::internal_server_error(e.to_string()))?;
+
+    println!("{existing_usernames:?}");
+
+    // Resolve usernames in memory
+    let mut used_usernames = existing_usernames.clone();
+    let mut final_users = Vec::new();
+
+    for user in new_users.iter_mut() {
+        let mut candidate = user.username.clone();
+        let mut suffix = 1;
+
+        // Loop through the usernames and attempt to append suffix
+        while used_usernames.contains(&candidate) {
+            candidate = format!("{}_{}", user.username, suffix);
+            suffix += 1;
+
+            if suffix > 100 {
+                return Err(ApiResponse::bad_request(format!(
+                    "Too many usernames containing '{}'", user.username,
+                )));
+            }
+        }
+
+        // Add the successful candidate to the used names
+        used_usernames.insert(candidate.clone());
+
+        // Update the to be added user
+        user.username = candidate;
+    }
+
+    // Insert into database with a single transaction
+    let inserted_count = db.run({
+        let insert_users = new_users.clone();
+        move |conn| {
             conn.build_transaction().read_write().run(|conn| {
-                let mut users_inserted = 0;
-                use crate::schema::users;
-
-                for user in users_to_database.iter_mut() {
-                    let mut attempt = 0;
-                    let mut inserted = false;
-
-                    while !inserted {
-                        let base_username = if attempt == 0 {
-                            user.username.to_string()
-                        } else {
-                            format!("{}_{}", user.username, attempt)
-                        };
-
-                        user.username = base_username.clone();
-
-                        match diesel::insert_into(users::dsl::users)
-                            .values(user.clone())
-                            .on_conflict(users::username)
-                            .do_nothing()
-                            .execute(conn)
-                        {
-                            Ok(0) => {
-                                attempt += 1;
-                                if attempt > 100 {
-                                    return Err(DieselError::DatabaseError(
-                                        DatabaseErrorKind::UniqueViolation,
-                                        Box::new(format!(
-                                            "Username '{base_username}' taken too many times"
-                                        )),
-                                    ));
-                                }
-                            }
-                            Ok(num) => {
-                                users_inserted += num;
-                                inserted = true;
-                            }
-                            Err(e) => return Err(e),
-                        }
-                    }
-                }
-
-                Ok(users_inserted)
+                diesel::insert_into(users::dsl::users)
+                    .values(&insert_users)
+                    .execute(conn)
+                    //.map_err()
             })
-        })
-        .await
-        .map_err(|e| ApiResponse::internal_server_error(e.to_string()))?;
+        }
+    })
+    .await
+    .map_err(|e| ApiResponse::internal_server_error(e.to_string()))?;
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+
+    // // Insert all new users in a single transaction
+    // let mut users_to_database = new_users.clone();
+    // let entries = db
+    //     .run(move |conn| {
+    //         // Start the transaction manually
+    //         conn.build_transaction().read_write().run(|conn| {
+    //             let mut users_inserted = 0;
+    //             use crate::schema::users;
+
+    //             for user in users_to_database.iter_mut() {
+    //                 let mut attempt = 0;
+    //                 let mut inserted = false;
+
+    //                 while !inserted {
+    //                     let base_username = if attempt == 0 {
+    //                         user.username.to_string()
+    //                     } else {
+    //                         format!("{}_{}", user.username, attempt)
+    //                     };
+
+    //                     user.username = base_username.clone();
+
+    //                     match diesel::insert_into(users::dsl::users)
+    //                         .values(user.clone())
+    //                         .on_conflict(users::username)
+    //                         .do_nothing()
+    //                         .execute(conn)
+    //                     {
+    //                         Ok(0) => {
+    //                             attempt += 1;
+    //                             if attempt > 100 {
+    //                                 return Err(DieselError::DatabaseError(
+    //                                     DatabaseErrorKind::UniqueViolation,
+    //                                     Box::new(format!(
+    //                                         "Username '{base_username}' taken too many times"
+    //                                     )),
+    //                                 ));
+    //                             }
+    //                         }
+    //                         Ok(num) => {
+    //                             users_inserted += num;
+    //                             inserted = true;
+    //                         }
+    //                         Err(e) => return Err(e),
+    //                     }
+    //                 }
+    //             }
+
+    //             Ok(users_inserted)
+    //         })
+    //     })
+    //     .await
+    //     .map_err(|e| ApiResponse::internal_server_error(e.to_string()))?;
 
     // Send an invitation email to the new users
     let inviter = guard.get_user();
@@ -148,7 +217,7 @@ pub async fn invite_new_users_by_form(
 
     // Return success response
     Ok(ApiResponse::success(
-        format!("{entries} users invited"),
+        format!("{inserted_count} users invited"),
         None,
     ))
 }
