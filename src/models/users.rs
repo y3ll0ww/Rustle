@@ -1,19 +1,20 @@
 use std::fmt::{Display, Formatter};
 
 use chrono::{NaiveDateTime, Utc};
-use diesel::prelude::*;
+use diesel::{prelude::*, sql_types::Text};
 use rocket_sync_db_pools::diesel;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::schema::users;
 
-#[derive(Clone, Debug, Deserialize, Insertable, Queryable, Serialize)]
+#[derive(Clone, Debug, Deserialize, Insertable, Queryable, QueryableByName, Serialize)]
 #[diesel(table_name = users)]
 pub struct User {
     pub id: Uuid,
     pub role: i16,
     pub status: i16,
+    #[diesel(sql_type = Text)]
     pub username: String,
     pub display_name: Option<String>,
     pub email: String,
