@@ -1,14 +1,7 @@
 use std::collections::HashSet;
 
 use crate::{
-    api::{ApiResponse, Error, Null, Success},
-    auth::JwtGuard,
-    cookies::TOKEN_COOKIE,
-    db::Database,
-    email::MailClient,
-    forms::users::{InvitedMultipleUsersForm, LoginForm, NewUserForm, Password},
-    models::users::{NewUser, PublicUser, User},
-    schema::users,
+    api::{ApiResponse, Error, Null, Success}, auth::JwtGuard, cookies::TOKEN_COOKIE, db::Database, email::MailClient, forms::users::{InvitedMultipleUsersForm, LoginForm, NewUserForm, Password}, models::users::{NewUser, PublicUser, User}, schema::users
 };
 use diesel::{
     result::{DatabaseErrorKind, Error as DieselError},
@@ -71,7 +64,8 @@ pub async fn invite_new_users_by_form(
     let mut existing_usernames = database::get_username_duplicates(&db, &base_usernames).await?;
 
     // Update the usernames of the new users to avoid unique constraint violations
-    update_usernames(&mut new_users, &mut existing_usernames).map_err(ApiResponse::bad_request)?;
+    assign_unique_usernames(&mut new_users, &mut existing_usernames)
+        .map_err(ApiResponse::bad_request)?;
 
     // Insert the new users into the database in a single transaction
     // This transaction will be rolled back on failure
@@ -174,7 +168,7 @@ pub async fn inject_user(user: Json<User>, db: Database) -> String {
     }
 }
 
-fn update_usernames(
+fn assign_unique_usernames(
     new_users: &mut [User],
     existing_usernames: &mut HashSet<String>,
 ) -> Result<(), String> {
