@@ -1,4 +1,4 @@
-use diesel::result::Error as DieselError;
+use diesel::result::{DatabaseErrorKind, Error as DieselError};
 use rocket::{http::Status, response::status::Custom, serde::json::Json};
 use serde::{Deserialize, Serialize};
 
@@ -20,9 +20,18 @@ impl<T> ApiResponse<T> {
     }
 
     pub fn from_error(error: DieselError) -> Error<T> {
+        let message = error.to_string();
+
         match error {
-            DieselError::NotFound => Self::not_found(error.to_string()),
-            _ => Self::internal_server_error(error.to_string()),
+            DieselError::NotFound => Self::not_found(message),
+            DieselError::DatabaseError(error_kind, _) => match error_kind {
+                DatabaseErrorKind::CheckViolation
+                | DatabaseErrorKind::ForeignKeyViolation
+                | DatabaseErrorKind::NotNullViolation
+                | DatabaseErrorKind::UniqueViolation => Self::bad_request(message),
+                _ => Self::internal_server_error(message)
+            }
+            _ => Self::internal_server_error(message),
         }
     }
 

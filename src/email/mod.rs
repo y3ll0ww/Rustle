@@ -43,9 +43,10 @@ impl MailClient {
         inviter: &PublicUser,
         recipient: &PublicUser,
         team_name: &str,
+        token: &str,
     ) -> Result<Response, String> {
         // Get the invitation template
-        let template = MailTemplate::invitation(inviter, recipient, team_name)?;
+        let template = MailTemplate::invitation(inviter, recipient, team_name, token)?;
 
         // Generate the message
         let message = self.mail.from_template(recipient, template)?;
@@ -85,7 +86,8 @@ fn send_mail_test() {
         updated_at: chrono::Utc::now().naive_utc(),
     };
 
-    let result = MailClient::no_reply().send_invitation(&inviter, &recipient, "ATT Test Tool");
+    let result =
+        MailClient::no_reply().send_invitation(&inviter, &recipient, "ATT Test Tool", "token");
 
     println!("{result:?}");
     assert!(result.is_ok());

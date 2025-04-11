@@ -1,18 +1,24 @@
-use std::str::FromStr;
+use std::{collections::HashSet, str::FromStr};
 
 use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 
 use rocket::{
     http::{ContentType, Status},
-    local::blocking::{Client, LocalResponse},
+    local::{
+        asynchronous::{Client as AsyncClient, LocalResponse as AsyncLocalResponse},
+        blocking::{Client, LocalResponse},
+    },
+    State,
 };
 use uuid::Uuid;
 
 use crate::{
+    api::ApiResponse,
+    cache::{users::get_invite_token, RedisMutex},
     cookies::TOKEN_COOKIE,
     forms::users::{InvitedMultipleUsersForm, InvitedUserForm, LoginForm, NewUserForm, Password},
     models::users::{User, UserRole, UserStatus},
-    tests::test_client,
+    tests::{async_test_client, test_client},
 };
 
 const USERNAME: &str = "test_user";
@@ -20,6 +26,16 @@ const PASSWORD: &str = "strong_password";
 
 const ADMIN_USERNAME: &str = "admin";
 const ADMIN_PASSWORD: &str = "admin_password123";
+
+pub const DEFAULT_LOGIN: LoginForm = LoginForm {
+    username: USERNAME,
+    password: PASSWORD,
+};
+
+pub const ADMIN_LOGIN: LoginForm = LoginForm {
+    username: ADMIN_USERNAME,
+    password: ADMIN_PASSWORD,
+};
 
 #[test]
 fn inject_admin_user() {
@@ -103,11 +119,11 @@ fn submit_new_user_by_form() {
     assert_authorized_cookies(response, true);
 }
 
-#[test]
-fn invite_new_users_by_form() {
-    let client = test_client();
+#[tokio::test]
+async fn invite_new_users_by_form() {
+    let client = async_test_client().await;
 
-    default_login(&client);
+    async_login(&client, DEFAULT_LOGIN).await;
 
     // Create a form with test data
     let invitation = InvitedMultipleUsersForm {
@@ -116,17 +132,17 @@ fn invite_new_users_by_form() {
             InvitedUserForm {
                 first_name: "Jelle",
                 last_name: "van Geel",
-                email: "jelle.vangeeel@teamrockstars.com",
+                email: "jelle.vangeel@teamrockstars.com",
             },
             InvitedUserForm {
                 first_name: "John",
                 last_name: "Doe",
-                email: "john_doee@teamrockstars.com",
+                email: "john_doe@teamrockstars.com",
             },
             InvitedUserForm {
                 first_name: "John",
                 last_name: "Doe",
-                email: "johnny_doeey@teamrockstars.com",
+                email: "johnny_doey@teamrockstars.com",
             },
         ],
     };
@@ -138,17 +154,51 @@ fn invite_new_users_by_form() {
         .post("/user/invite")
         .body(invitation.body())
         .header(ContentType::Form)
-        .dispatch();
+        .dispatch()
+        .await;
 
+    // Clone the status before printing
     let status = response.status().clone();
 
-    println!("{:?}", response.into_string());
+    // Extract the ApiResponse containing the vector of strings with the tokens
+    let invitation_response = response
+        .into_json::<ApiResponse<Vec<String>>>()
+        .await
+        .unwrap();
+
+    // Print the information from the response
+    println!("Message: {}", invitation_response.message);
+    println!("Tokens:  {:?}", invitation_response.data);
 
     // Assert the submit request was successful
     assert_eq!(status, Status::Ok);
 
-    // Assert that the cookies are added
-    //assert_authorized_cookies(response, true);
+    // Since email has to be unique, collect them to veriy
+    // if users are added to the cache correctly
+    let mut email_addresses: HashSet<&str> = invitation
+        .users
+        .into_iter()
+        .map(|user| user.email)
+        .collect();
+
+    // Get the redis cache
+    let redis: &State<RedisMutex> = client
+        .rocket()
+        .state::<RedisMutex>()
+        .expect("Redis state should be available")
+        .into();
+
+    // Loop through the tokens from the response
+    for token in invitation_response.data.unwrap() {
+        // Attempt getting the token from the cache
+        match get_invite_token(redis, &token).await {
+            // If the email address can be removed from the pre-defined email addresses, it means
+            // that the user is successfully added to the redis cache
+            Ok(public_user) => assert!(email_addresses.remove(public_user.email.as_str())),
+            // If getting the token fails, the test should fail
+            Err(e) => assert!(false, "{e:?}"),
+        }
+    }
 }
 
 /// Logging in and logging out a user.
@@ -166,7 +216,7 @@ fn login_existing_user_then_logout() {
     let client = test_client();
 
     // Log in
-    default_login(&client);
+    login(&client, DEFAULT_LOGIN);
 
     // Log out
     let logout_response = client.post("/user/logout").dispatch();
@@ -203,10 +253,10 @@ fn delete_existing_user_by_id() {
     let client = test_client();
 
     // Login required
-    admin_login(&client);
+    login(&client, ADMIN_LOGIN);
 
     // User ID: Change depending on which user tester wants to delete
-    let user_id = "7ec8a625-b3cd-458c-97ee-77201c41f66e";
+    let user_id = "77987439-2fed-4d45-9f5d-4c02c66eb265";
 
     // Send delete request
     let response = client.delete(format!("/user/{user_id}/delete")).dispatch();
@@ -220,7 +270,7 @@ fn delete_all_users_except_for_admin_and_test_user() {
     let client = test_client();
 
     // Login required
-    admin_login(&client);
+    login(&client, ADMIN_LOGIN);
 
     // Get all the users
     let response = client.get(format!("/user")).dispatch();
@@ -268,7 +318,7 @@ fn get_user_by_username() {
     let client = test_client();
 
     // Login required
-    default_login(&client);
+    login(&client, DEFAULT_LOGIN);
 
     // Send get request
     let response = client.get(format!("/user/{USERNAME}")).dispatch();
@@ -292,7 +342,7 @@ fn get_all_users() {
     let client = test_client();
 
     // Login required
-    default_login(&client);
+    login(&client, DEFAULT_LOGIN);
 
     // Send get request
     let response = client.get(format!("/user")).dispatch();
@@ -311,39 +361,52 @@ fn get_all_users() {
     println!("{:?}", data.unwrap());
 }
 
-pub fn admin_login(client: &Client) {
-    let login_form = LoginForm {
-        username: ADMIN_USERNAME,
-        password: ADMIN_PASSWORD,
-    };
-
-    login(client, login_form)
-}
-
-pub fn default_login(client: &Client) {
-    let login_form = LoginForm {
-        username: USERNAME,
-        password: PASSWORD,
-    };
-
-    login(client, login_form)
-}
-
-fn login(client: &Client, login_form: LoginForm) {
+pub fn login(client: &Client, login_form: LoginForm) {
     let login_response = client
         .post("/user/login")
         .header(ContentType::Form)
         .body(login_form.body())
         .dispatch();
 
+    let status = login_response.status().clone();
+    println!("{:?}", login_response.into_string());
+
+    // Assert the login request was successful
+    assert_eq!(status, Status::Ok);
+
+    // Assert that the cookies are added
+    //assert_authorized_cookies(login_response, true);
+}
+
+pub async fn async_login(client: &AsyncClient, login_form: LoginForm<'static>) {
+    let login_response = client
+        .post("/user/login")
+        .header(ContentType::Form)
+        .body(login_form.body())
+        .dispatch()
+        .await;
+
     // Assert the login request was successful
     assert_eq!(login_response.status(), Status::Ok);
 
     // Assert that the cookies are added
-    assert_authorized_cookies(login_response, true);
+    async_assert_authorized_cookies(login_response, true);
 }
 
 fn assert_authorized_cookies(response: LocalResponse<'_>, available: bool) {
+    // Get the cookies after the response
+    let cookies = response.cookies();
+    let token_cookie = cookies.get_private(TOKEN_COOKIE);
+
+    // Perform the assertions on the cookies based on provided boolean
+    if available {
+        assert!(token_cookie.is_some());
+    } else {
+        assert!(token_cookie.is_none());
+    }
+}
+
+fn async_assert_authorized_cookies(response: AsyncLocalResponse<'_>, available: bool) {
     // Get the cookies after the response
     let cookies = response.cookies();
     let token_cookie = cookies.get_private(TOKEN_COOKIE);

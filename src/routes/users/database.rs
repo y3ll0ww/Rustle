@@ -1,20 +1,33 @@
 use std::collections::HashSet;
 
-use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
+use diesel::{
+    result::Error as DieselError,
+    ExpressionMethods, QueryDsl, RunQueryDsl,
+};
 use uuid::Uuid;
 
 use crate::{
     api::{ApiResponse, Error, Null},
     db::Database,
-    models::users::{PublicUser, User},
+    models::users::{NewUser, PublicUser, User},
     schema::users,
 };
+
+pub async fn create_new_user(db: &Database, new_user: NewUser) -> Result<User, Error<Null>> {
+    db.run(move |conn| {
+        diesel::insert_into(users::table)
+            .values(new_user)
+            .get_result(conn)
+    })
+    .await
+    .map_err(ApiResponse::from_error)
+}
 
 pub async fn get_all_public_users(db: &Database) -> Result<Vec<PublicUser>, Error<Null>> {
     let users: Vec<PublicUser> = db
         .run(move |conn| users::table.get_results::<User>(conn))
         .await
-        .map_err(|e| ApiResponse::not_found(e.to_string()))?
+        .map_err(ApiResponse::from_error)?
         .iter()
         .map(PublicUser::from)
         .collect();
@@ -31,7 +44,7 @@ pub async fn get_user_by_username(db: &Database, username: &str) -> Result<User,
             .first::<User>(conn)
     })
     .await
-    .map_err(|e| ApiResponse::not_found(e.to_string()))
+    .map_err(ApiResponse::from_error)
 }
 
 pub async fn get_username_duplicates(
@@ -61,7 +74,7 @@ pub async fn get_username_duplicates(
         }
     })
     .await
-    .map_err(|e| ApiResponse::internal_server_error(e.to_string()))
+    .map_err(ApiResponse::from_error)
 }
 
 pub async fn create_transaction_bulk_invitation(
@@ -84,11 +97,16 @@ pub async fn create_transaction_bulk_invitation(
         }
     })
     .await
-    .map_err(|e| ApiResponse::internal_server_error(e.to_string()))
+    .map_err(ApiResponse::from_error)
 }
 
 pub async fn delete_user_by_id(db: &Database, id: Uuid) -> Result<usize, Error<Null>> {
     db.run(move |conn| diesel::delete(users::table.filter(users::id.eq(id))).execute(conn))
         .await
         .map_err(ApiResponse::from_error)
+}
+
+pub async fn inject_user(db: &Database, user: User) -> Result<usize, DieselError> {
+    db.run(move |conn| diesel::insert_into(users::table).values(user).execute(conn))
+        .await
 }

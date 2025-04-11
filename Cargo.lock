@@ -1969,6 +1969,7 @@ dependencies = [
  "rocket_sync_db_pools",
  "serde",
  "serde_json",
+ "tokio",
  "uuid",
 ]
 

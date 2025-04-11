@@ -3,7 +3,7 @@ use rocket::http::{ContentType, Status};
 use crate::{
     forms::teams::NewTeamForm,
     routes::TEAMS,
-    tests::{test_client, users::default_login},
+    tests::{test_client, users::{login, DEFAULT_LOGIN}},
 };
 
 #[test]
@@ -11,7 +11,7 @@ fn new_team_by_form() {
     let client = test_client();
 
     // Log in
-    default_login(&client);
+    login(&client, DEFAULT_LOGIN);
 
     // Create a form with test data
     let new_user = NewTeamForm {
@@ -35,7 +35,7 @@ fn view_all_teams_of_default_user() {
     let client = test_client();
 
     // Log in
-    default_login(&client);
+    login(&client, DEFAULT_LOGIN);
 
     let response = client.get(format!("{TEAMS}")).dispatch();
 
@@ -62,7 +62,7 @@ fn view_team_of_default_user() {
     let team_id = "a66a6bb3-9fe0-490c-ba4f-d14b2f18076e";
 
     // Log in
-    default_login(&client);
+    login(&client, DEFAULT_LOGIN);
 
     let response = client.get(format!("{TEAMS}{team_id}")).dispatch();
 
@@ -82,7 +82,7 @@ fn delete_team_from_default_user() {
     let team_id = "a66a6bb3-9fe0-490c-ba4f-d14b2f18076e";
 
     // Log in
-    default_login(&client);
+    login(&client, DEFAULT_LOGIN);
 
     let response = client.delete(format!("{TEAMS}{team_id}/delete")).dispatch();
 

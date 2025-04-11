@@ -1,13 +1,16 @@
 use std::collections::HashSet;
 
 use crate::{
-    api::{ApiResponse, Error, Null, Success}, auth::JwtGuard, cookies::TOKEN_COOKIE, db::Database, email::MailClient, forms::users::{InvitedMultipleUsersForm, LoginForm, NewUserForm, Password}, models::users::{NewUser, PublicUser, User}, schema::users
+    api::{ApiResponse, Error, Null, Success},
+    auth::JwtGuard,
+    cache::{self, RedisMutex},
+    cookies::TOKEN_COOKIE,
+    db::Database,
+    email::MailClient,
+    forms::users::{InvitedMultipleUsersForm, LoginForm, NewUserForm, Password},
+    models::users::{NewUser, PublicUser, User},
 };
-use diesel::{
-    result::{DatabaseErrorKind, Error as DieselError},
-    RunQueryDsl,
-};
-use rocket::{form::Form, http::CookieJar, serde::json::Json};
+use rocket::{form::Form, http::CookieJar, serde::json::Json, State};
 use uuid::Uuid;
 
 use super::database;
@@ -54,7 +57,8 @@ pub async fn invite_new_users_by_form(
     guard: JwtGuard,
     form: Form<InvitedMultipleUsersForm<'_>>,
     db: Database,
-) -> Result<Success<Null>, Error<Null>> {
+    redis: &State<RedisMutex>,
+) -> Result<Success<Vec<String>>, Error<Null>> {
     // Create a vector of Users and a HashSet of base usernames from the form
     let (mut new_users, base_usernames) = form
         .get_users_and_base_usernames()
@@ -68,24 +72,36 @@ pub async fn invite_new_users_by_form(
         .map_err(ApiResponse::bad_request)?;
 
     // Insert the new users into the database in a single transaction
-    // This transaction will be rolled back on failure
     let inserted_count = database::create_transaction_bulk_invitation(&new_users, &db).await?;
 
-    // Send an invitation email to the new users
+    // Create persistent variables for the following loop
     let inviter = guard.get_user();
     let mail_client = MailClient::no_reply();
-    for user in new_users {
-        let recipient = PublicUser::from(&user);
 
+    // Declare a vector to keep the tokens
+    let mut tokens = Vec::new();
+
+    // Loop through the collection of new users
+    for user in new_users {
+        // Create a random token with a length of 64 characters
+        let token = cache::create_random_token(64);
+        
+        // Save the token for the response
+        tokens.push(token.clone());
+
+        // Add the token to the redis cache
+        cache::users::add_invite_token(&redis, &token, PublicUser::from(&user)).await?;
+
+        // Send an invitation email to the new users, containing the token
         mail_client
-            .send_invitation(&inviter, &recipient, form.space)
-            .map_err(|e| ApiResponse::internal_server_error(format!("Coudn't send email: {e}")))?;
+            .send_invitation(&inviter, &PublicUser::from(&user), form.space, &token)
+            .map_err(ApiResponse::internal_server_error)?;
     }
 
     // Return success response
     Ok(ApiResponse::success(
         format!("{inserted_count} users invited"),
-        None,
+        Some(tokens),
     ))
 }
 
@@ -121,19 +137,7 @@ pub async fn create_new_user_by_form(
     };
 
     // Add the new User to the database
-    let inserted_user: User = db
-        .run(move |conn| {
-            diesel::insert_into(users::table)
-                .values(&new_user)
-                .get_result(conn)
-        })
-        .await
-        .map_err(|e| match e {
-            DieselError::DatabaseError(DatabaseErrorKind::UniqueViolation, _) => {
-                ApiResponse::conflict("User already exists".to_string(), e.to_string())
-            }
-            _ => ApiResponse::internal_server_error(format!("Error creating user: {}", e)),
-        })?;
+    let inserted_user = database::create_new_user(&db, new_user).await?;
 
     // Add the user to the JWT guard
     JwtGuard::secure(&inserted_user, cookies)
@@ -154,15 +158,7 @@ pub async fn inject_user(user: Json<User>, db: Database) -> String {
     new_user.id = Uuid::new_v4(); // Generate a new UUID
 
     // Use Diesel to insert the new user
-    let result = db
-        .run(move |c| {
-            diesel::insert_into(users::table)
-                .values(&new_user) // Clone new_user into the closure
-                .execute(c) // Pass the connection
-        })
-        .await;
-
-    match result {
+    match database::inject_user(&db, new_user).await {
         Ok(_) => format!("User {username} created"),
         Err(e) => format!("Error creating user: {e}"), // Print error details
     }
