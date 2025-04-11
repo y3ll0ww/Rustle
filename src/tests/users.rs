@@ -116,17 +116,17 @@ fn invite_new_users_by_form() {
             InvitedUserForm {
                 first_name: "Jelle",
                 last_name: "van Geel",
-                email: "jelle.vangeel@teamrockstars.com",
+                email: "jelle.vangeeel@teamrockstars.com",
             },
             InvitedUserForm {
                 first_name: "John",
                 last_name: "Doe",
-                email: "john_doe@teamrockstars.com",
+                email: "john_doee@teamrockstars.com",
             },
             InvitedUserForm {
                 first_name: "John",
                 last_name: "Doe",
-                email: "johnny_doey@teamrockstars.com",
+                email: "johnny_doeey@teamrockstars.com",
             },
         ],
     };

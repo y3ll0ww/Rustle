@@ -43,7 +43,7 @@ pub async fn create_new_team_by_form(
     let user = guard.get_user();
 
     // Step 1: Validate user permissions
-    if (user.role.clone() as i32) < UserRole::Manager as i32 {
+    if user.role < i16::from(UserRole::Manager) {
         return Err(ApiResponse::unauthorized(
             "User not allowed to create teams".to_string(),
         ));
@@ -154,7 +154,7 @@ pub async fn update_team_by_form(
 
             // Step 2: Validate if the user has permission to update the team
             if team_member.team_role < minimal_team_role as i16
-                && (i16::from(user.role)) < i16::from(minimal_user_role)
+                && (user.role < i16::from(minimal_user_role))
             {
                 return Err(ApiResponse::unauthorized(
                     "No permission to update team information".to_string(),

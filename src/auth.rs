@@ -31,7 +31,7 @@ impl JwtGuard {
     }
 
     pub async fn secure(user: &User, cookies: &CookieJar<'_>) -> Result<(), String> {
-        let token = Self::generate_token(PublicUser::from(&user)).await?;
+        let token = Self::generate_token(PublicUser::from(user)).await?;
 
         let cookie = Cookie::build((TOKEN_COOKIE, token))
             .http_only(true) // Prevent JavaScript access (mitigates XSS)

@@ -1,26 +1,34 @@
 use std::collections::HashSet;
 
-use crate::{email::MailClient, forms::users::InvitedMultipleUsersForm};
-use diesel::RunQueryDsl;
+use crate::{
+    api::{ApiResponse, Error, Null, Success},
+    auth::JwtGuard,
+    cookies::TOKEN_COOKIE,
+    db::Database,
+    email::MailClient,
+    forms::users::{InvitedMultipleUsersForm, LoginForm, NewUserForm, Password},
+    models::users::{NewUser, PublicUser, User},
+    schema::users,
+};
+use diesel::{
+    result::{DatabaseErrorKind, Error as DieselError},
+    RunQueryDsl,
+};
+use rocket::{form::Form, http::CookieJar, serde::json::Json};
+use uuid::Uuid;
 
-use super::*;
+use super::database;
 
 const MAX_SIMILAR_USERNAMES: usize = 100;
 
+#[post("/login", data = "<credentials>")]
 pub async fn login_by_form(
     credentials: Form<LoginForm<'_>>,
     db: Database,
     cookies: &CookieJar<'_>,
 ) -> Result<Success<Null>, Error<Null>> {
     // Get the user from the database
-    let user = match &get_user_from_db(db, credentials.username).await?.data {
-        Some(user) => user.clone(),
-        None => {
-            return Err(ApiResponse::internal_server_error(
-                "No user data".to_string(),
-            ));
-        }
-    };
+    let user = database::get_user_by_username(&db, credentials.username).await?;
 
     // Validate if the given password is correct
     if !Password::verify_password(credentials.password, &user.password).map_err(|e| {
@@ -38,6 +46,7 @@ pub async fn login_by_form(
     Ok(ApiResponse::success("Login successful".to_string(), None))
 }
 
+#[post("/logout")]
 pub fn logout(_guard: JwtGuard, cookies: &CookieJar<'_>) -> Success<String> {
     cookies.remove_private(TOKEN_COOKIE);
 
@@ -47,117 +56,26 @@ pub fn logout(_guard: JwtGuard, cookies: &CookieJar<'_>) -> Success<String> {
     )
 }
 
+#[post("/invite", data = "<form>")]
 pub async fn invite_new_users_by_form(
     guard: JwtGuard,
     form: Form<InvitedMultipleUsersForm<'_>>,
     db: Database,
 ) -> Result<Success<Null>, Error<Null>> {
-    // 1) Extract all the users from the form
-    //    a) Create display_name and username based on first and last name
-    //    b) Create a hashed password based on a generated UUID
-    // 2) Get a list of all the users in the database that have similar usernames as the ones in
-    //    the newly created list of users
-    //    a) Where users match any of the following names: "full_username"
-    //    b) Take the current usernames into consideration
-    // 3) Assign a username with a counter "_1",  "_2", "_3" etc.
-    // 4) Insert all the users in one transaction batch; rollback at error
+    // Create a vector of Users and a HashSet of base usernames from the form
+    let (mut new_users, base_usernames) = form
+        .get_users_and_base_usernames()
+        .map_err(ApiResponse::internal_server_error)?;
 
-    let mut new_users = Vec::new();
-    let mut base_usernames = HashSet::new();
+    // Collect duplicate usernames from the database
+    let mut existing_usernames = database::get_username_duplicates(&db, &base_usernames).await?;
 
-    for user in &form.users {
-        // Define the username and the display name
-        let display_name = format!("{} {}", user.first_name, user.last_name);
-        let username = display_name.to_lowercase().replace(' ', "_");
+    // Update the usernames of the new users to avoid unique constraint violations
+    update_usernames(&mut new_users, &mut existing_usernames).map_err(ApiResponse::bad_request)?;
 
-        base_usernames.insert(username.clone());
-
-        // Generate a hashed password
-        let password = Password::generate(None).map_err(|e| {
-            ApiResponse::internal_server_error(format!("Coudn't hash password: {e}"))
-        })?;
-
-        // Add a new user to be processed
-        new_users.push(User::new(
-            username,
-            Some(display_name),
-            user.email.to_string(),
-            password,
-        ));
-    }
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-    //.filter(sql("username ~ '^john_doe(_[0-9]+)?$'"))
-
-    // Get all existing similar usernames from the database
-    let mut existing_usernames: HashSet<String> = db
-        .run({
-            // Pattern for matching usernames; exact and numbered variants:
-            // ^(john_doe|jane_doe|john_smith|jane_smith)(_[0-9]+)?$
-            let regex_pattern = format!(
-                "^({})(_[0-9]+)?$",
-                base_usernames
-                    .iter()
-                    .map(|name| regex::escape(name))
-                    .collect::<Vec<_>>()
-                    .join("|")
-            );
-
-            // Get all existing usernames from the database using the regex pattern, then collect
-            // their usernames into a HashSet
-            move |conn| {
-                diesel::sql_query("SELECT * FROM users WHERE username ~ $1")
-                    .bind::<diesel::sql_types::Text, _>(&regex_pattern)
-                    .load::<User>(conn)
-                    .map(|users| users.into_iter().map(|u| u.username).collect())
-            }
-        })
-        .await
-        .map_err(|e| ApiResponse::internal_server_error(e.to_string()))?;
-
-    // Loop through the new users and check if their usernames are already taken
-    for user in new_users.iter_mut() {
-        let mut suffix = 1;
-        let mut assigned_username = user.username.clone();
-
-        // If the username is already taken, append a suffix
-        while existing_usernames.contains(&assigned_username) {
-            assigned_username = format!("{}_{}", user.username, suffix);
-            suffix += 1;
-
-            // If the suffix is greater than the maximum, return an error
-            if suffix > MAX_SIMILAR_USERNAMES {
-                return Err(ApiResponse::bad_request(format!(
-                    "Too many usernames containing '{}'",
-                    user.username,
-                )));
-            }
-        }
-
-        // Add the successful candidate to the used names
-        existing_usernames.insert(assigned_username.clone());
-
-        // Update the username of the to be added user
-        user.username = assigned_username;
-    }
-
-    // Insert into database with a single transaction
-    let inserted_count = db
-        .run({
-            // Clone the new_users vector to move into the closure
-            let insert_users = new_users.clone();
-
-            // Move the database connection into the closure
-            move |conn| {
-                // Insert all users in one transaction; if any error occurs, rollback
-                conn.build_transaction().read_write().run(|conn| {
-                    diesel::insert_into(users::dsl::users)
-                        .values(&insert_users)
-                        .execute(conn)
-                })
-            }
-        })
-        .await
-        .map_err(|e| ApiResponse::internal_server_error(e.to_string()))?;
+    // Insert the new users into the database in a single transaction
+    // This transaction will be rolled back on failure
+    let inserted_count = database::create_transaction_bulk_invitation(&new_users, &db).await?;
 
     // Send an invitation email to the new users
     let inviter = guard.get_user();
@@ -188,6 +106,7 @@ pub async fn invite_new_users_by_form(
 /// ### Returns
 /// * `Ok(Success<InsertedUser>)`: When `Ok`, it returns [`Success`] with the [`InsertedUser`].
 /// * `Err(Error<String>)`: When `Err`, it returns an [`Error`] with [`Null`].
+#[post("/register", data = "<form>")]
 pub async fn create_new_user_by_form(
     form: Form<NewUserForm<'_>>,
     db: Database,
@@ -234,6 +153,7 @@ pub async fn create_new_user_by_form(
     ))
 }
 
+#[post("/create", format = "json", data = "<user>")]
 pub async fn inject_user(user: Json<User>, db: Database) -> String {
     let mut new_user = user.into_inner(); // Extract user data from Json
     let username = new_user.username.clone();
@@ -252,4 +172,34 @@ pub async fn inject_user(user: Json<User>, db: Database) -> String {
         Ok(_) => format!("User {username} created"),
         Err(e) => format!("Error creating user: {e}"), // Print error details
     }
+}
+
+fn update_usernames(
+    new_users: &mut [User],
+    existing_usernames: &mut HashSet<String>,
+) -> Result<(), String> {
+    // Loop through the new users and check if their usernames are already taken
+    for user in new_users.iter_mut() {
+        let mut suffix = 1;
+        let mut assigned_username = user.username.clone();
+
+        // If the username is already taken, append a suffix
+        while existing_usernames.contains(&assigned_username) {
+            assigned_username = format!("{}_{}", user.username, suffix);
+            suffix += 1;
+
+            // If the suffix is greater than the maximum, return an error
+            if suffix > MAX_SIMILAR_USERNAMES {
+                return Err(format!("Too many usernames containing '{}'", user.username));
+            }
+        }
+
+        // Add the unique username to the existing usernames set
+        existing_usernames.insert(assigned_username.clone());
+
+        // Update the username with the unique username
+        user.username = assigned_username;
+    }
+
+    Ok(())
 }
