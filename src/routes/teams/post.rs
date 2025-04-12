@@ -35,7 +35,7 @@ use super::*;
 pub async fn create_new_team_by_form(
     form: Form<NewTeamForm>,
     guard: JwtGuard,
-    db: Database,
+    db: Db,
     cookies: &CookieJar<'_>,
     redis: &State<RedisMutex>,
 ) -> Result<Success<Null>, Error<Null>> {
@@ -127,7 +127,7 @@ pub async fn update_team_by_form(
     id: Uuid,
     form: Form<UpdateTeamForm>,
     guard: JwtGuard,
-    db: Database,
+    db: Db,
     cookies: &CookieJar<'_>,
     redis: &State<RedisMutex>,
 ) -> Result<Success<Null>, Error<Null>> {

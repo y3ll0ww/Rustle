@@ -3,11 +3,9 @@ use uuid::Uuid;
 use crate::{
     api::{ApiResponse, Error, Null, Success},
     auth::JwtGuard,
-    db::Database,
+    database::{Db, users},
     models::users::UserRole,
 };
-
-use super::database;
 
 /// Deletes a [`User`] from the database.
 ///
@@ -33,7 +31,7 @@ use super::database;
 pub async fn delete_user_by_id(
     id: Uuid,
     guard: JwtGuard,
-    db: Database,
+    db: Db,
 ) -> Result<Success<Null>, Error<Null>> {
     // Get user cookie
     let user = guard.get_user();
@@ -46,7 +44,7 @@ pub async fn delete_user_by_id(
     }
 
     // Delete the records from the database and collect the number of deleted rows
-    let deleted_rows = database::delete_user_by_id(&db, id).await?;
+    let deleted_rows = users::delete_user_by_id(&db, id).await?;
 
     // If there are any deleted rows, it means the user is successfully deleted
     if deleted_rows > 0 {

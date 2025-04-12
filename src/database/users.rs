@@ -1,19 +1,16 @@
 use std::collections::HashSet;
 
-use diesel::{
-    result::Error as DieselError,
-    ExpressionMethods, QueryDsl, RunQueryDsl,
-};
+use diesel::{result::Error as DieselError, ExpressionMethods, QueryDsl, RunQueryDsl};
 use uuid::Uuid;
 
 use crate::{
     api::{ApiResponse, Error, Null},
-    db::Database,
-    models::users::{NewUser, PublicUser, User},
+    database::Db,
+    models::users::{NewUser, PublicUser, User, UserStatus},
     schema::users,
 };
 
-pub async fn create_new_user(db: &Database, new_user: NewUser) -> Result<User, Error<Null>> {
+pub async fn create_new_user(db: &Db, new_user: NewUser) -> Result<User, Error<Null>> {
     db.run(move |conn| {
         diesel::insert_into(users::table)
             .values(new_user)
@@ -23,7 +20,7 @@ pub async fn create_new_user(db: &Database, new_user: NewUser) -> Result<User, E
     .map_err(ApiResponse::from_error)
 }
 
-pub async fn get_all_public_users(db: &Database) -> Result<Vec<PublicUser>, Error<Null>> {
+pub async fn get_all_public_users(db: &Db) -> Result<Vec<PublicUser>, Error<Null>> {
     let users: Vec<PublicUser> = db
         .run(move |conn| users::table.get_results::<User>(conn))
         .await
@@ -35,7 +32,15 @@ pub async fn get_all_public_users(db: &Database) -> Result<Vec<PublicUser>, Erro
     Ok(users)
 }
 
-pub async fn get_user_by_username(db: &Database, username: &str) -> Result<User, Error<Null>> {
+pub async fn get_user_by_id(db: &Db, id: &Uuid) -> Result<User, Error<Null>> {
+    let id = id.clone();
+
+    db.run(move |conn| users::table.filter(users::id.eq(id)).first::<User>(conn))
+        .await
+        .map_err(ApiResponse::from_error)
+}
+
+pub async fn get_user_by_username(db: &Db, username: &str) -> Result<User, Error<Null>> {
     let username = username.to_string();
 
     db.run(move |conn| {
@@ -48,7 +53,7 @@ pub async fn get_user_by_username(db: &Database, username: &str) -> Result<User,
 }
 
 pub async fn get_username_duplicates(
-    db: &Database,
+    db: &Db,
     base_usernames: &HashSet<String>,
 ) -> Result<HashSet<String>, Error<Null>> {
     // Pattern for matching usernames; exact and numbered variants:
@@ -79,7 +84,7 @@ pub async fn get_username_duplicates(
 
 pub async fn create_transaction_bulk_invitation(
     new_users: &[User],
-    db: &Database,
+    db: &Db,
 ) -> Result<usize, Error<Null>> {
     // Insert into database with a single transaction
     db.run({
@@ -100,13 +105,32 @@ pub async fn create_transaction_bulk_invitation(
     .map_err(ApiResponse::from_error)
 }
 
-pub async fn delete_user_by_id(db: &Database, id: Uuid) -> Result<usize, Error<Null>> {
+pub async fn set_user_password(
+    db: &Db,
+    id: Uuid,
+    password_hash: String,
+) -> Result<usize, Error<Null>> {
+    let id = id.clone();
+
+    db.run(move |conn| {
+        diesel::update(users::table.filter(users::id.eq(&id)))
+            .set((
+                users::password.eq(&password_hash),
+                users::status.eq(i16::from(UserStatus::Active)),
+            ))
+            .execute(conn)
+            .map_err(ApiResponse::from_error)
+    })
+    .await
+}
+
+pub async fn delete_user_by_id(db: &Db, id: Uuid) -> Result<usize, Error<Null>> {
     db.run(move |conn| diesel::delete(users::table.filter(users::id.eq(id))).execute(conn))
         .await
         .map_err(ApiResponse::from_error)
 }
 
-pub async fn inject_user(db: &Database, user: User) -> Result<usize, DieselError> {
+pub async fn inject_user(db: &Db, user: User) -> Result<usize, DieselError> {
     db.run(move |conn| diesel::insert_into(users::table).values(user).execute(conn))
         .await
 }

@@ -48,15 +48,19 @@ impl RedisPool {
     where
         T: DeserializeOwned,
     {
-        let mut con = self.get_connection().await.unwrap();
+        let mut con = self.get_connection().await.map_err(|e|
+            ApiResponse::internal_server_error(format!("Cache connection error: {e}"))
+        )?;
 
         // Try to get the cached data
-        let cached_data: Option<String> = con.get(key).await.unwrap();
+        let cached_data: Option<String> = con.get(key).await.map_err(|e|
+            ApiResponse::internal_server_error(format!("Cache retrieval error: {e}"))
+        )?;
 
         // If data exists, deserialize it
         if let Some(data) = cached_data {
             let deserialized_data: T = serde_json::from_str(&data).map_err(|e| {
-                ApiResponse::internal_server_error(format!("Failed to deserialize: {}", e))
+                ApiResponse::conflict(format!("Failed to deserialize: {}", e), data)
             })?;
             Ok(Some(deserialized_data))
         } else {

@@ -26,7 +26,7 @@ use super::*;
 pub async fn delete_team_by_id(
     id: Uuid,
     guard: JwtGuard,
-    db: Database,
+    db: Db,
     cookies: &CookieJar<'_>,
     redis: &State<RedisMutex>,
 ) -> Result<Success<Null>, Error<Null>> {

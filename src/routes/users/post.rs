@@ -5,7 +5,7 @@ use crate::{
     auth::JwtGuard,
     cache::{self, RedisMutex},
     cookies::TOKEN_COOKIE,
-    db::Database,
+    database::{Db, users as database},
     email::MailClient,
     forms::users::{InvitedMultipleUsersForm, LoginForm, NewUserForm, Password},
     models::users::{NewUser, PublicUser, User},
@@ -13,14 +13,12 @@ use crate::{
 use rocket::{form::Form, http::CookieJar, serde::json::Json, State};
 use uuid::Uuid;
 
-use super::database;
-
 const MAX_SIMILAR_USERNAMES: usize = 100;
 
 #[post("/login", data = "<credentials>")]
 pub async fn login_by_form(
     credentials: Form<LoginForm<'_>>,
-    db: Database,
+    db: Db,
     cookies: &CookieJar<'_>,
 ) -> Result<Success<Null>, Error<Null>> {
     // Get the user from the database
@@ -56,7 +54,7 @@ pub fn logout(_guard: JwtGuard, cookies: &CookieJar<'_>) -> Success<String> {
 pub async fn invite_new_users_by_form(
     guard: JwtGuard,
     form: Form<InvitedMultipleUsersForm<'_>>,
-    db: Database,
+    db: Db,
     redis: &State<RedisMutex>,
 ) -> Result<Success<Vec<String>>, Error<Null>> {
     // Create a vector of Users and a HashSet of base usernames from the form
@@ -89,8 +87,8 @@ pub async fn invite_new_users_by_form(
         // Save the token for the response
         tokens.push(token.clone());
 
-        // Add the token to the redis cache
-        cache::users::add_invite_token(&redis, &token, PublicUser::from(&user)).await?;
+        // Add the token to the redis cache; containing the user ID
+        cache::users::add_invite_token(&redis, &token, user.id).await?;
 
         // Send an invitation email to the new users, containing the token
         mail_client
@@ -119,7 +117,7 @@ pub async fn invite_new_users_by_form(
 #[post("/register", data = "<form>")]
 pub async fn create_new_user_by_form(
     form: Form<NewUserForm<'_>>,
-    db: Database,
+    db: Db,
     cookies: &CookieJar<'_>,
 ) -> Result<Success<Null>, Error<Null>> {
     // Hash the provided password
@@ -152,7 +150,7 @@ pub async fn create_new_user_by_form(
 }
 
 #[post("/create", format = "json", data = "<user>")]
-pub async fn inject_user(user: Json<User>, db: Database) -> String {
+pub async fn inject_user(user: Json<User>, db: Db) -> String {
     let mut new_user = user.into_inner(); // Extract user data from Json
     let username = new_user.username.clone();
     new_user.id = Uuid::new_v4(); // Generate a new UUID

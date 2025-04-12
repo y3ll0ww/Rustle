@@ -13,7 +13,7 @@ use super::*;
 /// * **500 Server Error**: Any database operation fails.
 pub async fn get_teams_by_user_id(
     guard: JwtGuard,
-    db: Database,
+    db: Db,
 ) -> Result<Success<Vec<Team>>, Error<Null>> {
     let user_id = guard.get_user().id;
 
@@ -57,7 +57,7 @@ pub async fn get_teams_by_user_id(
 pub async fn get_team_by_id(
     id: Uuid,
     _guard: JwtGuard,
-    db: Database,
+    db: Db,
     cookies: &CookieJar<'_>,
     redis: &State<RedisMutex>,
 ) -> Result<Success<TeamWithMembers>, Error<Null>> {
