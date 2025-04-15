@@ -132,8 +132,8 @@ impl From<UserRole> for i16 {
 pub enum UserStatus {
     // User created but hasn't set a password yet)
     Invited = 0,
-    /// User has set their password
-    PasswordSet = 1,
+    /// User is inactive; currently not used
+    Inactive = 1,
     /// User is fully active, possibly after email verification
     Active = 2,
     /// User is suspended
@@ -148,7 +148,7 @@ impl TryFrom<i16> for UserStatus {
     fn try_from(value: i16) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(UserStatus::Invited),
-            1 => Ok(UserStatus::PasswordSet),
+            1 => Ok(UserStatus::Inactive),
             2 => Ok(UserStatus::Active),
             3 => Ok(UserStatus::Suspended),
             4 => Ok(UserStatus::Deleted),

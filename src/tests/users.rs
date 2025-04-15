@@ -17,7 +17,7 @@ use crate::{
     cache::{users::get_invite_token, RedisMutex},
     cookies::TOKEN_COOKIE,
     forms::users::{InvitedMultipleUsersForm, InvitedUserForm, LoginForm, NewUserForm, Password},
-    models::users::{User, UserRole, UserStatus},
+    models::users::{PublicUser, User, UserRole, UserStatus},
     tests::{async_test_client, test_client},
 };
 
@@ -147,8 +147,6 @@ async fn invite_new_users_by_form() {
         ],
     };
 
-    println!("Invitation body: {}", invitation.body());
-
     // Send submit request
     let response = client
         .post("/user/invite")
@@ -166,10 +164,6 @@ async fn invite_new_users_by_form() {
         .await
         .unwrap();
 
-    // Print the information from the response
-    println!("Message: {}", invitation_response.message);
-    println!("Tokens:  {:?}", invitation_response.data);
-
     // Assert the submit request was successful
     assert_eq!(status, Status::Ok);
 
@@ -185,6 +179,72 @@ async fn invite_new_users_by_form() {
         // Attempt getting the token from the cache
         assert!(get_invite_token(redis, &token).await.is_ok());
     }
+}
+
+#[tokio::test]
+async fn set_password_after_receiving_invite() {
+    let client = async_test_client().await;
+
+    let user_id = Uuid::from_str("2bb99c44-a8ee-46d6-83b7-9c2a203b67d9").unwrap();
+
+    // Get the redis cache
+    let redis: &State<RedisMutex> = client
+        .rocket()
+        .state::<RedisMutex>()
+        .expect("Redis state should be available")
+        .into();
+
+    // Generate a random token
+    let token = crate::cache::create_random_token(64);
+
+    // Add the token to the cache
+    assert!(
+        crate::cache::users::add_invite_token(&redis, &token, user_id)
+            .await
+            .is_ok()
+    );
+
+    // User clicks the link: The token should be recovered
+    let response = client.get(format!("/user/invite/get/{token}")).dispatch().await;
+
+    assert_eq!(response.status(), Status::Ok);
+
+    // User fills in the password: User will be activated
+    let password = Password {
+        first: PASSWORD,
+        second: PASSWORD,
+    };
+
+    let response = client
+        .put(format!("/user/invite/set/{token}"))
+        .body(password.body())
+        .header(ContentType::Form)
+        .dispatch()
+        .await;
+
+    assert_eq!(response.status(), Status::Ok);
+
+    // Verify that the cache doesn't have the invitation token anymore
+    assert!(crate::cache::users::get_invite_token(&redis, &token)
+        .await
+        .is_err());
+
+    async_login(&client, ADMIN_LOGIN).await;
+
+    // Verify that the user status is upgraded
+    let response = client.get(format!("/user/{USERNAME}")).dispatch().await;
+
+    // Copy the status for later assertion
+    let status = response.status().clone();
+
+    // Extract the data to print it to the screen
+    let data = response.into_string().await;
+
+    assert_eq!(status, Status::Ok);
+    assert!(data.is_some());
+
+    let public_user = serde_json::from_str::<PublicUser>(&data.unwrap()).unwrap();
+    assert_eq!(public_user.status, i16::from(UserStatus::Active));
 }
 
 /// Logging in and logging out a user.

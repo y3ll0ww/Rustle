@@ -134,7 +134,7 @@ pub struct LoginForm<'v> {
 
 impl LoginForm<'_> {
     pub fn body(&self) -> String {
-        format!("username={}&password={}", self.username, self.password,)
+        format!("username={}&password={}", self.username, self.password)
     }
 }
 
@@ -148,6 +148,10 @@ pub struct Password<'v> {
 }
 
 impl Password<'_> {
+    pub fn body(&self) -> String {
+        format!("first={}&second={}", self.first, self.second)
+    }
+
     pub fn generate(password: Option<&str>) -> Result<String, argon2::password_hash::Error> {
         // Use input or a generated UUID
         let password = match password {

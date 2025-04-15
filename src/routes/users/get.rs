@@ -38,7 +38,7 @@ pub async fn get_user_by_username(
         })
 }
 
-#[get("/invite/<token>/get")]
+#[get("/invite/get/<token>")]
 pub async fn get_invited_user(
     token: String,
     db: Db,
