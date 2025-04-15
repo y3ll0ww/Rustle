@@ -175,6 +175,10 @@ impl Password<'_> {
         Ok(Argon2::default().verify_password(password, &hash).is_ok())
     }
 
+    pub fn inputs_match(&self) -> bool {
+        self.first == self.second
+    }
+
     pub fn hash_password(&self) -> Result<String, argon2::password_hash::Error> {
         // Argon2 with default params (Argon2id v19)
         let argon2 = Argon2::default();

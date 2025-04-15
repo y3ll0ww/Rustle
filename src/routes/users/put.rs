@@ -17,6 +17,13 @@ pub async fn set_password_after_invite(
     // Get the user from the redis cache
     let user_id = get_invite_token(redis, &token).await?;
 
+    // Verify that the password input match
+    if !form.inputs_match() {
+        return Err(ApiResponse::bad_request(
+            "Password inputs do not match".to_string(),
+        ));
+    };
+
     // Hash the provided password
     let password_hash = form
         .hash_password()
