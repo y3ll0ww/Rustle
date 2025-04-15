@@ -3,7 +3,10 @@ use rocket::http::{ContentType, Status};
 use crate::{
     forms::teams::NewTeamForm,
     routes::TEAMS,
-    tests::{test_client, users::{login, DEFAULT_LOGIN}},
+    tests::{
+        test_client,
+        users::{login, DEFAULT_LOGIN},
+    },
 };
 
 #[test]

@@ -205,7 +205,10 @@ async fn set_password_after_receiving_invite() {
     );
 
     // User clicks the link: The token should be recovered
-    let response = client.get(format!("/user/invite/get/{token}")).dispatch().await;
+    let response = client
+        .get(format!("/user/invite/get/{token}"))
+        .dispatch()
+        .await;
 
     assert_eq!(response.status(), Status::Ok);
 

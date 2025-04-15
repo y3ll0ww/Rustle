@@ -24,13 +24,13 @@ impl<T> ApiResponse<T> {
 
         match error {
             DieselError::NotFound => Self::not_found(message),
-            DieselError::DatabaseError(error_kind, _) => match error_kind {
+            DieselError::DatabaseError(
                 DatabaseErrorKind::CheckViolation
                 | DatabaseErrorKind::ForeignKeyViolation
                 | DatabaseErrorKind::NotNullViolation
-                | DatabaseErrorKind::UniqueViolation => Self::bad_request(message),
-                _ => Self::internal_server_error(message)
-            }
+                | DatabaseErrorKind::UniqueViolation,
+                _,
+            ) => Self::bad_request(message),
             _ => Self::internal_server_error(message),
         }
     }

@@ -64,7 +64,7 @@ pub async fn get_team_by_id(
     let redis = redis.lock().await;
 
     // Step 1: Check the team update stored in cookies
-    let team_update_from_cookie = get_team_update_cookie(&id, cookies).unwrap_or_default();
+    let team_update_from_cookie = get_team_update_cookie(id, cookies).unwrap_or_default();
 
     // Step 2: Get the team update from the database
     let team_id = id;
@@ -84,7 +84,7 @@ pub async fn get_team_by_id(
         Some(team_update) if team_update.last_updated == team_update_from_db.last_updated => {
             // Retrieve the team information from the cache (ignore error in case cache not working)
             let team_from_cache = redis
-                .get_from_cache::<TeamWithMembers>(&team_cache_key(&id))
+                .get_from_cache::<TeamWithMembers>(&team_cache_key(id))
                 .await
                 .unwrap_or(None);
 
@@ -128,7 +128,7 @@ pub async fn get_team_by_id(
 
     // Add the team with members to the cache (ignore error in case cache not working)
     let _ = redis
-        .set_to_cache(&team_cache_key(&id), &team_from_database, TEAM_CACHE_TTL)
+        .set_to_cache(&team_cache_key(id), &team_from_database, TEAM_CACHE_TTL)
         .await;
 
     Ok(ApiResponse::success(

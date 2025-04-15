@@ -5,7 +5,7 @@ use crate::{
     auth::JwtGuard,
     cache::{self, RedisMutex},
     cookies::TOKEN_COOKIE,
-    database::{Db, users as database},
+    database::{users as database, Db},
     email::MailClient,
     forms::users::{InvitedMultipleUsersForm, LoginForm, NewUserForm, Password},
     models::users::{NewUser, PublicUser, User},
@@ -83,12 +83,12 @@ pub async fn invite_new_users_by_form(
     for user in new_users {
         // Create a random token with a length of 64 characters
         let token = cache::create_random_token(64);
-        
+
         // Save the token for the response
         tokens.push(token.clone());
 
         // Add the token to the redis cache; containing the user ID
-        cache::users::add_invite_token(&redis, &token, user.id).await?;
+        cache::users::add_invite_token(redis, &token, user.id).await?;
 
         // Send an invitation email to the new users, containing the token
         mail_client

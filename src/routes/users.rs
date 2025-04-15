@@ -15,6 +15,5 @@ pub fn routes() -> Vec<rocket::Route> {
         post::login_by_form,            // POST:    /user/login
         post::logout,                   // POST:    /user/logout
         post::create_new_user_by_form,  // POST:    /user/register
-        
     ]
 }

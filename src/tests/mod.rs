@@ -8,5 +8,7 @@ pub fn test_client() -> Client {
 }
 
 pub async fn async_test_client() -> AsyncClient {
-    AsyncClient::tracked(crate::rocket()).await.expect("valid rocket instance")
+    AsyncClient::tracked(crate::rocket())
+        .await
+        .expect("valid rocket instance")
 }

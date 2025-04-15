@@ -3,7 +3,7 @@ use rocket::{form::Form, State};
 use crate::{
     api::{ApiResponse, Error, Null, Success},
     cache::{self, users::get_invite_token, RedisMutex},
-    database::{Db, users as database},
+    database::{users as database, Db},
     forms::users::Password,
 };
 
@@ -30,7 +30,7 @@ pub async fn set_password_after_invite(
     }
 
     // Remove the invitation token from the cache
-    cache::users::remove_invite_token(&redis, &token)
+    cache::users::remove_invite_token(redis, &token)
         .await
         .map(|()| ApiResponse::success(format!("User '{user_id}' successfully activated"), None))
 }

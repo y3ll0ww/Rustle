@@ -52,13 +52,13 @@ pub async fn delete_team_by_id(
     }
 
     // 3. Remove the relevant cookie
-    remove_team_update_cookie(&id, cookies)?;
+    remove_team_update_cookie(id, cookies)?;
 
     // 4. Remove the team information in the cache; if this fails ignore
     let _ = redis
         .lock()
         .await
-        .remove_from_cache(&team_cache_key(&id))
+        .remove_from_cache(&team_cache_key(id))
         .await;
 
     // 5. Remove the team from the database

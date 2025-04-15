@@ -48,7 +48,7 @@ pub async fn get_invited_user(
     let user_id = cache::users::get_invite_token(redis, &token).await?;
 
     // Get the user from the database
-    let user = database::get_user_by_id(&db, &user_id).await?;
+    let user = database::get_user_by_id(&db, user_id).await?;
 
     // Return not found if the user is not of status invited
     // > Returning not found avoids leaking user existence or status, preventing malicious actors

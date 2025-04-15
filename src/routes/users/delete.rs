@@ -3,7 +3,7 @@ use uuid::Uuid;
 use crate::{
     api::{ApiResponse, Error, Null, Success},
     auth::JwtGuard,
-    database::{Db, users},
+    database::{users, Db},
     models::users::UserRole,
 };
 

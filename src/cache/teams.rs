@@ -11,11 +11,11 @@ use super::RedisMutex;
 pub const TEAM_CACHE_KEY: &str = "team:";
 pub const TEAM_CACHE_TTL: Option<u64> = Some(3600); // One hour
 
-pub fn team_cache_key(team_id: &Uuid) -> String {
+pub fn team_cache_key(team_id: Uuid) -> String {
     format!("{TEAM_CACHE_KEY}{team_id}")
 }
 
-pub async fn set_team_cache(redis: &State<RedisMutex>, team_id: &Uuid, team: &TeamWithMembers) {
+pub async fn set_team_cache(redis: &State<RedisMutex>, team_id: Uuid, team: &TeamWithMembers) {
     let _ = redis
         .lock()
         .await
@@ -25,7 +25,7 @@ pub async fn set_team_cache(redis: &State<RedisMutex>, team_id: &Uuid, team: &Te
 
 pub async fn update_team_cache(
     redis: &State<RedisMutex>,
-    team_id: &Uuid,
+    team_id: Uuid,
     form: Option<UpdateTeamForm>,
     members: Option<Vec<TeamMemberInfo>>,
 ) -> bool {

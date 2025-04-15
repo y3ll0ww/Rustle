@@ -48,14 +48,14 @@ impl RedisPool {
     where
         T: DeserializeOwned,
     {
-        let mut con = self.get_connection().await.map_err(|e|
+        let mut con = self.get_connection().await.map_err(|e| {
             ApiResponse::internal_server_error(format!("Cache connection error: {e}"))
-        )?;
+        })?;
 
         // Try to get the cached data
-        let cached_data: Option<String> = con.get(key).await.map_err(|e|
+        let cached_data: Option<String> = con.get(key).await.map_err(|e| {
             ApiResponse::internal_server_error(format!("Cache retrieval error: {e}"))
-        )?;
+        })?;
 
         // If data exists, deserialize it
         if let Some(data) = cached_data {
@@ -106,11 +106,11 @@ impl RedisPool {
 
     // Method to remove data to Redis cache
     pub async fn remove_from_cache(&self, key: &str) -> Result<(), Error<String>> {
-        let mut con = self.get_connection().await.map_err(|e| {
+        let mut conn = self.get_connection().await.map_err(|e| {
             ApiResponse::internal_server_error(format!("Couldn't optain Redis connection: {e}"))
         })?;
 
-        let _: () = con
+        let _: () = conn
             .del(key)
             .await
             .map_err(|e| ApiResponse::internal_server_error(format!("Redis DEL error: {e}")))?;

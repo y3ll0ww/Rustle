@@ -32,9 +32,7 @@ pub async fn get_all_public_users(db: &Db) -> Result<Vec<PublicUser>, Error<Null
     Ok(users)
 }
 
-pub async fn get_user_by_id(db: &Db, id: &Uuid) -> Result<User, Error<Null>> {
-    let id = id.clone();
-
+pub async fn get_user_by_id(db: &Db, id: Uuid) -> Result<User, Error<Null>> {
     db.run(move |conn| users::table.filter(users::id.eq(id)).first::<User>(conn))
         .await
         .map_err(ApiResponse::from_error)
@@ -110,8 +108,6 @@ pub async fn set_user_password(
     id: Uuid,
     password_hash: String,
 ) -> Result<usize, Error<Null>> {
-    let id = id.clone();
-
     db.run(move |conn| {
         diesel::update(users::table.filter(users::id.eq(&id)))
             .set((

@@ -117,7 +117,7 @@ pub async fn create_new_team_by_form(
     add_team_update_cookie(team_update, cookies)?;
 
     // Step 4: Add the team information to the cache
-    set_team_cache(redis, &team_id, &cache_team_with_members).await;
+    set_team_cache(redis, team_id, &cache_team_with_members).await;
 
     // Return success response
     Ok(ApiResponse::success(success_message, None))
@@ -194,7 +194,7 @@ pub async fn update_team_by_form(
         .await?;
 
     // Step 5: Update the team in the cache
-    if update_team_cache(redis, &id, Some(form_clone), None).await {
+    if update_team_cache(redis, id, Some(form_clone), None).await {
         // Step 6: If cache has been updated, update the cookie too
         add_team_update_cookie(team_update, cookies)?;
     }
