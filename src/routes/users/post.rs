@@ -11,7 +11,6 @@ use crate::{
     models::users::{NewUser, PublicUser, User},
 };
 use rocket::{form::Form, http::CookieJar, serde::json::Json, State};
-use tokio::time::Instant;
 use uuid::Uuid;
 
 const MAX_SIMILAR_USERNAMES: usize = 100;
@@ -73,16 +72,8 @@ pub async fn invite_new_users_by_form(
     // Insert the new users into the database in a single transaction
     let inserted_count = database::create_transaction_bulk_invitation(&new_users, &db).await?;
 
-    // Create persistent variables for the following loop
-    let inviter = guard.get_user();
-    let mail_client = MailClient::no_reply();
-
     // Declare a vector to keep the tokens
     let mut tokens = Vec::new();
-
-    // TODO!: Remove after mail worker implementation
-    let start_time = Instant::now();
-    println!("START TIME: {start_time:?}");
 
     // Loop through the collection of new users
     for user in new_users {
@@ -95,17 +86,16 @@ pub async fn invite_new_users_by_form(
         // Add the token to the redis cache; containing the user ID
         cache::users::add_invite_token(redis, &token, user.id).await?;
 
-        // Send an invitation email to the new users, containing the token
-        mail_client
-            .send_invitation(&inviter, &PublicUser::from(&user), form.space, &token)
-            .map_err(ApiResponse::internal_server_error)?;
-    }
+        let inviter = guard.get_user();
+        let recipient = PublicUser::from(&user);
+        let team_name = form.space.to_string();
 
-    // TODO!: Remove after mail worker implementation
-    let end_time = Instant::now();
-    println!("END TIME: {end_time:?}");
-    let time_elapsed = end_time.duration_since(start_time).as_secs();
-    println!("Elapsed: {time_elapsed}");
+        // Send an invitation email to the new users, containing the token
+        tokio::spawn(async move {
+            let _ =
+                MailClient::no_reply().send_invitation(&inviter, &recipient, &team_name, &token);
+        });
+    }
 
     // Return success response
     Ok(ApiResponse::success(
