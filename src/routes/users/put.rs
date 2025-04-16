@@ -9,7 +9,7 @@ use crate::{
 
 #[put("/invite/set/<token>", data = "<form>")]
 pub async fn set_password_after_invite(
-    token: String,
+    token: &str,
     form: Form<Password<'_>>,
     db: Db,
     redis: &State<RedisMutex>,

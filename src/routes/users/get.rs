@@ -23,7 +23,7 @@ pub async fn list_all_users(
 
 #[get("/<username>")]
 pub async fn get_user_by_username(
-    username: String,
+    username: &str,
     _guard: JwtGuard,
     db: Db,
 ) -> Result<Success<PublicUser>, Error<Null>> {
@@ -40,7 +40,7 @@ pub async fn get_user_by_username(
 
 #[get("/invite/get/<token>")]
 pub async fn get_invited_user(
-    token: String,
+    token: &str,
     db: Db,
     redis: &State<RedisMutex>,
 ) -> Result<Success<Vec<String>>, Error<Null>> {

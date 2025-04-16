@@ -11,6 +11,7 @@ use crate::{
     models::users::{NewUser, PublicUser, User},
 };
 use rocket::{form::Form, http::CookieJar, serde::json::Json, State};
+use tokio::time::Instant;
 use uuid::Uuid;
 
 const MAX_SIMILAR_USERNAMES: usize = 100;
@@ -79,6 +80,10 @@ pub async fn invite_new_users_by_form(
     // Declare a vector to keep the tokens
     let mut tokens = Vec::new();
 
+    // TODO!: Remove after mail worker implementation
+    let start_time = Instant::now();
+    println!("START TIME: {start_time:?}");
+
     // Loop through the collection of new users
     for user in new_users {
         // Create a random token with a length of 64 characters
@@ -95,6 +100,12 @@ pub async fn invite_new_users_by_form(
             .send_invitation(&inviter, &PublicUser::from(&user), form.space, &token)
             .map_err(ApiResponse::internal_server_error)?;
     }
+
+    // TODO!: Remove after mail worker implementation
+    let end_time = Instant::now();
+    println!("END TIME: {end_time:?}");
+    let time_elapsed = end_time.duration_since(start_time).as_secs();
+    println!("Elapsed: {time_elapsed}");
 
     // Return success response
     Ok(ApiResponse::success(
