@@ -57,6 +57,9 @@ pub fn logout(_guard: JwtGuard, cookies: &CookieJar<'_>) -> Success<String> {
     )
 }
 
+/// TODO!:
+/// - Adding space/project functionality
+/// - Inviting only when a certain role in space
 #[post("/invite", data = "<form>")]
 pub async fn invite_new_users_by_form(
     guard: JwtGuard,
@@ -108,6 +111,54 @@ pub async fn invite_new_users_by_form(
     Ok(ApiResponse::success(
         format!("{inserted_count} users invited"),
         Some(tokens),
+    ))
+}
+
+/// TODO!:
+/// - Adding space/project functionality
+/// - Inviting only when a certain role in space
+#[post("/invite/re/<space>/<id>")]
+pub async fn reinvite_user_by_id(
+    space: &str,
+    id: Uuid,
+    guard: JwtGuard,
+    db: Db,
+    redis: &State<RedisMutex>,
+) -> Result<Success<String>, Error<Null>> {
+    // Get the user from the database
+    let user = database::get_user_by_id(&db, id).await?;
+
+    // Extract the user status
+    let user_status = UserStatus::try_from(user.status)
+        .map_err(|e| ApiResponse::conflict(e, String::new()))?;
+
+    // Make sure the user status is still on invited
+    if !matches!(user_status, UserStatus::Invited) {
+        return Err(ApiResponse::bad_request(format!(
+            "User {} has status {user_status:?}",
+            user.username,
+        )));
+    };
+
+    // Create a random token with a length of 64 characters
+    let token = cache::create_random_token(64);
+
+    // Add the token to the redis cache; containing the user ID
+    cache::users::add_invite_token(redis, &token, user.id).await?;
+
+    // Get the required information for the invitation email
+    let inviter = guard.get_user();
+    let recipient = PublicUser::from(&user);
+    let team_name = space.replace('_', " ");
+
+    // Send the email
+    MailClient::no_reply()
+        .send_invitation(&inviter, &recipient, &team_name, &token)
+        .map_err(|e| ApiResponse::internal_server_error(e))?;
+
+    Ok(ApiResponse::success(
+        format!("{} invited", user.username),
+        Some(token),
     ))
 }
 

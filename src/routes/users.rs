@@ -12,6 +12,7 @@ pub fn routes() -> Vec<rocket::Route> {
         post::invite_new_users_by_form, // POST:    /user/invite
         get::get_invited_user,          // GET:     /user/invite/get/<token>
         put::set_password_after_invite, // PUT:     /user/invite/set/<token>
+        post::reinvite_user_by_id,      // POST:    /user/invite/re/<space>/<id>
         post::login_by_form,            // POST:    /user/login
         post::logout,                   // POST:    /user/logout
     ]

@@ -28,6 +28,7 @@ const ROUTE_DELETE: &str = "/user/delete/";
 const ROUTE_INVITE: &str = "/user/invite";
 const ROUTE_INVITE_GET: &str = "/user/invite/get/";
 const ROUTE_INVITE_SET: &str = "/user/invite/set/";
+const ROUTE_REINVITE: &str = "/user/invite/re/";
 
 const ADMIN_USERNAME: &str = "admin";
 const ADMIN_PASSWORD: &str = "admin_password123";

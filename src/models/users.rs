@@ -129,6 +129,7 @@ impl From<UserRole> for i16 {
     }
 }
 
+#[derive(Debug, PartialEq)]
 pub enum UserStatus {
     // User created but hasn't set a password yet)
     Invited = 0,
