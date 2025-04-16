@@ -1,0 +1,206 @@
+use std::str::FromStr;
+
+use rocket::{
+    http::{ContentType, Status}, local::asynchronous::Client, State
+};
+use uuid::Uuid;
+
+use super::{async_login, DEFAULT_LOGIN, DEFAULT_PASSWORD};
+use crate::{
+    api::ApiResponse,
+    cache::{self, RedisMutex},
+    forms::users::{InvitedMultipleUsersForm, InvitedUserForm, Password},
+    models::users::{PublicUser, UserStatus},
+    tests::{
+        async_test_client,
+        users::{
+            ADMIN_LOGIN, DUPLICATE_USER_1_EMAIL_ADDR, DUPLICATE_USER_2_EMAIL_ADDR,
+            INVITED_USER_1_EMAIL_ADDR, INVITED_USER_1_FIRST_NAME, INVITED_USER_1_LAST_NAME,
+            INVITED_USER_1_LOGIN, INVITED_USER_1_USERNAME, INVITED_USER_2_EMAIL_ADDR,
+            INVITED_USER_2_FIRST_NAME, INVITED_USER_2_LAST_NAME, INVITED_USER_3_EMAIL_ADDR,
+            INVITED_USER_3_FIRST_NAME, INVITED_USER_3_LAST_NAME,
+        },
+    },
+};
+
+#[tokio::test]
+async fn invite_new_users_by_form() {
+    let client = async_test_client().await;
+
+    async_login(&client, DEFAULT_LOGIN).await;
+
+    // Create a form with test data
+    let invitation = InvitedMultipleUsersForm {
+        space: "Some space",
+        users: vec![
+            InvitedUserForm {
+                first_name: INVITED_USER_1_FIRST_NAME,
+                last_name: INVITED_USER_1_LAST_NAME,
+                email: INVITED_USER_1_EMAIL_ADDR,
+            },
+            InvitedUserForm {
+                first_name: INVITED_USER_1_FIRST_NAME,
+                last_name: INVITED_USER_1_LAST_NAME,
+                email: DUPLICATE_USER_1_EMAIL_ADDR,
+            },
+            InvitedUserForm {
+                first_name: INVITED_USER_2_FIRST_NAME,
+                last_name: INVITED_USER_2_LAST_NAME,
+                email: INVITED_USER_2_EMAIL_ADDR,
+            },
+            InvitedUserForm {
+                first_name: INVITED_USER_2_FIRST_NAME,
+                last_name: INVITED_USER_2_LAST_NAME,
+                email: DUPLICATE_USER_2_EMAIL_ADDR,
+            },
+            InvitedUserForm {
+                first_name: INVITED_USER_3_FIRST_NAME,
+                last_name: INVITED_USER_3_LAST_NAME,
+                email: INVITED_USER_3_EMAIL_ADDR,
+            },
+        ],
+    };
+
+    // Send submit request
+    let response = client
+        .post("/user/invite")
+        .body(invitation.body())
+        .header(ContentType::Form)
+        .dispatch()
+        .await;
+
+    // Clone the status before printing
+    let status = response.status().clone();
+
+    // Extract the ApiResponse containing the vector of strings with the tokens
+    let invitation_response = response
+        .into_json::<ApiResponse<Vec<String>>>()
+        .await
+        .unwrap();
+
+    // Assert the submit request was successful
+    assert_eq!(status, Status::Ok);
+
+    // Get the redis cache
+    let redis: &State<RedisMutex> = client
+        .rocket()
+        .state::<RedisMutex>()
+        .expect("Redis state should be available")
+        .into();
+
+    // Loop through the tokens from the response
+    for token in invitation_response.data.unwrap() {
+        // Attempt getting the token from the cache
+        assert!(cache::users::get_invite_token(redis, &token).await.is_ok());
+    }
+}
+
+#[tokio::test]
+async fn set_password_after_receiving_invite() {
+    let client = async_test_client().await;
+
+    // Extract the user ID for INVITED_USER_1 first
+    let user_id = get_invited_user_1_user_id(&client).await;
+
+    // Get the redis cache
+    let redis: &State<RedisMutex> = client
+        .rocket()
+        .state::<RedisMutex>()
+        .expect("Redis state should be available")
+        .into();
+
+    // Generate a random token
+    let token = cache::create_random_token(64);
+
+    // Convert the user ID to a UUID
+    let user_id = Uuid::from_str(&user_id).unwrap();
+
+    // Add the token to the cache
+    assert!(cache::users::add_invite_token(&redis, &token, user_id)
+        .await
+        .is_ok());
+
+    // User clicks the link: The token should be recovered
+    let response = client
+        .get(format!("/user/invite/get/{token}"))
+        .dispatch()
+        .await;
+
+    assert_eq!(response.status(), Status::Ok);
+
+    // User fills in the password: User will be activated
+    let password = Password {
+        first: DEFAULT_PASSWORD,
+        second: DEFAULT_PASSWORD,
+    };
+
+    let response = client
+        .put(format!("/user/invite/set/{token}"))
+        .body(password.body())
+        .header(ContentType::Form)
+        .dispatch()
+        .await;
+
+    assert_eq!(response.status(), Status::Ok);
+
+    // Verify that the cache doesn't have the invitation token anymore
+    assert!(cache::users::get_invite_token(&redis, &token)
+        .await
+        .is_err());
+
+    // Login as newly created user
+    async_login(&client, INVITED_USER_1_LOGIN).await;
+
+    // Verify that the user status is upgraded
+    let response = client
+        .get(format!("/user/{INVITED_USER_1_USERNAME}"))
+        .dispatch()
+        .await;
+
+    // Copy the status for later assertion
+    let status = response.status().clone();
+
+    // Extract the data to print it to the screen
+    let deserialized_response = response.into_json::<ApiResponse<PublicUser>>().await;
+
+    assert_eq!(status, Status::Ok);
+    assert!(deserialized_response.is_some());
+
+    // Get the public user data from the deserialized response
+    let public_user = deserialized_response.unwrap().data.unwrap();
+
+    // Verify that the user is now active
+    assert_eq!(public_user.status, i16::from(UserStatus::Active));
+}
+
+
+async fn get_invited_user_1_user_id(client: &Client) -> String {
+    async_login(&client, ADMIN_LOGIN).await;
+
+    // Send get request
+    let response = client
+        .get(format!("/user/{INVITED_USER_1_USERNAME}"))
+        .dispatch()
+        .await;
+
+    // Assert the delete request was successful
+    assert_eq!(response.status(), Status::Ok);
+
+    // Extract the data to print it to the screen
+    let deserialized_response = response.into_json::<ApiResponse<PublicUser>>().await;
+    assert!(deserialized_response.is_some());
+
+    // Get the public user data from the deserialized response
+    let public_user = deserialized_response.unwrap().data.unwrap();
+
+    // Verify that the user is invited
+    assert_eq!(public_user.status, i16::from(UserStatus::Invited));
+
+    // Log out
+    let logout_response = client.post("/user/logout").dispatch().await;
+
+    // Assert that the logout request was handled succesfully
+    assert_eq!(logout_response.status(), Status::Ok);
+
+    public_user.id.to_string()
+}

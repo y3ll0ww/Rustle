@@ -1,414 +1,60 @@
-use std::str::FromStr;
-
-use chrono::{DateTime, NaiveDate, NaiveDateTime, NaiveTime, Utc};
-
 use rocket::{
     http::{ContentType, Status},
     local::{
         asynchronous::{Client as AsyncClient, LocalResponse as AsyncLocalResponse},
         blocking::{Client, LocalResponse},
     },
-    State,
-};
-use uuid::Uuid;
-
-use crate::{
-    api::ApiResponse,
-    cache::{users::get_invite_token, RedisMutex},
-    cookies::TOKEN_COOKIE,
-    forms::users::{InvitedMultipleUsersForm, InvitedUserForm, LoginForm, NewUserForm, Password},
-    models::users::{PublicUser, User, UserRole, UserStatus},
-    tests::{async_test_client, test_client},
 };
 
-const USERNAME: &str = "test_user";
-const PASSWORD: &str = "strong_password";
+use crate::{cookies::TOKEN_COOKIE, forms::users::LoginForm};
+
+#[cfg(test)]
+mod deleting_users;
+#[cfg(test)]
+mod eol_functions;
+#[cfg(test)]
+mod getting_users;
+#[cfg(test)]
+mod invitation_flow;
+#[cfg(test)]
+mod login_logout;
 
 const ADMIN_USERNAME: &str = "admin";
 const ADMIN_PASSWORD: &str = "admin_password123";
 
-pub const DEFAULT_LOGIN: LoginForm = LoginForm {
-    username: USERNAME,
-    password: PASSWORD,
-};
+const DEFAULT_USERNAME: &str = "test_user";
+const DEFAULT_PASSWORD: &str = "strong_password";
+
+const INVITED_USER_1_FIRST_NAME: &str = "Lucas";
+const INVITED_USER_1_LAST_NAME: &str = "Bennett";
+const INVITED_USER_1_USERNAME: &str = "lucas_bennett";
+const INVITED_USER_1_EMAIL_ADDR: &str = "lucas.benett@example.com";
+
+const INVITED_USER_2_FIRST_NAME: &str = "Ava";
+const INVITED_USER_2_LAST_NAME: &str = "Thornton";
+const INVITED_USER_2_EMAIL_ADDR: &str = "ava.thornton@example.com";
+
+const INVITED_USER_3_FIRST_NAME: &str = "Mia";
+const INVITED_USER_3_LAST_NAME: &str = "Delgado";
+const INVITED_USER_3_EMAIL_ADDR: &str = "mia.delgado@example.com";
+
+const DUPLICATE_USER_1_EMAIL_ADDR: &str = "lucas_bennett_1@example.com";
+const DUPLICATE_USER_2_EMAIL_ADDR: &str = "ava_thornton_1@example.com";
 
 pub const ADMIN_LOGIN: LoginForm = LoginForm {
     username: ADMIN_USERNAME,
     password: ADMIN_PASSWORD,
 };
 
-#[test]
-fn inject_admin_user() {
-    let client = test_client();
-
-    // Use valid date values for created_at and updated_at fields
-    let created_at = NaiveDateTime::new(
-        NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(),
-        NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
-    );
-    let updated_at = DateTime::from_timestamp(Utc::now().timestamp(), 0)
-        .unwrap()
-        .naive_utc();
-
-    // Construct a JSON payload matching the User structure
-    let user = User {
-        id: Uuid::from_str("a99b50c6-02e9-4142-95fe-35c3ccd4f147").unwrap(),
-        role: i16::from(UserRole::Admin),
-        status: i16::from(UserStatus::Active),
-        username: ADMIN_USERNAME.to_string(),
-        display_name: None,
-        email: "some@abc.nl".to_string(),
-        password: Password::generate(Some(ADMIN_PASSWORD)).unwrap(),
-        bio: None,
-        avatar_url: None,
-        created_at,
-        updated_at,
-    };
-
-    let payload = serde_json::to_string(&user).unwrap();
-
-    // Send POST request to the correct endpoint `/users`
-    let response = client
-        .post("/user/create")
-        .header(ContentType::JSON)
-        .body(payload)
-        .dispatch();
-
-    // Assert that the response status is 200 (indicating success)
-    assert_eq!(response.status(), Status::Ok);
-
-    // Optionally, check the response body for success message
-    let response_body = response.into_string().unwrap();
-    println!("{response_body}");
-    assert!(response_body.contains(&format!("User {ADMIN_USERNAME} created")));
-}
-
-/// Creates a new user in the database using form data.
-///
-/// It will submit a [`NewUserForm`] and check the response status code. Then it will validate the
-/// cookies to check if the newly created user is logged in.
-///
-/// ## Prerequisites
-///
-/// Make sure there is no standard user already added to the database or the test will fail.
-#[test]
-fn submit_new_user_by_form() {
-    let client = test_client();
-
-    // Create a form with test data
-    let new_user = NewUserForm {
-        username: USERNAME,
-        password: Password {
-            first: PASSWORD,
-            second: PASSWORD,
-        },
-        email: "test@example.com",
-    };
-
-    // Send submit request
-    let response = client
-        .post("/user/register")
-        .body(new_user.body()) // Use the formatted string as the body
-        .header(ContentType::Form)
-        .dispatch();
-
-    // Assert the submit request was successful
-    assert_eq!(response.status(), Status::Ok);
-
-    // Assert that the cookies are added
-    assert_authorized_cookies(response, true);
-}
-
-#[tokio::test]
-async fn invite_new_users_by_form() {
-    let client = async_test_client().await;
-
-    async_login(&client, DEFAULT_LOGIN).await;
-
-    // Create a form with test data
-    let invitation = InvitedMultipleUsersForm {
-        space: "Some space",
-        users: vec![
-            InvitedUserForm {
-                first_name: "Jelle",
-                last_name: "van Geel",
-                email: "jelle.vangeel@teamrockstars.com",
-            },
-            InvitedUserForm {
-                first_name: "John",
-                last_name: "Doe",
-                email: "john_doe@teamrockstars.com",
-            },
-            InvitedUserForm {
-                first_name: "John",
-                last_name: "Doe",
-                email: "johnny_doey@teamrockstars.com",
-            },
-        ],
-    };
-
-    // Send submit request
-    let response = client
-        .post("/user/invite")
-        .body(invitation.body())
-        .header(ContentType::Form)
-        .dispatch()
-        .await;
-
-    // Clone the status before printing
-    let status = response.status().clone();
-
-    // Extract the ApiResponse containing the vector of strings with the tokens
-    let invitation_response = response
-        .into_json::<ApiResponse<Vec<String>>>()
-        .await
-        .unwrap();
-
-    // Assert the submit request was successful
-    assert_eq!(status, Status::Ok);
-
-    // Get the redis cache
-    let redis: &State<RedisMutex> = client
-        .rocket()
-        .state::<RedisMutex>()
-        .expect("Redis state should be available")
-        .into();
-
-    // Loop through the tokens from the response
-    for token in invitation_response.data.unwrap() {
-        // Attempt getting the token from the cache
-        assert!(get_invite_token(redis, &token).await.is_ok());
-    }
-}
-
-#[tokio::test]
-async fn set_password_after_receiving_invite() {
-    let client = async_test_client().await;
-
-    let user_id = Uuid::from_str("2bb99c44-a8ee-46d6-83b7-9c2a203b67d9").unwrap();
-
-    // Get the redis cache
-    let redis: &State<RedisMutex> = client
-        .rocket()
-        .state::<RedisMutex>()
-        .expect("Redis state should be available")
-        .into();
-
-    // Generate a random token
-    let token = crate::cache::create_random_token(64);
-
-    // Add the token to the cache
-    assert!(
-        crate::cache::users::add_invite_token(&redis, &token, user_id)
-            .await
-            .is_ok()
-    );
-
-    // User clicks the link: The token should be recovered
-    let response = client
-        .get(format!("/user/invite/get/{token}"))
-        .dispatch()
-        .await;
-
-    assert_eq!(response.status(), Status::Ok);
-
-    // User fills in the password: User will be activated
-    let password = Password {
-        first: PASSWORD,
-        second: PASSWORD,
-    };
-
-    let response = client
-        .put(format!("/user/invite/set/{token}"))
-        .body(password.body())
-        .header(ContentType::Form)
-        .dispatch()
-        .await;
-
-    assert_eq!(response.status(), Status::Ok);
-
-    // Verify that the cache doesn't have the invitation token anymore
-    assert!(crate::cache::users::get_invite_token(&redis, &token)
-        .await
-        .is_err());
-
-    async_login(&client, ADMIN_LOGIN).await;
-
-    // Verify that the user status is upgraded
-    let response = client.get(format!("/user/{USERNAME}")).dispatch().await;
-
-    // Copy the status for later assertion
-    let status = response.status().clone();
-
-    // Extract the data to print it to the screen
-    let data = response.into_string().await;
-
-    assert_eq!(status, Status::Ok);
-    assert!(data.is_some());
-
-    let public_user = serde_json::from_str::<PublicUser>(&data.unwrap()).unwrap();
-    assert_eq!(public_user.status, i16::from(UserStatus::Active));
-}
-
-/// Logging in and logging out a user.
-///
-/// This test will log in the standard user and verify if the token and user information is
-/// correctly added to the cookies. Then it will log out the standard user and verify that said
-/// information is removed from the cookies.
-///
-/// ## Prerequisites
-///
-/// There should already be a standard user added to the database. This can be done by running the
-/// test `test_submit`.
-#[test]
-fn login_existing_user_then_logout() {
-    let client = test_client();
-
-    // Log in
-    login(&client, DEFAULT_LOGIN);
-
-    // Log out
-    let logout_response = client.post("/user/logout").dispatch();
-
-    // Assert that the logout request was handled succesfully
-    assert_eq!(logout_response.status(), Status::Ok);
-
-    // Assert that the cookies are removed
-    assert_authorized_cookies(logout_response, false);
-}
-
-#[test]
-fn logout_without_being_logged_in() {
-    let client = test_client();
-
-    // Log out
-    let logout_response = client.post("/user/logout").dispatch();
-
-    // Assert that the logout request returned "Unauthorized"
-    assert_eq!(logout_response.status(), Status::Unauthorized);
-}
-
-/// Removes a user with a given user ID from the database.
-///
-/// ## Prerequisites
-///
-/// The user should already exist in the database. This can be done by running the test
-/// `test_submit`.
-///
-/// The tester should know the user ID from the desired user, then replace the `user_id` variable
-/// inside the test accordingly.
-#[test]
-fn delete_existing_user_by_id() {
-    let client = test_client();
-
-    // Login required
-    login(&client, ADMIN_LOGIN);
-
-    // User ID: Change depending on which user tester wants to delete
-    let user_id = "77987439-2fed-4d45-9f5d-4c02c66eb265";
-
-    // Send delete request
-    let response = client.delete(format!("/user/{user_id}/delete")).dispatch();
-
-    // Assert the delete request was successful
-    assert_eq!(response.status(), Status::Ok);
-}
-
-#[test]
-fn delete_all_users_except_for_admin_and_test_user() {
-    let client = test_client();
-
-    // Login required
-    login(&client, ADMIN_LOGIN);
-
-    // Get all the users
-    let response = client.get(format!("/user")).dispatch();
-
-    // Convert the response to a Value
-    let response_value: serde_json::Value =
-        serde_json::from_str(&response.into_string().unwrap()).unwrap();
-
-    // Extract the "data" field from the response
-    let data = serde_json::to_value(response_value)
-        .unwrap()
-        .get("data")
-        .unwrap()
-        .clone();
-
-    // Check if the data is an array
-    if let serde_json::Value::Array(users) = data {
-        // Iterate over the users and delete them
-        for user in users {
-            // Get the user ID and username
-            let user_id = user.get("id").and_then(|v| v.as_str()).unwrap();
-            let username = user.get("username").and_then(|v| v.as_str()).unwrap();
-
-            // Skip the admin and test user
-            if username == ADMIN_USERNAME || username == USERNAME {
-                continue;
-            }
-
-            // Delete the user
-            let response = client.delete(format!("/user/{user_id}/delete")).dispatch();
-            assert_eq!(response.status(), Status::Ok);
-        }
-    }
-
-    // Assert that the delete request was successful
-    let response = client.get(format!("/user")).dispatch();
-    let status = response.status().clone();
-
-    println!("{:?}", response.into_string());
-    assert_eq!(status, Status::Ok);
-}
-
-#[test]
-fn get_user_by_username() {
-    let client = test_client();
-
-    // Login required
-    login(&client, DEFAULT_LOGIN);
-
-    // Send get request
-    let response = client.get(format!("/user/{USERNAME}")).dispatch();
-
-    // Copy the status for later assertion
-    let status = response.status().clone();
-
-    // Extract the data to print it to the screen
-    let data = response.into_string();
-
-    // Assert the delete request was successful
-    assert_eq!(status, Status::Ok);
-
-    // Print the data to the screen
-    assert!(data.is_some());
-    println!("{:?}", data.unwrap());
-}
-
-#[test]
-fn get_all_users() {
-    let client = test_client();
-
-    // Login required
-    login(&client, DEFAULT_LOGIN);
-
-    // Send get request
-    let response = client.get(format!("/user")).dispatch();
-
-    // Copy the status for later assertion
-    let status = response.status().clone();
-
-    // Extract the data to print it to the screen
-    let data = response.into_string();
-
-    // Assert the delete request was successful
-    assert_eq!(status, Status::Ok);
-
-    // Print the data to the screen
-    assert!(data.is_some());
-    println!("{:?}", data.unwrap());
-}
+pub const DEFAULT_LOGIN: LoginForm = LoginForm {
+    username: DEFAULT_USERNAME,
+    password: DEFAULT_PASSWORD,
+};
+
+pub const INVITED_USER_1_LOGIN: LoginForm = LoginForm {
+    username: INVITED_USER_1_USERNAME,
+    password: DEFAULT_PASSWORD,
+};
 
 pub fn login(client: &Client, login_form: LoginForm) {
     let login_response = client
@@ -417,14 +63,24 @@ pub fn login(client: &Client, login_form: LoginForm) {
         .body(login_form.body())
         .dispatch();
 
-    let status = login_response.status().clone();
-    println!("{:?}", login_response.into_string());
-
     // Assert the login request was successful
-    assert_eq!(status, Status::Ok);
+    assert_eq!(login_response.status(), Status::Ok);
 
     // Assert that the cookies are added
-    //assert_authorized_cookies(login_response, true);
+    assert_authorized_cookies(login_response, true);
+}
+
+fn assert_authorized_cookies(response: LocalResponse<'_>, available: bool) {
+    // Get the cookies after the response
+    let cookies = response.cookies();
+    let token_cookie = cookies.get_private(TOKEN_COOKIE);
+
+    // Perform the assertions on the cookies based on provided boolean
+    if available {
+        assert!(token_cookie.is_some());
+    } else {
+        assert!(token_cookie.is_none());
+    }
 }
 
 pub async fn async_login(client: &AsyncClient, login_form: LoginForm<'static>) {
@@ -440,19 +96,6 @@ pub async fn async_login(client: &AsyncClient, login_form: LoginForm<'static>) {
 
     // Assert that the cookies are added
     async_assert_authorized_cookies(login_response, true);
-}
-
-fn assert_authorized_cookies(response: LocalResponse<'_>, available: bool) {
-    // Get the cookies after the response
-    let cookies = response.cookies();
-    let token_cookie = cookies.get_private(TOKEN_COOKIE);
-
-    // Perform the assertions on the cookies based on provided boolean
-    if available {
-        assert!(token_cookie.is_some());
-    } else {
-        assert!(token_cookie.is_none());
-    }
 }
 
 fn async_assert_authorized_cookies(response: AsyncLocalResponse<'_>, available: bool) {
