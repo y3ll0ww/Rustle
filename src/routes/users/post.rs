@@ -7,8 +7,8 @@ use crate::{
     cookies::TOKEN_COOKIE,
     database::{users as database, Db},
     email::MailClient,
-    forms::users::{InvitedMultipleUsersForm, LoginForm, NewUserForm, Password},
-    models::users::{NewUser, PublicUser, User, UserStatus},
+    forms::users::{InvitedMultipleUsersForm, LoginForm, Password},
+    models::users::{PublicUser, User, UserStatus},
 };
 use rocket::{form::Form, http::CookieJar, serde::json::Json, State};
 use uuid::Uuid;
@@ -108,52 +108,6 @@ pub async fn invite_new_users_by_form(
     Ok(ApiResponse::success(
         format!("{inserted_count} users invited"),
         Some(tokens),
-    ))
-}
-
-/// This function allows for the creation of a new [`User`] by using a form.
-///
-/// **Route**: `./form`
-///
-/// ### Parameters
-/// * `db`: Instance of the [`Database`] connection.
-/// * `form`: A [`NewUserForm`] for creating a [`User`].
-///
-/// ### Returns
-/// * `Ok(Success<InsertedUser>)`: When `Ok`, it returns [`Success`] with the [`InsertedUser`].
-/// * `Err(Error<String>)`: When `Err`, it returns an [`Error`] with [`Null`].
-#[post("/register", data = "<form>")]
-pub async fn create_new_user_by_form(
-    form: Form<NewUserForm<'_>>,
-    db: Db,
-    cookies: &CookieJar<'_>,
-) -> Result<Success<Null>, Error<Null>> {
-    // Hash the provided password
-    let password_hash = form
-        .password
-        .hash_password()
-        .map_err(|e| ApiResponse::internal_server_error(format!("Couldn't hash password: {e}")))?;
-
-    // Create a new User
-    let new_user = NewUser {
-        username: form.username.to_string(),
-        display_name: form.username.to_string(),
-        email: form.email.to_string(),
-        password: password_hash,
-    };
-
-    // Add the new User to the database
-    let inserted_user = database::create_new_user(&db, new_user).await?;
-
-    // Add the user to the JWT guard
-    JwtGuard::secure(&inserted_user, cookies)
-        .await
-        .map_err(ApiResponse::internal_server_error)?;
-
-    // Return success response
-    Ok(ApiResponse::success(
-        format!("User '{}' created succesfully", inserted_user.username),
-        None,
     ))
 }
 

@@ -11,25 +11,6 @@ use uuid::Uuid;
 
 use crate::models::users::User;
 
-/// This struct represents the information required to create a new [`User`] via a form.
-#[derive(Debug, Deserialize, FromForm, Serialize)]
-pub struct NewUserForm<'v> {
-    #[field(validate = len(1..))]
-    pub username: &'v str,
-    pub password: Password<'v>,
-    #[field(validate = contains('@').or_else(msg!("invalid email address")))]
-    pub email: &'v str,
-}
-
-impl NewUserForm<'_> {
-    pub fn body(&self) -> String {
-        format!(
-            "username={}&password.first={}&password.second={}&email={}",
-            self.username, self.password.first, self.password.second, self.email,
-        )
-    }
-}
-
 #[derive(Debug, FromForm)]
 pub struct InvitedMultipleUsersForm<'v> {
     // Allow at most 10 invites per request
