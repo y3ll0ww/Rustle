@@ -8,7 +8,7 @@ use crate::{
     database::{users as database, Db},
     email::MailClient,
     forms::users::{InvitedMultipleUsersForm, LoginForm, NewUserForm, Password},
-    models::users::{NewUser, PublicUser, User},
+    models::users::{NewUser, PublicUser, User, UserStatus},
 };
 use rocket::{form::Form, http::CookieJar, serde::json::Json, State};
 use uuid::Uuid;
@@ -24,6 +24,14 @@ pub async fn login_by_form(
     // Get the user from the database
     let user = database::get_user_by_username(&db, credentials.username).await?;
 
+    // Return not found if the user is not active
+    if user.status != i16::from(UserStatus::Active) {
+        return Err(ApiResponse::not_found(format!(
+            "User '{}' not found",
+            user.username
+        )));
+    }
+
     // Validate if the given password is correct
     if !Password::verify_password(credentials.password, &user.password).map_err(|e| {
         ApiResponse::internal_server_error(format!("Password verification failed: {}", e))
@@ -36,7 +44,6 @@ pub async fn login_by_form(
         .await
         .map_err(ApiResponse::internal_server_error)?;
 
-    // Return the token
     Ok(ApiResponse::success("Login successful".to_string(), None))
 }
 
@@ -91,7 +98,7 @@ pub async fn invite_new_users_by_form(
         let team_name = form.space.to_string();
 
         // Send an invitation email to the new users, containing the token
-        tokio::spawn(async move {
+        tokio::task::spawn_blocking(move || {
             let _ =
                 MailClient::no_reply().send_invitation(&inviter, &recipient, &team_name, &token);
         });

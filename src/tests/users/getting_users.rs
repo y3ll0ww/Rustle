@@ -1,7 +1,10 @@
 use rocket::http::Status;
 
 use super::{login, DEFAULT_LOGIN, DEFAULT_USERNAME};
-use crate::tests::test_client;
+use crate::tests::{
+    test_client,
+    users::{ROUTE_GET, ROUTE_GET_ALL},
+};
 
 #[test]
 fn get_all_users() {
@@ -11,7 +14,7 @@ fn get_all_users() {
     login(&client, DEFAULT_LOGIN);
 
     // Send get request
-    let response = client.get(format!("/user")).dispatch();
+    let response = client.get(ROUTE_GET_ALL).dispatch();
 
     // Copy the status for later assertion
     let status = response.status().clone();
@@ -35,7 +38,9 @@ fn get_user_by_username() {
     login(&client, DEFAULT_LOGIN);
 
     // Send get request
-    let response = client.get(format!("/user/{DEFAULT_USERNAME}")).dispatch();
+    let response = client
+        .get(format!("{ROUTE_GET}{DEFAULT_USERNAME}"))
+        .dispatch();
 
     // Copy the status for later assertion
     let status = response.status().clone();

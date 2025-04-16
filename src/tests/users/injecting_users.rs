@@ -6,8 +6,19 @@ use super::{ADMIN_PASSWORD, ADMIN_USERNAME, DEFAULT_PASSWORD, DEFAULT_USERNAME};
 use crate::{
     forms::users::Password,
     models::users::{User, UserRole, UserStatus},
-    tests::test_client,
+    tests::{test_client, users::ROUTE_CREATE},
 };
+
+#[test]
+fn inject_custom_user() {
+    user_injection(
+        "invited_user",
+        Some("password123!"),
+        "invited_user@example.com",
+        UserRole::Reviewer,
+        UserStatus::Invited,
+    )
+}
 
 #[test]
 fn inject_admin_user() {
@@ -36,7 +47,7 @@ fn user_injection(
     password: Option<&str>,
     email: &str,
     role: UserRole,
-    status: UserStatus
+    status: UserStatus,
 ) {
     let client = test_client();
 
@@ -59,7 +70,7 @@ fn user_injection(
 
     // Send POST request to the correct endpoint `/users`
     let response = client
-        .post("/user/create")
+        .post(ROUTE_CREATE)
         .header(ContentType::JSON)
         .body(payload)
         .dispatch();

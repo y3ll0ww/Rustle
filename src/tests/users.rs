@@ -11,13 +11,23 @@ use crate::{cookies::TOKEN_COOKIE, forms::users::LoginForm};
 #[cfg(test)]
 mod deleting_users;
 #[cfg(test)]
-mod injecting_users;
-#[cfg(test)]
 mod getting_users;
+#[cfg(test)]
+mod injecting_users;
 #[cfg(test)]
 mod invitation_flow;
 #[cfg(test)]
 mod login_logout;
+
+const ROUTE_CREATE: &str = "/user/create";
+const ROUTE_GET_ALL: &str = "/user";
+const ROUTE_GET: &str = "/user/";
+const ROUTE_LOGIN: &str = "/user/login";
+const ROUTE_LOGOUT: &str = "/user/logout";
+const ROUTE_DELETE: &str = "/user/delete/";
+const ROUTE_INVITE: &str = "/user/invite";
+const ROUTE_INVITE_GET: &str = "/user/invite/get/";
+const ROUTE_INVITE_SET: &str = "/user/invite/set/";
 
 const ADMIN_USERNAME: &str = "admin";
 const ADMIN_PASSWORD: &str = "admin_password123";
@@ -32,6 +42,7 @@ const INVITED_USER_1_EMAIL_ADDR: &str = "lucas.benett@example.com";
 
 const INVITED_USER_2_FIRST_NAME: &str = "Ava";
 const INVITED_USER_2_LAST_NAME: &str = "Thornton";
+const INVITED_USER_2_USERNAME: &str = "ava_thornton";
 const INVITED_USER_2_EMAIL_ADDR: &str = "ava.thornton@example.com";
 
 const INVITED_USER_3_FIRST_NAME: &str = "Mia";
@@ -56,9 +67,14 @@ pub const INVITED_USER_1_LOGIN: LoginForm = LoginForm {
     password: DEFAULT_PASSWORD,
 };
 
+pub const INVITED_USER_2_LOGIN: LoginForm = LoginForm {
+    username: INVITED_USER_2_USERNAME,
+    password: DEFAULT_PASSWORD,
+};
+
 pub fn login(client: &Client, login_form: LoginForm) {
     let login_response = client
-        .post("/user/login")
+        .post(ROUTE_LOGIN)
         .header(ContentType::Form)
         .body(login_form.body())
         .dispatch();
@@ -68,6 +84,16 @@ pub fn login(client: &Client, login_form: LoginForm) {
 
     // Assert that the cookies are added
     assert_authorized_cookies(login_response, true);
+}
+
+pub fn logout(client: &Client) {
+    let logout_response = client.post(ROUTE_LOGOUT).dispatch();
+
+    // Assert that the logout request was successful
+    assert_eq!(logout_response.status(), Status::Ok);
+
+    // Assert that the cookies are removed
+    assert_authorized_cookies(logout_response, false);
 }
 
 fn assert_authorized_cookies(response: LocalResponse<'_>, available: bool) {
@@ -85,7 +111,7 @@ fn assert_authorized_cookies(response: LocalResponse<'_>, available: bool) {
 
 pub async fn async_login(client: &AsyncClient, login_form: LoginForm<'static>) {
     let login_response = client
-        .post("/user/login")
+        .post(ROUTE_LOGIN)
         .header(ContentType::Form)
         .body(login_form.body())
         .dispatch()

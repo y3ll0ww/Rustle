@@ -1,7 +1,9 @@
 use std::str::FromStr;
 
 use rocket::{
-    http::{ContentType, Status}, local::asynchronous::Client, State
+    http::{ContentType, Status},
+    local::asynchronous::Client,
+    State,
 };
 use uuid::Uuid;
 
@@ -18,7 +20,8 @@ use crate::{
             INVITED_USER_1_EMAIL_ADDR, INVITED_USER_1_FIRST_NAME, INVITED_USER_1_LAST_NAME,
             INVITED_USER_1_LOGIN, INVITED_USER_1_USERNAME, INVITED_USER_2_EMAIL_ADDR,
             INVITED_USER_2_FIRST_NAME, INVITED_USER_2_LAST_NAME, INVITED_USER_3_EMAIL_ADDR,
-            INVITED_USER_3_FIRST_NAME, INVITED_USER_3_LAST_NAME,
+            INVITED_USER_3_FIRST_NAME, INVITED_USER_3_LAST_NAME, ROUTE_GET, ROUTE_INVITE,
+            ROUTE_INVITE_GET, ROUTE_INVITE_SET, ROUTE_LOGOUT,
         },
     },
 };
@@ -63,7 +66,7 @@ async fn invite_new_users_by_form() {
 
     // Send submit request
     let response = client
-        .post("/user/invite")
+        .post(ROUTE_INVITE)
         .body(invitation.body())
         .header(ContentType::Form)
         .dispatch()
@@ -99,30 +102,11 @@ async fn invite_new_users_by_form() {
 async fn set_password_after_receiving_invite() {
     let client = async_test_client().await;
 
-    // Extract the user ID for INVITED_USER_1 first
-    let user_id = get_invited_user_1_user_id(&client).await;
-
-    // Get the redis cache
-    let redis: &State<RedisMutex> = client
-        .rocket()
-        .state::<RedisMutex>()
-        .expect("Redis state should be available")
-        .into();
-
-    // Generate a random token
-    let token = cache::create_random_token(64);
-
-    // Convert the user ID to a UUID
-    let user_id = Uuid::from_str(&user_id).unwrap();
-
-    // Add the token to the cache
-    assert!(cache::users::add_invite_token(&redis, &token, user_id)
-        .await
-        .is_ok());
+    let (redis, token) = add_token_to_cache(&client).await;
 
     // User clicks the link: The token should be recovered
     let response = client
-        .get(format!("/user/invite/get/{token}"))
+        .get(format!("{ROUTE_INVITE_GET}{token}"))
         .dispatch()
         .await;
 
@@ -135,7 +119,7 @@ async fn set_password_after_receiving_invite() {
     };
 
     let response = client
-        .put(format!("/user/invite/set/{token}"))
+        .put(format!("{ROUTE_INVITE_SET}{token}"))
         .body(password.body())
         .header(ContentType::Form)
         .dispatch()
@@ -153,7 +137,7 @@ async fn set_password_after_receiving_invite() {
 
     // Verify that the user status is upgraded
     let response = client
-        .get(format!("/user/{INVITED_USER_1_USERNAME}"))
+        .get(format!("{ROUTE_GET}{INVITED_USER_1_USERNAME}"))
         .dispatch()
         .await;
 
@@ -173,22 +157,45 @@ async fn set_password_after_receiving_invite() {
     assert_eq!(public_user.status, i16::from(UserStatus::Active));
 }
 
+async fn add_token_to_cache(client: &Client) -> (&State<RedisMutex>, String) {
+    // Get the redis cache
+    let redis: &State<RedisMutex> = client
+        .rocket()
+        .state::<RedisMutex>()
+        .expect("Redis state should be available")
+        .into();
+
+    // Generate a random token
+    let token = cache::create_random_token(64);
+
+    let user_id = get_invited_user_1_user_id(client).await;
+
+    // Convert the user ID to a UUID
+    let user_id = Uuid::from_str(&user_id).unwrap();
+
+    // Add the token to the cache
+    assert!(cache::users::add_invite_token(&redis, &token, user_id)
+        .await
+        .is_ok());
+
+    (redis, token)
+}
 
 async fn get_invited_user_1_user_id(client: &Client) -> String {
+    // Login as admin
     async_login(&client, ADMIN_LOGIN).await;
 
     // Send get request
     let response = client
-        .get(format!("/user/{INVITED_USER_1_USERNAME}"))
+        .get(format!("{ROUTE_GET}{INVITED_USER_1_USERNAME}"))
         .dispatch()
         .await;
 
     // Assert the delete request was successful
     assert_eq!(response.status(), Status::Ok);
 
-    // Extract the data to print it to the screen
+    // Extract the data
     let deserialized_response = response.into_json::<ApiResponse<PublicUser>>().await;
-    assert!(deserialized_response.is_some());
 
     // Get the public user data from the deserialized response
     let public_user = deserialized_response.unwrap().data.unwrap();
@@ -197,7 +204,7 @@ async fn get_invited_user_1_user_id(client: &Client) -> String {
     assert_eq!(public_user.status, i16::from(UserStatus::Invited));
 
     // Log out
-    let logout_response = client.post("/user/logout").dispatch().await;
+    let logout_response = client.post(ROUTE_LOGOUT).dispatch().await;
 
     // Assert that the logout request was handled succesfully
     assert_eq!(logout_response.status(), Status::Ok);

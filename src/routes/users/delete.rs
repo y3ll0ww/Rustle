@@ -27,7 +27,7 @@ use crate::{
 ///   - Request user not the same user (optional).
 /// * **404 Not found**: No [`User`] found in [`users::table`].
 /// * **500 Server Error**: Any database operation fails.
-#[delete("/<id>/delete")]
+#[delete("/delete/<id>")]
 pub async fn delete_user_by_id(
     id: Uuid,
     guard: JwtGuard,
