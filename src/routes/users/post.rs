@@ -129,8 +129,8 @@ pub async fn reinvite_user_by_id(
     let user = database::get_user_by_id(&db, id).await?;
 
     // Extract the user status
-    let user_status = UserStatus::try_from(user.status)
-        .map_err(|e| ApiResponse::conflict(e, String::new()))?;
+    let user_status =
+        UserStatus::try_from(user.status).map_err(|e| ApiResponse::conflict(e, String::new()))?;
 
     // Make sure the user status is still on invited
     if !matches!(user_status, UserStatus::Invited) {
@@ -154,7 +154,7 @@ pub async fn reinvite_user_by_id(
     // Send the email
     MailClient::no_reply()
         .send_invitation(&inviter, &recipient, &team_name, &token)
-        .map_err(|e| ApiResponse::internal_server_error(e))?;
+        .map_err(ApiResponse::internal_server_error)?;
 
     Ok(ApiResponse::success(
         format!("{} invited", user.username),

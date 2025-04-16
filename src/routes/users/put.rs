@@ -15,7 +15,7 @@ pub async fn set_password_after_invite(
     redis: &State<RedisMutex>,
 ) -> Result<Success<Vec<String>>, Error<Null>> {
     // Get the user from the redis cache
-    let user_id = get_invite_token(redis, &token).await?;
+    let user_id = get_invite_token(redis, token).await?;
 
     // Verify that the password input match
     if !form.inputs_match() {
@@ -37,7 +37,7 @@ pub async fn set_password_after_invite(
     }
 
     // Remove the invitation token from the cache
-    cache::users::remove_invite_token(redis, &token)
+    cache::users::remove_invite_token(redis, token)
         .await
         .map(|()| ApiResponse::success(format!("User '{user_id}' successfully activated"), None))
 }

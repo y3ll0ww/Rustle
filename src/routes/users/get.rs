@@ -28,7 +28,7 @@ pub async fn get_user_by_username(
     db: Db,
 ) -> Result<Success<PublicUser>, Error<Null>> {
     // Only get the user from the database
-    database::get_user_by_username(&db, &username)
+    database::get_user_by_username(&db, username)
         .await
         .map(|user| {
             ApiResponse::success(
@@ -45,7 +45,7 @@ pub async fn get_invited_user(
     redis: &State<RedisMutex>,
 ) -> Result<Success<Vec<String>>, Error<Null>> {
     // Get the user ID from the cache (should be a UUID at this stage)
-    let user_id = cache::users::get_invite_token(redis, &token).await?;
+    let user_id = cache::users::get_invite_token(redis, token).await?;
 
     // Get the user from the database
     let user = database::get_user_by_id(&db, user_id).await?;
