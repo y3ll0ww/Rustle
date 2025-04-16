@@ -11,7 +11,7 @@ use crate::{cookies::TOKEN_COOKIE, forms::users::LoginForm};
 #[cfg(test)]
 mod deleting_users;
 #[cfg(test)]
-mod eol_functions;
+mod injecting_users;
 #[cfg(test)]
 mod getting_users;
 #[cfg(test)]
