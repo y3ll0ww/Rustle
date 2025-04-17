@@ -1,11 +1,13 @@
 use rocket::State;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 use crate::{
     api::{ApiResponse, Error, Null, Success},
     auth::JwtGuard,
     cache::{self, RedisMutex},
     database::{users as database, Db},
-    models::users::{PublicUser, UserStatus},
+    models::users::{PublicUser, UserRole, UserStatus},
 };
 
 #[get("/")]
@@ -18,6 +20,38 @@ pub async fn list_all_users(
     Ok(ApiResponse::success(
         format!("{} users found", users.len()),
         Some(users),
+    ))
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct UserPagination {
+    last_id: Option<Uuid>,
+    users: Vec<PublicUser>,
+}
+
+#[get("/?<after>&<limit>")]
+pub async fn get_all_users_paginated(
+    after: Option<Uuid>,
+    limit: Option<i64>,
+    guard: JwtGuard,
+    db: Db,
+) -> Result<Success<UserPagination>, Error<Null>> {
+    // Only admin can see all the users
+    if guard.get_user().role != i16::from(UserRole::Admin) {
+        return Err(ApiResponse::unauthorized(format!(
+            "Only admin can see all users"
+        )));
+    }
+    
+    let users = database::get_users_after_id(&db, after, limit.unwrap_or(20)).await?;
+    let users_len = users.len();
+    let last_id = users.last().map(|user| user.id);
+
+    let pagination = UserPagination { last_id, users };
+
+    Ok(ApiResponse::success(
+        format!("{users_len} users found"),
+        Some(pagination),
     ))
 }
 

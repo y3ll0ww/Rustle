@@ -15,5 +15,6 @@ pub fn routes() -> Vec<rocket::Route> {
         post::reinvite_user_by_id,      // POST:    /user/invite/re/<space>/<id>
         post::login_by_form,            // POST:    /user/login
         post::logout,                   // POST:    /user/logout
+        get::get_all_users_paginated,       // GET:     /user/?<after>&<limit>
     ]
 }

@@ -31,6 +31,23 @@ fn get_all_users() {
 }
 
 #[test]
+fn get_all_users_paginated() {
+    let client = test_client();
+
+    // Login required
+    login(&client, DEFAULT_LOGIN);
+
+    // Send get request
+    let response = client.get(format!("{ROUTE_GET_ALL}?after=108026e0-c525-439d-8bda-d2e52f912d4d&limit=2")).dispatch();
+
+    let status = response.status().clone();
+
+    println!("{}", response.into_string().unwrap());
+
+    assert_eq!(status, Status::Ok)
+}
+
+#[test]
 fn get_user_by_username() {
     let client = test_client();
 

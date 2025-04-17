@@ -21,7 +21,7 @@ Other dependencies that should be in the container:
 `postgres-# GRANT ALL PRIVILEGES ON DATABASE <database> TO <user>;`
 `postgres-# \q`
 
-## 5. Log into databas for direct actions
+## 5. Log into database for direct actions
 `sudo -u postgres psql`
 `\l`
 `\c <database_name>`

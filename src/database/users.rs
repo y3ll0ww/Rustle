@@ -32,6 +32,33 @@ pub async fn get_all_public_users(db: &Db) -> Result<Vec<PublicUser>, Error<Null
     Ok(users)
 }
 
+pub async fn get_users_after_id(
+    db: &Db,
+    last_seen_id: Option<Uuid>,
+    limit: i64,
+) -> Result<Vec<PublicUser>, Error<Null>> {
+    use crate::schema::users::dsl::*;
+
+    let result = db
+        .run(move |conn| {
+            // Create a query, ordering the table by ID
+            let mut query = users.into_boxed().order(id.asc()).limit(limit);
+
+            if let Some(last_id) = last_seen_id {
+                query = query.filter(id.gt(last_id));
+            }
+
+            query.load::<User>(conn)
+        })
+        .await
+        .map_err(ApiResponse::from_error)?;
+
+    Ok(result
+        .into_iter()
+        .map(|user| PublicUser::from(&user))
+        .collect())
+}
+
 pub async fn get_user_by_id(db: &Db, id: Uuid) -> Result<User, Error<Null>> {
     db.run(move |conn| users::table.filter(users::id.eq(id)).first::<User>(conn))
         .await
