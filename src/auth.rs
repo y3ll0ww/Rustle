@@ -10,11 +10,10 @@ use rocket::{
     Request,
 };
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 use crate::{
     cookies::TOKEN_COOKIE,
-    models::users::{User, UserRole},
+    models::users::{PublicUser, User},
 };
 
 const TOKEN_VALIDITY_HRS: i64 = 24;
@@ -27,13 +26,12 @@ pub struct JwtGuard {
 }
 
 impl JwtGuard {
-    pub fn get_user(&self) -> AuthorizedUser {
+    pub fn get_user(&self) -> PublicUser {
         self.claims.sub.clone()
     }
 
     pub async fn secure(user: &User, cookies: &CookieJar<'_>) -> Result<(), String> {
-        let token =
-            Self::generate_token(AuthorizedUser::new(user.id, &user.username, user.role)?).await?;
+        let token = Self::generate_token(PublicUser::from(user)).await?;
 
         let cookie = Cookie::build((TOKEN_COOKIE, token))
             .http_only(true) // Prevent JavaScript access (mitigates XSS)
@@ -46,7 +44,7 @@ impl JwtGuard {
         Ok(())
     }
 
-    async fn generate_token(user: AuthorizedUser) -> Result<String, String> {
+    async fn generate_token(user: PublicUser) -> Result<String, String> {
         let expiration = chrono::Utc::now()
             .checked_add_signed(chrono::Duration::hours(TOKEN_VALIDITY_HRS))
             .expect("valid timestamp")
@@ -104,7 +102,7 @@ impl<'r> FromRequest<'r> for JwtGuard {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
     /// The subject of the token (User ID).
-    pub sub: AuthorizedUser,
+    pub sub: PublicUser,
     /// Expiration timestamp (Unix epoch).
     pub exp: usize,
 }
@@ -120,7 +118,7 @@ impl Claims {
 
         // Deserialize the payload properly (own implementation because of character escaping)
         let decoded_payload = String::from_utf8_lossy(
-            &general_purpose::STANDARD
+            &general_purpose::URL_SAFE_NO_PAD
                 .decode(token_payload)
                 .map_err(|e| (Status::Unauthorized, e.to_string()))?,
         )
@@ -143,24 +141,6 @@ impl Claims {
         Ok(TokenData {
             claims,
             header: Default::default(),
-        })
-    }
-}
-
-/// Represents user information stored in Redis. COOKIES: qwerty
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct AuthorizedUser {
-    pub id: Uuid,
-    pub username: String,
-    pub role: UserRole,
-}
-
-impl AuthorizedUser {
-    pub fn new(id: Uuid, username: &str, role: i16) -> Result<Self, String> {
-        Ok(AuthorizedUser {
-            id,
-            username: username.to_string(),
-            role: UserRole::try_from(role)?,
         })
     }
 }

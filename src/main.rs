@@ -8,7 +8,7 @@ pub mod api;
 pub mod auth;
 pub mod cache;
 pub mod cookies;
-pub mod db;
+pub mod database;
 pub mod email;
 pub mod forms;
 pub mod models;
@@ -20,7 +20,7 @@ mod tests;
 #[launch]
 fn rocket() -> _ {
     rocket::custom(rocket::Config::figment())
-        .attach(db::Database::fairing())
+        .attach(database::Db::fairing())
         .attach(redis_fairing())
         .mount(TEAMS, routes::teams::routes())
         .mount(USERS, routes::users::routes())

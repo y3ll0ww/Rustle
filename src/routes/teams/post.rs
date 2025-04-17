@@ -35,7 +35,7 @@ use super::*;
 pub async fn create_new_team_by_form(
     form: Form<NewTeamForm>,
     guard: JwtGuard,
-    db: Database,
+    db: Db,
     cookies: &CookieJar<'_>,
     redis: &State<RedisMutex>,
 ) -> Result<Success<Null>, Error<Null>> {
@@ -43,7 +43,7 @@ pub async fn create_new_team_by_form(
     let user = guard.get_user();
 
     // Step 1: Validate user permissions
-    if (user.role.clone() as i32) < UserRole::Manager as i32 {
+    if user.role < i16::from(UserRole::Manager) {
         return Err(ApiResponse::unauthorized(
             "User not allowed to create teams".to_string(),
         ));
@@ -117,7 +117,7 @@ pub async fn create_new_team_by_form(
     add_team_update_cookie(team_update, cookies)?;
 
     // Step 4: Add the team information to the cache
-    set_team_cache(redis, &team_id, &cache_team_with_members).await;
+    set_team_cache(redis, team_id, &cache_team_with_members).await;
 
     // Return success response
     Ok(ApiResponse::success(success_message, None))
@@ -127,7 +127,7 @@ pub async fn update_team_by_form(
     id: Uuid,
     form: Form<UpdateTeamForm>,
     guard: JwtGuard,
-    db: Database,
+    db: Db,
     cookies: &CookieJar<'_>,
     redis: &State<RedisMutex>,
 ) -> Result<Success<Null>, Error<Null>> {
@@ -154,7 +154,7 @@ pub async fn update_team_by_form(
 
             // Step 2: Validate if the user has permission to update the team
             if team_member.team_role < minimal_team_role as i16
-                && (user.role as i16) < minimal_user_role as i16
+                && (user.role < i16::from(minimal_user_role))
             {
                 return Err(ApiResponse::unauthorized(
                     "No permission to update team information".to_string(),
@@ -194,7 +194,7 @@ pub async fn update_team_by_form(
         .await?;
 
     // Step 5: Update the team in the cache
-    if update_team_cache(redis, &id, Some(form_clone), None).await {
+    if update_team_cache(redis, id, Some(form_clone), None).await {
         // Step 6: If cache has been updated, update the cookie too
         add_team_update_cookie(team_update, cookies)?;
     }

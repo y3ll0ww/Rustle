@@ -36,7 +36,7 @@ pub fn add_team_update_cookie(
 }
 
 pub fn get_team_update_cookie(
-    team_id: &Uuid,
+    team_id: Uuid,
     cookies: &CookieJar<'_>,
 ) -> Result<Option<TeamUpdate>, Error<String>> {
     // Deserialize the existing team updates
@@ -49,20 +49,20 @@ pub fn get_team_update_cookie(
 
     let team_update = team_updates
         .into_iter()
-        .find(|update| &update.team_id == team_id);
+        .find(|update| update.team_id == team_id);
 
     Ok(team_update)
 }
 
 pub fn remove_team_update_cookie(
-    team_id: &Uuid,
+    team_id: Uuid,
     cookies: &CookieJar<'_>,
 ) -> Result<(), Error<String>> {
     // Deserialize the existing team updates
     let mut team_updates = all_team_updates(cookies)?;
 
     // Retain all team updates that don't have the provided team ID
-    team_updates.retain(|team_update| &team_update.team_id != team_id);
+    team_updates.retain(|team_update| team_update.team_id != team_id);
 
     update_cookie(team_updates, cookies)
 }

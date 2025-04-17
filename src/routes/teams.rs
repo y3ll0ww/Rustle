@@ -12,7 +12,7 @@ use crate::{
         RedisMutex,
     },
     cookies::teams::{add_team_update_cookie, get_team_update_cookie, remove_team_update_cookie},
-    db::Database,
+    database::Db,
     forms::teams::{NewTeamForm, UpdateTeamForm},
     models::{
         teams::{Team, TeamMember, TeamMemberInfo, TeamRole, TeamUpdate, TeamWithMembers},
@@ -35,7 +35,7 @@ pub fn routes() -> Vec<rocket::Route> {
 }
 
 #[get("/")]
-async fn overview(guard: JwtGuard, db: Database) -> Result<Success<Vec<Team>>, Error<Null>> {
+async fn overview(guard: JwtGuard, db: Db) -> Result<Success<Vec<Team>>, Error<Null>> {
     get::get_teams_by_user_id(guard, db).await
 }
 
@@ -43,7 +43,7 @@ async fn overview(guard: JwtGuard, db: Database) -> Result<Success<Vec<Team>>, E
 async fn get_team(
     id: Uuid,
     guard: JwtGuard,
-    db: Database,
+    db: Db,
     cookies: &CookieJar<'_>,
     redis: &State<RedisMutex>,
 ) -> Result<Success<TeamWithMembers>, Error<Null>> {
@@ -54,7 +54,7 @@ async fn get_team(
 async fn new_team(
     form: Form<NewTeamForm>,
     guard: JwtGuard,
-    db: Database,
+    db: Db,
     cookies: &CookieJar<'_>,
     redis: &State<RedisMutex>,
 ) -> Result<Success<Null>, Error<Null>> {
@@ -66,7 +66,7 @@ async fn update_team(
     id: Uuid,
     form: Form<UpdateTeamForm>,
     guard: JwtGuard,
-    db: Database,
+    db: Db,
     cookies: &CookieJar<'_>,
     redis: &State<RedisMutex>,
 ) -> Result<Success<Null>, Error<Null>> {
@@ -77,7 +77,7 @@ async fn update_team(
 async fn delete_team(
     id: Uuid,
     guard: JwtGuard,
-    db: Database,
+    db: Db,
     cookies: &CookieJar<'_>,
     redis: &State<RedisMutex>,
 ) -> Result<Success<Null>, Error<Null>> {

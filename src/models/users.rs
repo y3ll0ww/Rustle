@@ -1,18 +1,20 @@
 use std::fmt::{Display, Formatter};
 
 use chrono::{NaiveDateTime, Utc};
-use diesel::prelude::*;
+use diesel::{prelude::*, sql_types::Text};
 use rocket_sync_db_pools::diesel;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::schema::users;
 
-#[derive(Clone, Debug, Deserialize, Insertable, Queryable, Serialize)]
+#[derive(Clone, Debug, Deserialize, Insertable, Queryable, QueryableByName, Serialize)]
 #[diesel(table_name = users)]
 pub struct User {
     pub id: Uuid,
     pub role: i16,
+    pub status: i16,
+    #[diesel(sql_type = Text)]
     pub username: String,
     pub display_name: Option<String>,
     pub email: String,
@@ -34,7 +36,8 @@ impl User {
 
         User {
             id: Uuid::new_v4(),
-            role: UserRole::Reviewer as i16,
+            role: i16::from(UserRole::Reviewer),
+            status: i16::from(UserStatus::Invited),
             username,
             display_name,
             email,
@@ -51,16 +54,17 @@ impl User {
 #[diesel(table_name = users)]
 pub struct NewUser {
     pub username: String,
+    pub display_name: String,
     pub email: String,
     pub password: String,
-    pub role: Option<i16>,
 }
 
-#[derive(Queryable, Serialize)]
+#[derive(Clone, Debug, Deserialize, Queryable, Serialize)]
 #[diesel(table_name = users)]
 pub struct PublicUser {
     pub id: Uuid,
     pub role: i16,
+    pub status: i16,
     pub username: String,
     pub display_name: Option<String>,
     pub email: String,
@@ -75,6 +79,7 @@ impl PublicUser {
         PublicUser {
             id: user.id,
             role: user.role,
+            status: user.status,
             username: user.username.clone(),
             display_name: user.display_name.clone(),
             email: user.email.clone(),
@@ -115,5 +120,46 @@ impl TryFrom<i16> for UserRole {
             0 => Ok(UserRole::Reviewer),
             _ => Err(format!("Invalid UserRole value: {value}")),
         }
+    }
+}
+
+impl From<UserRole> for i16 {
+    fn from(role: UserRole) -> Self {
+        role as i16
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum UserStatus {
+    // User created but hasn't set a password yet)
+    Invited = 0,
+    /// User is inactive; currently not used
+    Inactive = 1,
+    /// User is fully active, possibly after email verification
+    Active = 2,
+    /// User is suspended
+    Suspended = 3,
+    /// User is deleted
+    Deleted = 4,
+}
+
+impl TryFrom<i16> for UserStatus {
+    type Error = String;
+
+    fn try_from(value: i16) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(UserStatus::Invited),
+            1 => Ok(UserStatus::Inactive),
+            2 => Ok(UserStatus::Active),
+            3 => Ok(UserStatus::Suspended),
+            4 => Ok(UserStatus::Deleted),
+            _ => Err(format!("Invalid UserStatus value: {value}")),
+        }
+    }
+}
+
+impl From<UserStatus> for i16 {
+    fn from(status: UserStatus) -> Self {
+        status as i16
     }
 }

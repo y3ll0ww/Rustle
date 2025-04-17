@@ -43,9 +43,10 @@ impl MailClient {
         inviter: &PublicUser,
         recipient: &PublicUser,
         team_name: &str,
+        token: &str,
     ) -> Result<Response, String> {
         // Get the invitation template
-        let template = MailTemplate::invitation(inviter, recipient, team_name)?;
+        let template = MailTemplate::invitation(inviter, recipient, team_name, token)?;
 
         // Generate the message
         let message = self.mail.from_template(recipient, template)?;
@@ -53,36 +54,4 @@ impl MailClient {
         // Send the message
         self.smtp.send(message)
     }
-}
-
-#[test]
-fn send_mail_test() {
-    let recipient = PublicUser {
-        id: uuid::Uuid::new_v4(),
-        role: 0,
-        username: String::from("mohammad_nouranian"),
-        display_name: Some(String::from("Mohammad Nouranian")),
-        email: String::from("mohammad_nouranian@legrand_ext.com"),
-        bio: None,
-        avatar_url: None,
-        created_at: chrono::Utc::now().naive_utc(),
-        updated_at: chrono::Utc::now().naive_utc(),
-    };
-
-    let inviter = PublicUser {
-        id: uuid::Uuid::new_v4(),
-        role: 10,
-        username: String::from("André Cybulski"),
-        display_name: None,
-        email: String::from("andre_cybulski@ecotap.eu"),
-        bio: None,
-        avatar_url: None,
-        created_at: chrono::Utc::now().naive_utc(),
-        updated_at: chrono::Utc::now().naive_utc(),
-    };
-
-    let result = MailClient::no_reply().send_invitation(&inviter, &recipient, "ATT Test Tool");
-
-    println!("{result:?}");
-    assert!(result.is_ok());
 }

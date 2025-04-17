@@ -2,5 +2,7 @@
     <h1>Hello <b>{{ RECIPIENT }}</b>,</h1>
     <p>You're invited by <b>{{ INVITER }}</b> to join the <b>{{ TEAM_NAME }}</b> team!</p>
     <p>Click on the button below to confirm your invite.</p>
-    <button>Join now</button>
+    <a href="{{ INVITE_LINK }}">
+        <button>Join now</button>
+    </a>
 </div>

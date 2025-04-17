@@ -32,6 +32,7 @@ diesel::table! {
     users (id) {
         id -> Uuid,
         role -> Int2,
+        status -> Int2,
         #[max_length = 40]
         username -> Varchar,
         #[max_length = 40]

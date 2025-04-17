@@ -13,14 +13,16 @@
 //! redis-server --daemonize yes
 //! ```
 //! > To verify: `redis-cli ping`
+use rand::{distributions::Alphanumeric, Rng};
 use redis::{aio::Connection, AsyncCommands, Client, RedisResult};
 use rocket::{fairing::Fairing, tokio::sync::Mutex};
 use serde::{de::DeserializeOwned, Serialize};
 use std::sync::Arc;
 
-use crate::api::{ApiResponse, Error};
+use crate::api::{ApiResponse, Error, Null};
 
 pub mod teams;
+pub mod users;
 
 pub type RedisMutex = Arc<Mutex<RedisPool>>;
 
@@ -42,19 +44,23 @@ impl RedisPool {
     }
 
     // Method to get data from Redis cache
-    pub async fn get_from_cache<T>(&self, key: &str) -> Result<Option<T>, Error<String>>
+    pub async fn get_from_cache<T>(&self, key: &str) -> Result<Option<T>, Error<Null>>
     where
         T: DeserializeOwned,
     {
-        let mut con = self.get_connection().await.unwrap();
+        let mut con = self.get_connection().await.map_err(|e| {
+            ApiResponse::internal_server_error(format!("Cache connection error: {e}"))
+        })?;
 
         // Try to get the cached data
-        let cached_data: Option<String> = con.get(key).await.unwrap();
+        let cached_data: Option<String> = con.get(key).await.map_err(|e| {
+            ApiResponse::internal_server_error(format!("Cache retrieval error: {e}"))
+        })?;
 
         // If data exists, deserialize it
         if let Some(data) = cached_data {
             let deserialized_data: T = serde_json::from_str(&data).map_err(|e| {
-                ApiResponse::internal_server_error(format!("Failed to deserialize: {}", e))
+                ApiResponse::conflict(format!("Failed to deserialize: {}", e), data)
             })?;
             Ok(Some(deserialized_data))
         } else {
@@ -68,7 +74,7 @@ impl RedisPool {
         key: &str,
         value: &T,
         ttl: Option<u64>,
-    ) -> Result<(), Error<String>>
+    ) -> Result<(), Error<Null>>
     where
         T: Serialize,
     {
@@ -100,11 +106,11 @@ impl RedisPool {
 
     // Method to remove data to Redis cache
     pub async fn remove_from_cache(&self, key: &str) -> Result<(), Error<String>> {
-        let mut con = self.get_connection().await.map_err(|e| {
+        let mut conn = self.get_connection().await.map_err(|e| {
             ApiResponse::internal_server_error(format!("Couldn't optain Redis connection: {e}"))
         })?;
 
-        let _: () = con
+        let _: () = conn
             .del(key)
             .await
             .map_err(|e| ApiResponse::internal_server_error(format!("Redis DEL error: {e}")))?;
@@ -124,4 +130,12 @@ pub fn redis_fairing() -> impl Fairing {
             }
         }
     })
+}
+
+pub fn create_random_token(length: usize) -> String {
+    rand::thread_rng()
+        .sample_iter(&Alphanumeric)
+        .take(length)
+        .map(char::from)
+        .collect::<String>()
 }
