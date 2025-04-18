@@ -31,14 +31,20 @@ diesel::table! {
 diesel::table! {
     users (id) {
         id -> Uuid,
-        role -> Int2,
-        status -> Int2,
         #[max_length = 40]
         username -> Varchar,
-        #[max_length = 40]
-        display_name -> Nullable<Varchar>,
+        #[max_length = 20]
+        first_name -> Varchar,
+        #[max_length = 20]
+        last_name -> Varchar,
         #[max_length = 100]
         email -> Varchar,
+        #[max_length = 20]
+        phone -> Nullable<Varchar>,
+        role -> Int2,
+        status -> Int2,
+        #[max_length = 20]
+        job_title -> Nullable<Varchar>,
         password -> Text,
         bio -> Nullable<Text>,
         avatar_url -> Nullable<Text>,
@@ -52,4 +58,9 @@ diesel::joinable!(team_members -> users (user_id));
 diesel::joinable!(team_updates -> teams (team_id));
 diesel::joinable!(teams -> users (owner_id));
 
-diesel::allow_tables_to_appear_in_same_query!(team_members, team_updates, teams, users,);
+diesel::allow_tables_to_appear_in_same_query!(
+    team_members,
+    team_updates,
+    teams,
+    users,
+);

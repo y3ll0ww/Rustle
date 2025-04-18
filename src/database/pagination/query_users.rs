@@ -16,7 +16,8 @@ pub fn sort<'a>(
             Some(UserField::Role) => query.order(role.desc()),
             Some(UserField::Status) => query.order(status.desc()),
             Some(UserField::Username) => query.order(username.desc()),
-            Some(UserField::DisplayName) => query.order(display_name.desc()),
+            Some(UserField::FirstName) => query.order(first_name.desc()),
+            Some(UserField::LastName) => query.order(last_name.desc()),
             Some(UserField::Email) => query.order(email.desc()),
             Some(UserField::CreatedAt) => query.order(created_at.desc()),
             Some(UserField::UpdatedAt) => query.order(updated_at.desc()),
@@ -27,7 +28,8 @@ pub fn sort<'a>(
             Some(UserField::Role) => query.order(role.asc()),
             Some(UserField::Status) => query.order(status.asc()),
             Some(UserField::Username) => query.order(username.asc()),
-            Some(UserField::DisplayName) => query.order(display_name.asc()),
+            Some(UserField::FirstName) => query.order(first_name.asc()),
+            Some(UserField::LastName) => query.order(last_name.asc()),
             Some(UserField::Email) => query.order(email.asc()),
             Some(UserField::CreatedAt) => query.order(created_at.asc()),
             Some(UserField::UpdatedAt) => query.order(updated_at.asc()),
@@ -65,7 +67,9 @@ pub fn build<'a>(
             username
                 .ilike(q.clone())
                 .or(email.ilike(q.clone()))
-                .or(display_name.ilike(q)),
+                .or(first_name.ilike(q.clone()))
+                .or(last_name.ilike(q.clone()))
+                .or(phone.ilike(q)),
         );
     }
 

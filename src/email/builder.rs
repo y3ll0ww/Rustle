@@ -61,7 +61,7 @@ impl MailBuilder {
         let address = Address::from_str(&recipient.email).map_err(|e| e.to_string())?;
 
         let mailbox = Mailbox {
-            name: Some(recipient.get_name()),
+            name: Some(recipient.full_name()),
             email: address,
         };
 

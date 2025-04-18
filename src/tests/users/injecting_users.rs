@@ -13,6 +13,8 @@ use crate::{
 fn inject_custom_user() {
     user_injection(
         "invited_user",
+        "Invited",
+        "User",
         Some("password123!"),
         "invited_user@example.com",
         UserRole::Reviewer,
@@ -24,6 +26,8 @@ fn inject_custom_user() {
 fn inject_admin_user() {
     user_injection(
         ADMIN_USERNAME,
+        "Admin",
+        "User",
         Some(ADMIN_PASSWORD),
         "admin@example.com",
         UserRole::Admin,
@@ -35,6 +39,8 @@ fn inject_admin_user() {
 fn inject_default_user() {
     user_injection(
         DEFAULT_USERNAME,
+        "Default",
+        "User",
         Some(DEFAULT_PASSWORD),
         "test_user@example.com",
         UserRole::Reviewer,
@@ -44,6 +50,8 @@ fn inject_default_user() {
 
 fn user_injection(
     username: &str,
+    first_name: &str,
+    last_name: &str,
     password: Option<&str>,
     email: &str,
     role: UserRole,
@@ -54,11 +62,14 @@ fn user_injection(
     // Construct a JSON payload matching the User structure
     let user = User {
         id: Uuid::new_v4(),
+        username: username.to_string(),
+        first_name: first_name.to_string(),
+        last_name: last_name.to_string(),
+        email: email.to_string(),
+        phone: None,
         role: i16::from(role),
         status: i16::from(status),
-        username: username.to_string(),
-        display_name: None,
-        email: email.to_string(),
+        job_title: None,
         password: Password::generate(password).unwrap(),
         bio: None,
         avatar_url: None,

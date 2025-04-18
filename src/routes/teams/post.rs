@@ -74,20 +74,15 @@ pub async fn create_new_team_by_form(
     // Step 2: Add new team to database
     let cache_team_with_members = db
         .run(move |conn| {
-            // Get additional user information
-            let (display_name, avatar_url) = users::table
-                .filter(users::id.eq(&user.id))
-                .select((users::display_name, users::avatar_url))
-                .first::<(Option<String>, Option<String>)>(conn)?;
-
             // Create a new team with members to place in the cache
             let team_with_members = TeamWithMembers {
                 team: new_team.clone(),
                 members: vec![TeamMemberInfo {
                     user_id: user.id,
-                    username: user.username,
-                    display_name,
-                    avatar_url,
+                    first_name: user.first_name,
+                    last_name: user.last_name,
+                    job_title: user.job_title,
+                    avatar_url: user.avatar_url,
                     team_role: owner_membership.team_role,
                 }],
             };

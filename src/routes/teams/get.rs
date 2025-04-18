@@ -114,8 +114,9 @@ pub async fn get_team_by_id(
                 .filter(team_members::team_id.eq(&team_id))
                 .select((
                     users::id,
-                    users::username,
-                    users::display_name,
+                    users::first_name,
+                    users::last_name,
+                    users::job_title,
                     users::avatar_url,
                     team_members::team_role,
                 ))

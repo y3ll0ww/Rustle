@@ -71,8 +71,9 @@ pub struct TeamUpdate {
 #[derive(Deserialize, Queryable, Serialize)]
 pub struct TeamMemberInfo {
     pub user_id: Uuid,
-    pub username: String,
-    pub display_name: Option<String>,
+    pub first_name: String,
+    pub last_name: String,
+    pub job_title: Option<String>,
     pub avatar_url: Option<String>,
     pub team_role: i16,
 }

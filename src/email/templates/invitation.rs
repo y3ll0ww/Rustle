@@ -13,7 +13,7 @@ impl MailTemplate {
         team_name: &str,
         token: &str,
     ) -> Result<Self, String> {
-        let inviter_name = inviter.get_name();
+        let inviter_name = inviter.full_name();
         let link = format!("https://localhost/set-password?token={token}");
 
         Ok(MailTemplate {
@@ -31,8 +31,8 @@ impl HtmlElement {
         link: &str,
     ) -> Result<MultiPart, String> {
         let replacements = HashMap::from([
-            ("RECIPIENT", recipient.get_name()),
-            ("INVITER", inviter.get_name()),
+            ("RECIPIENT", recipient.full_name()),
+            ("INVITER", inviter.full_name()),
             ("TEAM_NAME", team_name.to_string()),
             ("INVITE_LINK", link.to_string()),
         ]);
