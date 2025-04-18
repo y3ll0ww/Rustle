@@ -1,5 +1,5 @@
 mod delete;
-mod get;
+pub mod get;
 mod post;
 mod put;
 
@@ -15,6 +15,7 @@ pub fn routes() -> Vec<rocket::Route> {
         post::reinvite_user_by_id,      // POST:    /user/invite/re/<space>/<id>
         post::login_by_form,            // POST:    /user/login
         post::logout,                   // POST:    /user/logout
+        get::get_paginated_users,       // GET:     /user/browse?<status>&<role>
         get::get_all_users_paginated,       // GET:     /user/?<after>&<limit>
     ]
 }
