@@ -7,23 +7,13 @@ use uuid::Uuid;
 use crate::{
     api::{ApiResponse, Error, Null},
     database::Db,
-    models::users::{NewUser, PublicUser, User, UserStatus},
+    models::users::{PublicUser, User, UserStatus},
     schema::users,
 };
 
 use super::pagination::{
     query_users, records::PaginatedRecords, request::PaginationRequest, sort::UserField,
 };
-
-pub async fn create_new_user(db: &Db, new_user: NewUser) -> Result<User, Error<Null>> {
-    db.run(move |conn| {
-        diesel::insert_into(users::table)
-            .values(new_user)
-            .get_result(conn)
-    })
-    .await
-    .map_err(ApiResponse::from_error)
-}
 
 pub async fn get_all_public_users(db: &Db) -> Result<Vec<PublicUser>, Error<Null>> {
     let users: Vec<PublicUser> = db

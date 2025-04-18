@@ -50,15 +50,6 @@ impl User {
     }
 }
 
-#[derive(Insertable, Serialize)]
-#[diesel(table_name = users)]
-pub struct NewUser {
-    pub username: String,
-    pub display_name: String,
-    pub email: String,
-    pub password: String,
-}
-
 #[derive(Clone, Debug, Deserialize, Queryable, Serialize)]
 #[diesel(table_name = users)]
 pub struct PublicUser {
