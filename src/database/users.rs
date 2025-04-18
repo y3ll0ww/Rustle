@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use diesel::{result::Error as DieselError, ExpressionMethods, QueryDsl, RunQueryDsl};
+use rocket::serde::json::Json;
 use uuid::Uuid;
 
 use crate::{
@@ -8,6 +9,10 @@ use crate::{
     database::Db,
     models::users::{NewUser, PublicUser, User, UserStatus},
     schema::users,
+};
+
+use super::pagination::{
+    query_users, records::PaginatedRecords, request::PaginationRequest, sort::UserField,
 };
 
 pub async fn create_new_user(db: &Db, new_user: NewUser) -> Result<User, Error<Null>> {
@@ -32,31 +37,59 @@ pub async fn get_all_public_users(db: &Db) -> Result<Vec<PublicUser>, Error<Null
     Ok(users)
 }
 
-pub async fn get_users_after_id(
+pub async fn get_users_paginated(
     db: &Db,
-    last_seen_id: Option<Uuid>,
-    limit: i64,
-) -> Result<Vec<PublicUser>, Error<Null>> {
-    use crate::schema::users::dsl::*;
+    status: Option<i16>,
+    role: Option<i16>,
+    params: Json<PaginationRequest<UserField>>,
+) -> Result<PaginatedRecords<PublicUser>, Error<Null>> {
+    // Number of the page (should be at least 1)
+    let requested_page = params.page.unwrap_or(1).max(1);
 
-    let result = db
+    // Number of maximum results (default 20, min 1, max 100)
+    let limit = params.limit.unwrap_or(20).clamp(1, 100);
+
+    let (users, total_records, page, total_pages) = db
         .run(move |conn| {
-            // Create a query, ordering the table by ID
-            let mut query = users.into_boxed().order(id.asc()).limit(limit);
+            let search = params.search.as_deref().unwrap_or_default();
 
-            if let Some(last_id) = last_seen_id {
-                query = query.filter(id.gt(last_id));
-            }
+            // Build the query as COUNT to get the total
+            let total = query_users::build(search, status, role)
+                .count()
+                .get_result::<i64>(conn)?;
 
-            query.load::<User>(conn)
+            // Define the total number of pages by dividing the total by the limit and returning the upper
+            // bound from the float as integer. Make sure there is at least one page.
+            let total_pages = ((total as f64 / limit as f64).ceil() as i64).max(1);
+
+            // Cap the page to total pages
+            let page = requested_page.min(total_pages);
+
+            // Calculate the offset of the search
+            let offset = (page - 1) * limit;
+
+            // Build the query again for LOAD and apply filtering
+            let mut query = query_users::build(search, status, role);
+
+            // Apply sorting to the query
+            query = query_users::sort(query, &params.sort_by, &params.sort_dir);
+
+            // Add the offset and limit and run the query
+            let users: Vec<PublicUser> = query
+                .offset(offset)
+                .limit(limit)
+                .load::<User>(conn)
+                .map(|users| users.iter().map(PublicUser::from).collect())?;
+
+            Ok((users, total, page, total_pages))
         })
         .await
         .map_err(ApiResponse::from_error)?;
 
-    Ok(result
-        .into_iter()
-        .map(|user| PublicUser::from(&user))
-        .collect())
+    Ok(
+        PaginatedRecords::<PublicUser>::new(total_records, page, limit, total_pages)
+            .add_records(users),
+    )
 }
 
 pub async fn get_user_by_id(db: &Db, id: Uuid) -> Result<User, Error<Null>> {

@@ -16,6 +16,5 @@ pub fn routes() -> Vec<rocket::Route> {
         post::login_by_form,            // POST:    /user/login
         post::logout,                   // POST:    /user/logout
         get::get_paginated_users,       // GET:     /user/browse?<status>&<role>
-        get::get_all_users_paginated,       // GET:     /user/?<after>&<limit>
     ]
 }

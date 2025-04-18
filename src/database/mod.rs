@@ -1,3 +1,4 @@
+pub mod pagination;
 pub mod users;
 
 use rocket_sync_db_pools::{database, diesel};

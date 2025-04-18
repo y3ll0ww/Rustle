@@ -2,7 +2,7 @@ use rocket::http::{ContentType, Status};
 
 use super::{login, DEFAULT_LOGIN, DEFAULT_USERNAME};
 use crate::{
-    routes::users::get::PaginationParams,
+    database::pagination::{request::PaginationRequest, sort::UserField},
     tests::{
         test_client,
         users::{ROUTE_GET, ROUTE_GET_ALL},
@@ -62,7 +62,7 @@ fn second_get_all_users_paginated() {
     login(&client, DEFAULT_LOGIN);
 
     // Construct a JSON payload matching the User structure
-    let params = PaginationParams {
+    let params = PaginationRequest::<UserField> {
         page: Some(7),
         limit: Some(7),
         search: None,
