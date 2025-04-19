@@ -1,12 +1,12 @@
 use diesel::{Connection, ExpressionMethods, JoinOnDsl, QueryDsl, RunQueryDsl};
+use uuid::Uuid;
 
 use crate::{
     api::{ApiResponse, Error, Null},
     models::{
-        users::{PublicUser, User},
+        users::{PublicUser, User, UserRole},
         workspaces::{
-            MemberInfo, NewWorkspace, Workspace, WorkspaceMember, WorkspaceRole,
-            WorkspaceWithMembers,
+            WorkspaceUpdate, MemberInfo, NewWorkspace, Workspace, WorkspaceMember, WorkspaceRole, WorkspaceWithMembers
         },
     },
     schema::{users, workspace_members, workspaces},
@@ -14,9 +14,12 @@ use crate::{
 
 use super::Db;
 
+const UPDATE_USER_PERMISSION: UserRole = UserRole::Manager;
+const UPDATE_WORKSPACE_PERMISSION: WorkspaceRole = WorkspaceRole::Contributor;
+
 pub async fn insert_new_workspace(
-    new_workspace: NewWorkspace,
     db: &Db,
+    new_workspace: NewWorkspace,
 ) -> Result<WorkspaceWithMembers, Error<Null>> {
     // Copy owner ID since it will go out of scope
     let owner_id = new_workspace.owner;
@@ -33,19 +36,19 @@ pub async fn insert_new_workspace(
 
     // Add the owner to the workspace
     add_members_to_workspace(
+        db,
         vec![WorkspaceMember {
             workspace: workspace.id,
             member: owner_id,
             role: WorkspaceRole::Owner as i16,
         }],
-        db,
     )
     .await
 }
 
 pub async fn add_members_to_workspace(
-    members: Vec<WorkspaceMember>,
     db: &Db,
+    members: Vec<WorkspaceMember>,
 ) -> Result<WorkspaceWithMembers, Error<Null>> {
     // Return error if there are no members to add
     if members.is_empty() {
@@ -98,4 +101,39 @@ pub async fn add_members_to_workspace(
     })
     .await
     .map_err(ApiResponse::from_error)
+}
+
+pub async fn update_workspace_information(
+    db: &Db,
+    id: Uuid,
+    user: PublicUser,
+    form: WorkspaceUpdate,
+) -> Result<Workspace, Error<Null>> {
+    db.run(move |conn| {
+        // Check if the user has the correct user role
+        if user.role < i16::from(UPDATE_USER_PERMISSION) {
+            // If the user doesn't have the right role; check the role within the workspace
+            let member = workspace_members::table
+                .filter(workspace_members::workspace.eq(id))
+                .filter(workspace_members::member.eq(user.id))
+                .first::<WorkspaceMember>(conn)
+                .map_err(|e| {
+                    ApiResponse::unauthorized(format!("User not part of workspace: {e}"))
+                })?;
+
+            // If the workspace role is (also) insufficient; return unauthorized
+            if member.role < i16::from(UPDATE_WORKSPACE_PERMISSION) {
+                return Err(ApiResponse::unauthorized(
+                    "No permission to update team information".to_string(),
+                ));
+            }
+        }
+
+        // Step 3: Update the workspace table with information from the form
+        diesel::update(workspaces::table.filter(workspaces::id.eq(id)))
+            .set(form)
+            .get_result::<Workspace>(conn)
+            .map_err(ApiResponse::from_error)
+    })
+    .await
 }

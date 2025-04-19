@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{
-    forms::workspace::{NewWorkspaceForm, UpdateWorkspaceForm},
+    forms::workspace::NewWorkspaceForm,
     schema::{workspace_members, workspaces},
 };
 
@@ -40,19 +40,35 @@ impl Workspace {
         }
     }
 
-    pub fn update(&mut self, update_workspace_form: UpdateWorkspaceForm) {
-        if let Some(name) = update_workspace_form.name {
+    pub fn update(&mut self, workspace_update: WorkspaceUpdate) {
+        if let Some(name) = workspace_update.name {
             self.name = name
         }
 
-        if let Some(description) = update_workspace_form.description {
+        if let Some(description) = workspace_update.description {
             self.description = Some(description)
         }
 
-        if let Some(image_url) = update_workspace_form.image_url {
+        if let Some(image_url) = workspace_update.image_url {
             self.image_url = Some(image_url)
         }
     }
+}
+
+#[derive(Deserialize, Insertable, Serialize)]
+#[diesel(table_name = workspaces)]
+pub struct WorkspaceNew {
+    pub name: String,
+    pub description: Option<String>,
+    pub image_url: Option<String>,
+}
+
+#[derive(AsChangeset, Clone, Deserialize, Serialize)]
+#[diesel(table_name = workspaces)]
+pub struct WorkspaceUpdate {
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub image_url: Option<String>,
 }
 
 #[derive(Insertable, Queryable, Serialize)]

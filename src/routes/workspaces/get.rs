@@ -70,7 +70,7 @@ pub async fn get_workspace_by_id(
     let redis = redis.lock().await;
 
     // Step 1: Check the workspace update stored in cookies
-    let timestamp_from_cookie = get_workspace_update_cookie(id, cookies).unwrap_or_default();
+    let timestamp_from_cookie = get_workspace_timestamp(id, cookies).unwrap_or_default();
 
     // Step 2: Get the workspace update from the database
     let workspace_id = id;
@@ -88,7 +88,7 @@ pub async fn get_workspace_by_id(
     // retrieved from the database, we can return the workspace from the cache (if it exists).
     if timestamp_from_cookie == updated_at {
         let workspace_from_cache = redis
-            .get_from_cache::<WorkspaceWithMembers>(&workspace_cache_key(id))
+            .get_from_cache::<WorkspaceWithMembers>(&cache_key_workspace(id))
             .await
             .unwrap_or(None);
 
@@ -105,7 +105,7 @@ pub async fn get_workspace_by_id(
     }
 
     // In any other case (no cookie or different timestamps); update the cookie
-    add_workspace_update_cookie(workspace_id, updated_at, cookies);
+    add_workspace_timestamp(workspace_id, updated_at, cookies);
 
     // Step 4: Get the workspace information including workspace members from the database
     //let workspace_id = id;
@@ -136,7 +136,7 @@ pub async fn get_workspace_by_id(
     // Add the workspace with members to the cache (ignore error in case cache not working)
     let _ = redis
         .set_to_cache(
-            &workspace_cache_key(id),
+            &cache_key_workspace(id),
             &workspace_from_database,
             CACHE_TTL_ONE_HOUR,
         )

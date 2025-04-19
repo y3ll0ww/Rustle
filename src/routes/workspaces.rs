@@ -1,4 +1,3 @@
-use chrono::Utc;
 use diesel::prelude::*;
 use rocket::{form::Form, http::CookieJar, State};
 use rocket_sync_db_pools::diesel;
@@ -9,18 +8,18 @@ use crate::{
     auth::JwtGuard,
     cache::{
         workspaces::{
-            update_workspace_cache, workspace_cache_key, CACHE_TTL_ONE_HOUR,
+            cache_key_workspace, CACHE_TTL_ONE_HOUR,
         },
         RedisMutex,
     },
     cookies::workspaces::{
-        add_workspace_update_cookie, get_workspace_update_cookie, remove_workspace_update_cookie,
+        add_workspace_timestamp, get_workspace_timestamp, remove_workspace_update_cookie,
     },
     database::Db,
-    forms::workspace::{NewWorkspaceForm, UpdateWorkspaceForm},
+    forms::workspace::NewWorkspaceForm,
     models::{
         users::UserRole,
-        workspaces::{MemberInfo, Workspace, WorkspaceMember, WorkspaceRole, WorkspaceWithMembers},
+        workspaces::{MemberInfo, Workspace, WorkspaceWithMembers},
     },
     schema::{users, workspace_members, workspaces},
 };
@@ -28,6 +27,7 @@ use crate::{
 mod delete;
 mod get;
 mod post;
+mod put;
 
 // * /workspaces               -> GET
 // * /workspaces/new           -> POST
@@ -37,10 +37,10 @@ mod post;
 pub fn routes() -> Vec<rocket::Route> {
     routes![
         overview,
-        new_workspace,
+        post::create_new_workspace_by_form,
         get_workspace,
-        update_workspace,
-        delete_workspace
+        put::update_workspace,
+        delete_workspace,
     ]
 }
 
@@ -58,29 +58,6 @@ async fn get_workspace(
     redis: &State<RedisMutex>,
 ) -> Result<Success<WorkspaceWithMembers>, Error<Null>> {
     get::get_workspace_by_id(id, guard, db, cookies, redis).await
-}
-
-#[post("/new", data = "<form>")]
-async fn new_workspace(
-    form: Form<NewWorkspaceForm>,
-    guard: JwtGuard,
-    db: Db,
-    cookies: &CookieJar<'_>,
-    redis: &State<RedisMutex>,
-) -> Result<Success<Null>, Error<Null>> {
-    post::create_new_workspace_by_form(form, guard, db, cookies, redis).await
-}
-
-#[post("/<id>/update", data = "<form>")]
-async fn update_workspace(
-    id: Uuid,
-    form: Form<UpdateWorkspaceForm>,
-    guard: JwtGuard,
-    db: Db,
-    cookies: &CookieJar<'_>,
-    redis: &State<RedisMutex>,
-) -> Result<Success<Null>, Error<Null>> {
-    post::update_workspace_by_form(id, form, guard, db, cookies, redis).await
 }
 
 #[delete("/<id>/delete")]

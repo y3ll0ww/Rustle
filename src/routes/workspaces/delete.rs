@@ -58,7 +58,7 @@ pub async fn delete_workspace_by_id(
     let _ = redis
         .lock()
         .await
-        .remove_from_cache(&workspace_cache_key(id))
+        .remove_from_cache(&cache_key_workspace(id))
         .await;
 
     // 5. Remove the workspace from the database
