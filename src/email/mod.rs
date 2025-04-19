@@ -42,11 +42,11 @@ impl MailClient {
         &self,
         inviter: &PublicUser,
         recipient: &PublicUser,
-        team_name: &str,
+        workspace_name: &str,
         token: &str,
     ) -> Result<Response, String> {
         // Get the invitation template
-        let template = MailTemplate::invitation(inviter, recipient, team_name, token)?;
+        let template = MailTemplate::invitation(inviter, recipient, workspace_name, token)?;
 
         // Generate the message
         let message = self.mail.from_template(recipient, template)?;

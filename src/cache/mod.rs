@@ -21,8 +21,8 @@ use std::sync::Arc;
 
 use crate::api::{ApiResponse, Error, Null};
 
-pub mod teams;
 pub mod users;
+pub mod workspaces;
 
 pub type RedisMutex = Arc<Mutex<RedisPool>>;
 

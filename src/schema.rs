@@ -1,34 +1,6 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    team_members (team_id, user_id) {
-        team_id -> Uuid,
-        user_id -> Uuid,
-        team_role -> Int2,
-    }
-}
-
-diesel::table! {
-    team_updates (team_id) {
-        team_id -> Uuid,
-        last_updated -> Timestamp,
-    }
-}
-
-diesel::table! {
-    teams (id) {
-        id -> Uuid,
-        owner_id -> Uuid,
-        #[max_length = 40]
-        team_name -> Varchar,
-        team_description -> Nullable<Text>,
-        image_url -> Nullable<Text>,
-        created_at -> Timestamp,
-        updated_at -> Timestamp,
-    }
-}
-
-diesel::table! {
     users (id) {
         id -> Uuid,
         #[max_length = 40]
@@ -53,9 +25,29 @@ diesel::table! {
     }
 }
 
-diesel::joinable!(team_members -> teams (team_id));
-diesel::joinable!(team_members -> users (user_id));
-diesel::joinable!(team_updates -> teams (team_id));
-diesel::joinable!(teams -> users (owner_id));
+diesel::table! {
+    workspace_members (workspace, member) {
+        workspace -> Uuid,
+        member -> Uuid,
+        role -> Int2,
+    }
+}
 
-diesel::allow_tables_to_appear_in_same_query!(team_members, team_updates, teams, users,);
+diesel::table! {
+    workspaces (id) {
+        id -> Uuid,
+        owner -> Uuid,
+        #[max_length = 40]
+        name -> Varchar,
+        description -> Nullable<Text>,
+        image_url -> Nullable<Text>,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::joinable!(workspace_members -> users (member));
+diesel::joinable!(workspace_members -> workspaces (workspace));
+diesel::joinable!(workspaces -> users (owner));
+
+diesel::allow_tables_to_appear_in_same_query!(users, workspace_members, workspaces,);

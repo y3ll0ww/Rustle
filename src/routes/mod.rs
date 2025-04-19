@@ -1,5 +1,5 @@
-pub mod teams;
 pub mod users;
+pub mod workspaces;
 
-pub const TEAMS: &str = "/teams/";
 pub const USERS: &str = "/user/";
+pub const WORKSPACES: &str = "/workspaces/";

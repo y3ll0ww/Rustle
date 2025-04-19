@@ -1,44 +1,44 @@
 use diesel::AsChangeset;
 use serde::{Deserialize, Serialize};
 
-use crate::schema::teams;
+use crate::schema::workspaces;
 
 /// This struct represents the information required to create a new
-/// [`Team`](crate::models::teams::Team) via a form.
+/// [`Workspace`](crate::models::workspaces::Workspace) via a form.
 #[derive(Debug, Deserialize, FromForm, Serialize)]
-pub struct NewTeamForm {
+pub struct NewWorkspaceForm {
     #[field(validate = len(1..))]
-    pub team_name: String,
+    pub name: String,
     pub description: Option<String>,
 }
 
-impl NewTeamForm {
+impl NewWorkspaceForm {
     pub fn body(&self) -> String {
         format!(
-            "team_name={}&description={}",
-            self.team_name,
+            "name={}&description={}",
+            self.name,
             self.description.as_deref().unwrap_or_default(),
         )
     }
 }
 
 /// This struct represents the information required to update the basic information of an existing
-/// [`Team`](crate::models::teams::Team) via a form.
+/// [`Workspace`](crate::models::workspaces::Workspace) via a form.
 #[derive(AsChangeset, Clone, Debug, Deserialize, FromForm, Serialize)]
-#[diesel(table_name = teams)]
-pub struct UpdateTeamForm {
+#[diesel(table_name = workspaces)]
+pub struct UpdateWorkspaceForm {
     #[field(validate = len(1..))]
-    pub team_name: Option<String>,
-    pub team_description: Option<String>,
+    pub name: Option<String>,
+    pub description: Option<String>,
     pub image_url: Option<String>,
 }
 
-impl UpdateTeamForm {
+impl UpdateWorkspaceForm {
     pub fn body(&self) -> String {
         format!(
-            "team_name={}&description={}&image_url={}",
-            self.team_name.as_deref().unwrap_or_default(),
-            self.team_description.as_deref().unwrap_or_default(),
+            "name={}&description={}&image_url={}",
+            self.name.as_deref().unwrap_or_default(),
+            self.description.as_deref().unwrap_or_default(),
             self.image_url.as_deref().unwrap_or_default(),
         )
     }

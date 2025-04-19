@@ -1,7 +1,7 @@
 //use chrono::Utc;
 //
 //use crate::{
-//    cache::teams::{set_team_cache, update_team_cache},
+//    cache::workspaces::{set_team_cache, update_team_cache},
 //    forms::teams::UpdateTeamForm,
 //};
 //
@@ -32,8 +32,8 @@ use super::*;
 ///   - No [`TOKEN_COOKIE`](crate::cookies::TOKEN_COOKIE).
 ///   - Request user is not [`UserRole::Manager`] or higher.
 /// * **500 Server Error**: Any database operation fails.
-pub async fn create_new_team_by_form(
-    form: Form<NewTeamForm>,
+pub async fn create_new_workspace_by_form(
+    form: Form<NewWorkspaceForm>,
     guard: JwtGuard,
     db: Db,
     cookies: &CookieJar<'_>,
@@ -50,56 +50,43 @@ pub async fn create_new_team_by_form(
     }
 
     // Create a new Team
-    let new_team = Team::new(user.id, form.team_name.clone(), form.description.clone());
+    let new_workspace = Workspace::new(user.id, form.name.clone(), form.description.clone());
 
     // Create a new team member
-    let owner_membership = TeamMember {
-        team_id: new_team.id,
-        user_id: user.id,
-        team_role: TeamRole::Owner as i16,
-    };
-
-    // Create a new team update
-    let team_update = TeamUpdate {
-        team_id: new_team.id,
-        last_updated: new_team.updated_at,
+    let owner_membership = WorkspaceMember {
+        workspace: new_workspace.id,
+        member: user.id,
+        role: WorkspaceRole::Owner as i16,
     };
 
     // Create some variables from which types will go out of scope
-    let success_message = format!("Team created: '{}'", form.team_name);
-    let team_id = new_team.id;
+    let success_message = format!("Team created: '{}'", form.name);
+    let team_id = new_workspace.id;
     let user = user.clone();
-    let team_update_clone = team_update.clone();
+
+    let workspace_id = new_workspace.id;
+    let timestamp = new_workspace.updated_at;
 
     // Step 2: Add new team to database
     let cache_team_with_members = db
         .run(move |conn| {
             // Create a new team with members to place in the cache
-            let team_with_members = TeamWithMembers {
-                team: new_team.clone(),
-                members: vec![TeamMemberInfo {
-                    user_id: user.id,
-                    first_name: user.first_name,
-                    last_name: user.last_name,
-                    job_title: user.job_title,
-                    avatar_url: user.avatar_url,
-                    team_role: owner_membership.team_role,
+            let team_with_members = WorkspaceWithMembers {
+                workspace: new_workspace.clone(),
+                members: vec![MemberInfo {
+                    user,
+                    role: owner_membership.role,
                 }],
             };
 
             // Insert new team into teams table
-            diesel::insert_into(teams::table)
-                .values(&new_team)
+            diesel::insert_into(workspaces::table)
+                .values(&new_workspace)
                 .execute(conn)?;
 
             // Insert owner into team_members table
-            diesel::insert_into(team_members::table)
+            diesel::insert_into(workspace_members::table)
                 .values(&owner_membership)
-                .execute(conn)?;
-
-            // Insert team update into team_updates table
-            diesel::insert_into(team_updates::table)
-                .values(&team_update_clone)
                 .execute(conn)?;
 
             // Return the team with members for caching
@@ -109,18 +96,18 @@ pub async fn create_new_team_by_form(
         .map_err(ApiResponse::from_error)?;
 
     // Step 3: Add the team update to the cookies
-    add_team_update_cookie(team_update, cookies)?;
+    add_workspace_update_cookie(workspace_id, timestamp, cookies);
 
     // Step 4: Add the team information to the cache
-    set_team_cache(redis, team_id, &cache_team_with_members).await;
+    set_workspace_cache(redis, team_id, &cache_team_with_members).await;
 
     // Return success response
     Ok(ApiResponse::success(success_message, None))
 }
 
-pub async fn update_team_by_form(
+pub async fn update_workspace_by_form(
     id: Uuid,
-    form: Form<UpdateTeamForm>,
+    form: Form<UpdateWorkspaceForm>,
     guard: JwtGuard,
     db: Db,
     cookies: &CookieJar<'_>,
@@ -128,75 +115,61 @@ pub async fn update_team_by_form(
 ) -> Result<Success<Null>, Error<Null>> {
     // User must be a manager
     let minimal_user_role = UserRole::Manager;
-    let minimal_team_role = TeamRole::Contributor;
+    let minimal_workspace_role = WorkspaceRole::Contributor;
 
     // Get user information from cookies
     let user = guard.get_user();
 
     // Copy some values to prevent borrowing issues
-    let team_id = id;
+    let workspace_id = id;
     let form_clone = form.clone();
 
     // Perform database actions
-    let team_update = db
+    let timestamp = db
         .run(move |conn| {
-            // Step 1: Get the user information from the team members table
-            let team_member = team_members::table
-                .filter(team_members::team_id.eq(&team_id))
-                .filter(team_members::user_id.eq(&user.id))
-                .first::<TeamMember>(conn)
-                .map_err(ApiResponse::from_error)?;
+            // Check if the user has the correct user role
+            if user.role < i16::from(minimal_user_role) {
+                // If the user doesn't have the right role; check the role within the workspace
+                let member = workspace_members::table
+                    .filter(workspace_members::workspace.eq(&workspace_id))
+                    .filter(workspace_members::member.eq(&user.id))
+                    .first::<WorkspaceMember>(conn)
+                    .map_err(ApiResponse::from_error)?;
 
-            // Step 2: Validate if the user has permission to update the team
-            if team_member.team_role < minimal_team_role as i16
-                && (user.role < i16::from(minimal_user_role))
-            {
-                return Err(ApiResponse::unauthorized(
-                    "No permission to update team information".to_string(),
-                ));
+                // If the workspace role is (also) insufficient; return unauthorized
+                if member.role < i16::from(minimal_workspace_role) {
+                    return Err(ApiResponse::unauthorized(
+                        "No permission to update team information".to_string(),
+                    ));
+                }
             }
 
             // Set the current timestamp
             let timestamp = Utc::now().naive_utc();
 
-            // Step 3: Update the team table with information from the form
-            if diesel::update(teams::table.filter(teams::id.eq(&team_id)))
-                .set((&*form, teams::updated_at.eq(timestamp)))
+            // Step 3: Update the workspace table with information from the form
+            if diesel::update(workspaces::table.filter(workspaces::id.eq(&workspace_id)))
+                .set((&*form, workspaces::updated_at.eq(timestamp)))
                 .execute(conn)
                 .map_err(ApiResponse::from_error)?
                 == 0
             {
-                return Err(ApiResponse::not_found("No teams to update".to_string()));
+                return Err(ApiResponse::not_found("No workspace to update".to_string()));
             };
 
-            // Step 4: Update the team updates table to reflect the change
-            if diesel::update(team_updates::table.filter(team_updates::team_id.eq(&team_id)))
-                .set(team_updates::last_updated.eq(timestamp))
-                .execute(conn)
-                .map_err(ApiResponse::from_error)?
-                == 0
-            {
-                return Err(ApiResponse::not_found(
-                    "No team updates to update".to_string(),
-                ));
-            };
-
-            Ok(TeamUpdate {
-                team_id,
-                last_updated: timestamp,
-            })
+            Ok(timestamp)
         })
         .await?;
 
     // Step 5: Update the team in the cache
-    if update_team_cache(redis, id, Some(form_clone), None).await {
+    if update_workspace_cache(redis, id, Some(form_clone), None).await {
         // Step 6: If cache has been updated, update the cookie too
-        add_team_update_cookie(team_update, cookies)?;
+        add_workspace_update_cookie(workspace_id, timestamp, cookies);
     }
 
     // Return a success response
     Ok(ApiResponse::success(
-        "Team updated successfully".to_string(),
+        "Workspace updated successfully".to_string(),
         None,
     ))
 }

@@ -98,12 +98,16 @@ pub async fn invite_new_users_by_form(
 
         let inviter = guard.get_user();
         let recipient = PublicUser::from(&user);
-        let team_name = form.space.to_string();
+        let workspace_name = form.space.to_string();
 
         // Send an invitation email to the new users, containing the token
         tokio::task::spawn_blocking(move || {
-            let _ =
-                MailClient::no_reply().send_invitation(&inviter, &recipient, &team_name, &token);
+            let _ = MailClient::no_reply().send_invitation(
+                &inviter,
+                &recipient,
+                &workspace_name,
+                &token,
+            );
         });
     }
 
@@ -149,11 +153,11 @@ pub async fn reinvite_user_by_id(
     // Get the required information for the invitation email
     let inviter = guard.get_user();
     let recipient = PublicUser::from(&user);
-    let team_name = space.replace('_', " ");
+    let workspace_name = space.replace('_', " ");
 
     // Send the email
     MailClient::no_reply()
-        .send_invitation(&inviter, &recipient, &team_name, &token)
+        .send_invitation(&inviter, &recipient, &workspace_name, &token)
         .map_err(ApiResponse::internal_server_error)?;
 
     Ok(ApiResponse::success(

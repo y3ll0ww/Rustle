@@ -1,8 +1,8 @@
 use rocket::http::{ContentType, Status};
 
 use crate::{
-    forms::teams::NewTeamForm,
-    routes::TEAMS,
+    forms::workspace::NewWorkspaceForm,
+    routes::WORKSPACES,
     tests::{
         test_client,
         users::{login, DEFAULT_LOGIN},
@@ -17,14 +17,14 @@ fn new_team_by_form() {
     login(&client, DEFAULT_LOGIN);
 
     // Create a form with test data
-    let new_user = NewTeamForm {
-        team_name: "Team name".to_string(),
+    let new_user = NewWorkspaceForm {
+        name: "Team name".to_string(),
         description: None,
     };
 
     // Send submit request
     let response = client
-        .post(format!("{TEAMS}new"))
+        .post(format!("{WORKSPACES}new"))
         .body(new_user.body())
         .header(ContentType::Form)
         .dispatch();
@@ -40,7 +40,7 @@ fn view_all_teams_of_default_user() {
     // Log in
     login(&client, DEFAULT_LOGIN);
 
-    let response = client.get(format!("{TEAMS}")).dispatch();
+    let response = client.get(format!("{WORKSPACES}")).dispatch();
 
     // Assert the login request was successful
     assert_eq!(response.status(), Status::Ok);
@@ -52,7 +52,7 @@ fn view_all_teams_of_default_user() {
 fn view_all_teams_without_logging_in() {
     let client = test_client();
 
-    let response = client.get(format!("{TEAMS}")).dispatch();
+    let response = client.get(format!("{WORKSPACES}")).dispatch();
 
     // Assert the login request was successful
     assert_eq!(response.status(), Status::Unauthorized);
@@ -67,7 +67,7 @@ fn view_team_of_default_user() {
     // Log in
     login(&client, DEFAULT_LOGIN);
 
-    let response = client.get(format!("{TEAMS}{team_id}")).dispatch();
+    let response = client.get(format!("{WORKSPACES}{team_id}")).dispatch();
 
     let status = response.status().clone();
 
@@ -87,7 +87,9 @@ fn delete_team_from_default_user() {
     // Log in
     login(&client, DEFAULT_LOGIN);
 
-    let response = client.delete(format!("{TEAMS}{team_id}/delete")).dispatch();
+    let response = client
+        .delete(format!("{WORKSPACES}{team_id}/delete"))
+        .dispatch();
 
     let status = response.status().clone();
 
