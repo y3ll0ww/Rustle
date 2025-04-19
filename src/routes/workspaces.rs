@@ -9,7 +9,7 @@ use crate::{
     auth::JwtGuard,
     cache::{
         workspaces::{
-            set_workspace_cache, update_workspace_cache, workspace_cache_key, CACHE_TTL_ONE_HOUR,
+            update_workspace_cache, workspace_cache_key, CACHE_TTL_ONE_HOUR,
         },
         RedisMutex,
     },

@@ -1,37 +1,7 @@
-//use chrono::Utc;
-//
-//use crate::{
-//    cache::workspaces::{set_team_cache, update_team_cache},
-//    forms::teams::UpdateTeamForm,
-//};
-//
+use crate::{cache, cookies, database, models::workspaces::NewWorkspace};
+
 use super::*;
 
-/// Creates a new team.
-///
-/// ## Permissions
-/// Requires as least [`UserRole::Manager`] to successfully complete.
-///
-/// ## Request
-/// * Method: `POST`
-/// * Guarded by JWT token
-/// * Data: [`NewTeamForm`]
-/// * Database access
-/// * Cookies: [`TEAM_COOKIE`]
-/// * Cache: [`team_cache_key`] with [`TEAM_CACHE_TTL`]
-///
-/// ## Response
-/// * **201 Created**: Nothing returned.
-///   - [`Team`] added to [`teams::table`] with request user as `owner_id`.
-///   - Request user (from cookie) added as [`TeamMember`] with [`TeamRole::Owner`] to
-///     [`team_members::table`].
-///   - [`TeamUpdate`] added to [`team_updates::table`] with `updated_at`.
-///   - [`TeamUpdate`] is added as a cookie.
-///   - [`TeamWithMembers`] added to the **Redis** cache (ignore if fail).
-/// * **401 Unauthorized**:
-///   - No [`TOKEN_COOKIE`](crate::cookies::TOKEN_COOKIE).
-///   - Request user is not [`UserRole::Manager`] or higher.
-/// * **500 Server Error**: Any database operation fails.
 pub async fn create_new_workspace_by_form(
     form: Form<NewWorkspaceForm>,
     guard: JwtGuard,
@@ -42,67 +12,38 @@ pub async fn create_new_workspace_by_form(
     // Get user information from cookies
     let user = guard.get_user();
 
-    // Step 1: Validate user permissions
+    // Validate user permissions
     if user.role < i16::from(UserRole::Manager) {
         return Err(ApiResponse::unauthorized(
             "User not allowed to create teams".to_string(),
         ));
     }
 
-    // Create a new Team
-    let new_workspace = Workspace::new(user.id, form.name.clone(), form.description.clone());
+    // Insert and return a new workspace with members
+    let workspace_with_members = database::workspaces::insert_new_workspace(
+        NewWorkspace::from_form(user.id, form.into_inner()),
+        &db,
+    )
+    .await?;
 
-    // Create a new team member
-    let owner_membership = WorkspaceMember {
-        workspace: new_workspace.id,
-        member: user.id,
-        role: WorkspaceRole::Owner as i16,
-    };
+    // Add the workspace update timestamp to the cookies
+    cookies::workspaces::add_workspace_update_cookie(
+        workspace_with_members.workspace.id,
+        workspace_with_members.workspace.updated_at,
+        cookies,
+    );
 
-    // Create some variables from which types will go out of scope
-    let success_message = format!("Team created: '{}'", form.name);
-    let team_id = new_workspace.id;
-    let user = user.clone();
-
-    let workspace_id = new_workspace.id;
-    let timestamp = new_workspace.updated_at;
-
-    // Step 2: Add new team to database
-    let cache_team_with_members = db
-        .run(move |conn| {
-            // Create a new team with members to place in the cache
-            let team_with_members = WorkspaceWithMembers {
-                workspace: new_workspace.clone(),
-                members: vec![MemberInfo {
-                    user,
-                    role: owner_membership.role,
-                }],
-            };
-
-            // Insert new team into teams table
-            diesel::insert_into(workspaces::table)
-                .values(&new_workspace)
-                .execute(conn)?;
-
-            // Insert owner into team_members table
-            diesel::insert_into(workspace_members::table)
-                .values(&owner_membership)
-                .execute(conn)?;
-
-            // Return the team with members for caching
-            Ok(team_with_members)
-        })
-        .await
-        .map_err(ApiResponse::from_error)?;
-
-    // Step 3: Add the team update to the cookies
-    add_workspace_update_cookie(workspace_id, timestamp, cookies);
-
-    // Step 4: Add the team information to the cache
-    set_workspace_cache(redis, team_id, &cache_team_with_members).await;
+    // Add the workspace information to the cache
+    cache::workspaces::set_workspace_cache(redis, &workspace_with_members).await;
 
     // Return success response
-    Ok(ApiResponse::success(success_message, None))
+    Ok(ApiResponse::success(
+        format!(
+            "Workspace created: '{}'",
+            workspace_with_members.workspace.name
+        ),
+        None,
+    ))
 }
 
 pub async fn update_workspace_by_form(
@@ -173,14 +114,6 @@ pub async fn update_workspace_by_form(
         None,
     ))
 }
-
-//pub id: String,
-//pub owner_id: String,
-//pub team_name: String,
-//pub team_description: Option<String>,
-//pub image_url: Option<String>,
-//pub created_at: NaiveDateTime,
-//pub updated_at: NaiveDateTime,
 
 // Change owner
 // Add member

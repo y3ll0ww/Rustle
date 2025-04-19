@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::{
-    forms::workspace::UpdateWorkspaceForm,
+    forms::workspace::{NewWorkspaceForm, UpdateWorkspaceForm},
     schema::{workspace_members, workspaces},
 };
 
@@ -73,6 +73,24 @@ pub struct MemberInfo {
 pub struct WorkspaceWithMembers {
     pub workspace: Workspace,
     pub members: Vec<MemberInfo>,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = workspaces)]
+pub struct NewWorkspace {
+    pub owner: Uuid,
+    name: String,
+    description: Option<String>,
+}
+
+impl NewWorkspace {
+    pub fn from_form(owner: Uuid, form: NewWorkspaceForm) -> Self {
+        NewWorkspace {
+            owner,
+            name: form.name,
+            description: form.description,
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]

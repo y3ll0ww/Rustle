@@ -17,14 +17,13 @@ pub fn workspace_cache_key(workspace_id: Uuid) -> String {
 
 pub async fn set_workspace_cache(
     redis: &State<RedisMutex>,
-    workspacd_id: Uuid,
     workspace_with_members: &WorkspaceWithMembers,
 ) {
     let _ = redis
         .lock()
         .await
         .set_to_cache(
-            &workspace_cache_key(workspacd_id),
+            &workspace_cache_key(workspace_with_members.workspace.id),
             &workspace_with_members,
             CACHE_TTL_ONE_HOUR,
         )
