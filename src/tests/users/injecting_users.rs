@@ -4,7 +4,7 @@ use uuid::Uuid;
 
 use super::{ADMIN_PASSWORD, ADMIN_USERNAME, DEFAULT_PASSWORD, DEFAULT_USERNAME};
 use crate::{
-    forms::users::Password,
+    forms::password::Password,
     models::users::{User, UserRole, UserStatus},
     tests::{test_client, users::ROUTE_CREATE},
 };

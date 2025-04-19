@@ -6,7 +6,7 @@ use rocket::{
     },
 };
 
-use crate::{cookies::TOKEN_COOKIE, forms::users::LoginForm};
+use crate::{cookies::TOKEN_COOKIE, forms::login::LoginForm};
 
 #[cfg(test)]
 mod deleting_users;
@@ -19,6 +19,7 @@ mod invitation_flow;
 #[cfg(test)]
 mod login_logout;
 
+const ROUTE_BROWSE: &str = "/user/browse";
 const ROUTE_CREATE: &str = "/user/create";
 const ROUTE_GET_ALL: &str = "/user";
 const ROUTE_GET: &str = "/user/";

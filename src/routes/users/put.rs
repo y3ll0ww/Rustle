@@ -4,7 +4,7 @@ use crate::{
     api::{ApiResponse, Error, Null, Success},
     cache::{self, users::get_invite_token, RedisMutex},
     database::{users as database, Db},
-    forms::users::Password,
+    forms::password::Password,
 };
 
 #[put("/invite/set/<token>", data = "<form>")]

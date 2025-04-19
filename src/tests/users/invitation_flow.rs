@@ -11,7 +11,10 @@ use super::{async_login, DEFAULT_LOGIN, DEFAULT_PASSWORD, ROUTE_REINVITE};
 use crate::{
     api::ApiResponse,
     cache::{self, RedisMutex},
-    forms::users::{InvitedMultipleUsersForm, InvitedUserForm, Password},
+    forms::{
+        invite::{InvitedMultipleUsersForm, InvitedUserForm},
+        password::Password,
+    },
     models::users::{PublicUser, UserStatus},
     tests::{
         async_test_client,
@@ -40,26 +43,31 @@ async fn invite_new_users_by_form() {
                 first_name: INVITED_USER_1_FIRST_NAME,
                 last_name: INVITED_USER_1_LAST_NAME,
                 email: INVITED_USER_1_EMAIL_ADDR,
+                phone: Some("0031699748558"),
             },
             InvitedUserForm {
                 first_name: INVITED_USER_1_FIRST_NAME,
                 last_name: INVITED_USER_1_LAST_NAME,
                 email: DUPLICATE_USER_1_EMAIL_ADDR,
+                phone: None,
             },
             InvitedUserForm {
                 first_name: INVITED_USER_2_FIRST_NAME,
                 last_name: INVITED_USER_2_LAST_NAME,
                 email: INVITED_USER_2_EMAIL_ADDR,
+                phone: Some("0683650773"),
             },
             InvitedUserForm {
                 first_name: INVITED_USER_2_FIRST_NAME,
                 last_name: INVITED_USER_2_LAST_NAME,
                 email: DUPLICATE_USER_2_EMAIL_ADDR,
+                phone: None,
             },
             InvitedUserForm {
                 first_name: INVITED_USER_3_FIRST_NAME,
                 last_name: INVITED_USER_3_LAST_NAME,
                 email: INVITED_USER_3_EMAIL_ADDR,
+                phone: None,
             },
         ],
     };
