@@ -97,6 +97,14 @@ impl PublicUser {
     pub fn full_name(&self) -> String {
         format!("{} {}", self.first_name, self.last_name)
     }
+
+    pub fn is_admin(&self) -> bool {
+        self.role == i16::from(UserRole::Admin)
+    }
+
+    pub fn is_at_least(&self, role: UserRole) -> bool {
+        self.role >= i16::from(role)
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]

@@ -71,7 +71,7 @@ pub struct WorkspaceUpdate {
     pub image_url: Option<String>,
 }
 
-#[derive(Insertable, Queryable, Serialize)]
+#[derive(Deserialize, Insertable, Queryable, Serialize)]
 #[diesel(table_name = workspace_members)]
 pub struct WorkspaceMember {
     pub workspace: Uuid,

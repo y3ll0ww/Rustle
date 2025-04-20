@@ -12,6 +12,7 @@ pub mod database;
 pub mod email;
 pub mod forms;
 pub mod models;
+pub mod policies;
 pub mod routes;
 pub mod schema;
 #[cfg(test)]

@@ -1,10 +1,11 @@
-use rocket::State;
+use rocket::{http::CookieJar, State};
 use uuid::Uuid;
 
 use crate::{
     api::{ApiResponse, Error, Null, Success},
     auth::JwtGuard,
     cache::{self, RedisMutex},
+    cookies,
     database::{self, Db},
     models::workspaces::{Workspace, WorkspaceWithMembers},
 };
@@ -31,8 +32,9 @@ pub async fn get_list_of_workspaces_by_user_id(
 #[get("/<id>")]
 pub async fn get_workspace_by_id(
     id: Uuid,
-    _guard: JwtGuard,
+    guard: JwtGuard,
     db: Db,
+    cookies: &CookieJar<'_>,
     redis: &State<RedisMutex>,
 ) -> Result<Success<WorkspaceWithMembers>, Error<Null>> {
     // Check the cache for an existing workspace with members
@@ -50,6 +52,16 @@ pub async fn get_workspace_by_id(
             workspace_from_database
         }
     };
+
+    // Insert the permission in cookies
+    let user_id = guard.get_user().id;
+    if let Some(member) = workspace_with_members
+        .members
+        .iter()
+        .find(|m| m.user.id == user_id)
+    {
+        cookies::workspaces::insert_workspace_permission(cookies, id, member.role)?;
+    }
 
     Ok(ApiResponse::success(
         format!(

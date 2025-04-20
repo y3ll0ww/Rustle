@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::{
     api::{ApiResponse, Error, Null},
     models::{
-        users::{PublicUser, User, UserRole},
+        users::{PublicUser, User},
         workspaces::{
             MemberInfo, NewWorkspace, Workspace, WorkspaceMember, WorkspaceRole, WorkspaceUpdate,
             WorkspaceWithMembers,
@@ -15,9 +15,6 @@ use crate::{
 };
 
 use super::Db;
-
-const UPDATE_USER_PERMISSION: UserRole = UserRole::Manager;
-const UPDATE_WORKSPACE_PERMISSION: WorkspaceRole = WorkspaceRole::Contributor;
 
 pub async fn get_workspaces_by_user_id(db: &Db, user: Uuid) -> Result<Vec<Workspace>, Error<Null>> {
     // Retrieve all workspaces with the user ID
@@ -74,9 +71,6 @@ pub async fn insert_new_workspace(
     db: &Db,
     new_workspace: NewWorkspace,
 ) -> Result<WorkspaceWithMembers, Error<Null>> {
-    // Copy owner ID since it will go out of scope
-    let owner_id = new_workspace.owner;
-
     // Insert and return a new workspace
     let workspace = db
         .run(move |conn| {
@@ -92,8 +86,8 @@ pub async fn insert_new_workspace(
         db,
         vec![WorkspaceMember {
             workspace: workspace.id,
-            member: owner_id,
-            role: WorkspaceRole::Owner as i16,
+            member: workspace.owner,
+            role: i16::from(WorkspaceRole::Owner),
         }],
     )
     .await
@@ -103,11 +97,6 @@ pub async fn add_members_to_workspace(
     db: &Db,
     members: Vec<WorkspaceMember>,
 ) -> Result<WorkspaceWithMembers, Error<Null>> {
-    // Return error if there are no members to add
-    if members.is_empty() {
-        return Err(ApiResponse::bad_request("No members to add".to_string()));
-    }
-
     // Get the workspace ID of the first member (they should be the same)
     let workspace_id = members[0].workspace;
 
@@ -159,53 +148,22 @@ pub async fn add_members_to_workspace(
 pub async fn update_workspace_information(
     db: &Db,
     id: Uuid,
-    user: PublicUser,
-    form: WorkspaceUpdate,
+    update: WorkspaceUpdate,
 ) -> Result<Workspace, Error<Null>> {
     db.run(move |conn| {
-        // Check if the user has the correct user role
-        if user.role < i16::from(UPDATE_USER_PERMISSION) {
-            // If the user doesn't have the right role; check the role within the workspace
-            let member = workspace_members::table
-                .filter(workspace_members::workspace.eq(id))
-                .filter(workspace_members::member.eq(user.id))
-                .first::<WorkspaceMember>(conn)
-                .map_err(|e| {
-                    ApiResponse::unauthorized(format!("User not part of workspace: {e}"))
-                })?;
-
-            // If the workspace role is (also) insufficient; return unauthorized
-            if member.role < i16::from(UPDATE_WORKSPACE_PERMISSION) {
-                return Err(ApiResponse::unauthorized(
-                    "No permission to update team information".to_string(),
-                ));
-            }
-        }
-
-        // Update the workspace table with information from the form
+        // Update the workspace table with information from the update
         diesel::update(workspaces::table.filter(workspaces::id.eq(id)))
-            .set(form)
+            .set(update)
             .get_result::<Workspace>(conn)
             .map_err(ApiResponse::from_error)
     })
     .await
 }
 
-pub async fn remove_workspace(db: &Db, id: Uuid, user: PublicUser) -> Result<Workspace, Error<Null>> {
+pub async fn remove_workspace(db: &Db, id: Uuid) -> Result<Workspace, Error<Null>> {
     db.run(move |conn| {
-        // If the user is admin there's no need to filter on the owner ID
-        if user.role == i16::from(UserRole::Admin) {
-            diesel::delete(workspaces::table.filter(workspaces::id.eq(id)))
-                .get_result::<Workspace>(conn)
-        // If the user is not admin an extra filter, if the user is the owner, will be added
-        } else {
-            diesel::delete(
-                workspaces::table
-                    .filter(workspaces::id.eq(id))
-                    .filter(workspaces::owner.eq(user.id)),
-            )
+        diesel::delete(workspaces::table.filter(workspaces::id.eq(id)))
             .get_result::<Workspace>(conn)
-        }
     })
     .await
     .map_err(ApiResponse::from_error)
