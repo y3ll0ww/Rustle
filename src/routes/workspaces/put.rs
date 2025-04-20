@@ -9,7 +9,7 @@ use crate::{
     models::workspaces::{Workspace, WorkspaceUpdate}, policies::Policy,
 };
 
-#[put("/update/<id>", format = "json", data = "<update>")]
+#[put("/<id>/update", format = "json", data = "<update>")]
 pub async fn update_workspace(
     id: Uuid,
     update: Json<WorkspaceUpdate>,

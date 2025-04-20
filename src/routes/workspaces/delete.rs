@@ -11,7 +11,7 @@ use crate::{
 
 /// Deletes a [`Workspace`] and related
 /// [`WorkspaceMember`](crate::models::workspaces::WorkspaceMember)s.
-#[delete("/delete/<id>")]
+#[delete("/<id>/delete")]
 pub async fn delete_workspace_by_id(
     id: Uuid,
     guard: JwtGuard,

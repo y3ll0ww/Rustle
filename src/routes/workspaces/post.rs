@@ -53,7 +53,7 @@ pub async fn create_new_workspace_by_form(
     ))
 }
 
-#[put("/add-members/<id>", format = "json", data = "<members>")]
+#[post("/<id>/add-members", format = "json", data = "<members>")]
 pub async fn add_members_to_workspace(
     id: Uuid,
     members: Json<Vec<WorkspaceMember>>,

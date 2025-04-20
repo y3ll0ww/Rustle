@@ -15,7 +15,6 @@ mod getting_workspaces;
 const ROUTE_WORKSPACE: &str = "/workspaces/";
 const ROUTE_WORKSPACES: &str = "/workspaces";
 const ROUTE_WORKSPACE_NEW: &str = "/workspaces/new";
-const ROUTE_WORKSPACE_UPDATE: &str = "/workspaces/update/";
 
 #[test]
 fn view_all_teams_of_default_user() {

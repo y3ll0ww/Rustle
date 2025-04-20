@@ -109,7 +109,7 @@ impl PublicUser {
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum UserRole {
-    Admin = 10,
+    Admin = 1000,
     Manager = 5,
     Contributor = 1,
     Reviewer = 0,

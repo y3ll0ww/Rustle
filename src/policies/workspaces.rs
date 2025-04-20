@@ -22,6 +22,7 @@ impl Policy {
         user: PublicUser,
         cookies: &CookieJar<'_>,
     ) -> Result<(), Error<Null>> {
+        println!("ADMIN: {}", user.is_admin());
         Policy::rule(user.is_admin())
             .or(user_is_at_least(WorkspaceRole::Contributor, workspace, cookies)?)
             .authorize("Not authorized to update workspace information")
@@ -50,6 +51,6 @@ impl Policy {
 }
 
 fn user_is_at_least(workspace_role: WorkspaceRole, workspace: Uuid, cookies: &CookieJar<'_>) -> Result<bool, Error<Null>> {
-    let actual = cookies::workspaces::get_workspace_permission(cookies, workspace)?;
+    let actual = cookies::workspaces::get_workspace_permission(cookies, workspace).unwrap_or(-1);
     Ok(actual >= i16::from(workspace_role))
 }
