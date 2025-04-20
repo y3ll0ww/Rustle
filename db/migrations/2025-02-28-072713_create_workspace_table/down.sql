@@ -8,14 +8,12 @@ DROP INDEX IF EXISTS idx_user;
    TRIGGERS
 ------------------------------------- */
 DROP TRIGGER IF EXISTS trigger_update_workspaces_timestamp ON workspaces;
-DROP TRIGGER IF EXISTS trigger_workspace_members_insert ON workspace_members;
-DROP TRIGGER IF EXISTS trigger_workspace_members_delete ON workspace_members;
-DROP TRIGGER IF EXISTS trigger_user_status_update ON users;
+DROP TRIGGER IF EXISTS trigger_workspace_members_change ON workspace_members;
 
 /* -------------------------------------
    FUNCTIONS
 ------------------------------------- */
-DROP FUNCTION IF EXISTS touch_workspaces_updated_at;
+DROP FUNCTION IF EXISTS handle_workspace_membership_change;
 
 /* -------------------------------------
    TABLES

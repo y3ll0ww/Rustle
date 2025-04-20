@@ -40,6 +40,7 @@ diesel::table! {
         #[max_length = 40]
         name -> Varchar,
         description -> Nullable<Text>,
+        member_count -> Int4,
         image_url -> Nullable<Text>,
         created_at -> Timestamp,
         updated_at -> Timestamp,
@@ -50,4 +51,8 @@ diesel::joinable!(workspace_members -> users (member));
 diesel::joinable!(workspace_members -> workspaces (workspace));
 diesel::joinable!(workspaces -> users (owner));
 
-diesel::allow_tables_to_appear_in_same_query!(users, workspace_members, workspaces,);
+diesel::allow_tables_to_appear_in_same_query!(
+    users,
+    workspace_members,
+    workspaces,
+);

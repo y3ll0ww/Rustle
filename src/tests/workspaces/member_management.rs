@@ -17,7 +17,7 @@ fn add_member_to_workspace() {
     let client = test_client();
 
     // Define the workspace ID to update
-    let workspace_to_update = "2e06634d-2da3-44cb-9c81-326b6715efce";
+    let workspace_to_update = "ad5d4bf9-2e80-47b0-8454-1c431718b666";
     let member_to_add = "41cb895a-cf97-4df4-b2d3-8479146086a8";
 
     // Define the information for the member to add
@@ -53,7 +53,7 @@ fn remove_member_from_workspace() {
     let client = test_client();
 
     // Define the workspace ID to update
-    let workspace_to_update = "2e06634d-2da3-44cb-9c81-326b6715efce";
+    let workspace_to_update = "ad5d4bf9-2e80-47b0-8454-1c431718b666";
     let member_to_remove = "41cb895a-cf97-4df4-b2d3-8479146086a8";
 
     // Log in as user with sufficient status
