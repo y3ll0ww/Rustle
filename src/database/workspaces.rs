@@ -1,3 +1,4 @@
+use chrono::NaiveDateTime;
 use diesel::{Connection, ExpressionMethods, JoinOnDsl, QueryDsl, RunQueryDsl};
 use uuid::Uuid;
 
@@ -6,7 +7,8 @@ use crate::{
     models::{
         users::{PublicUser, User, UserRole},
         workspaces::{
-            WorkspaceUpdate, MemberInfo, NewWorkspace, Workspace, WorkspaceMember, WorkspaceRole, WorkspaceWithMembers
+            MemberInfo, NewWorkspace, Workspace, WorkspaceMember, WorkspaceRole, WorkspaceUpdate,
+            WorkspaceWithMembers,
         },
     },
     schema::{users, workspace_members, workspaces},
@@ -16,6 +18,57 @@ use super::Db;
 
 const UPDATE_USER_PERMISSION: UserRole = UserRole::Manager;
 const UPDATE_WORKSPACE_PERMISSION: WorkspaceRole = WorkspaceRole::Contributor;
+
+pub async fn get_workspaces_by_user_id(db: &Db, user: Uuid) -> Result<Vec<Workspace>, Error<Null>> {
+    // Retrieve all workspaces with the user ID
+    db.run(move |conn| {
+        workspaces::table
+            .inner_join(
+                workspace_members::table.on(workspace_members::workspace.eq(workspaces::id)),
+            )
+            .filter(workspace_members::member.eq(user))
+            .select(workspaces::all_columns)
+            .load::<Workspace>(conn)
+    })
+    .await
+    .map_err(ApiResponse::from_error)
+}
+
+pub async fn get_workspace_updated_at(db: &Db, id: Uuid) -> Result<NaiveDateTime, Error<Null>> {
+    db.run(move |conn| {
+        workspaces::table
+            .select(workspaces::updated_at)
+            .filter(workspaces::id.eq(id))
+            .first::<NaiveDateTime>(conn)
+            .map_err(ApiResponse::from_error)
+    })
+    .await
+}
+
+pub async fn get_workspace_by_id(db: &Db, id: Uuid) -> Result<WorkspaceWithMembers, Error<Null>> {
+    db.run(move |conn| {
+        let workspace = workspaces::table
+            .filter(workspaces::id.eq(id))
+            .first::<Workspace>(conn)
+            .map_err(ApiResponse::from_error)?;
+
+        let members = workspace_members::table
+            .inner_join(users::table.on(users::id.eq(workspace_members::member)))
+            .filter(workspace_members::workspace.eq(id))
+            .select((users::all_columns, workspace_members::role))
+            .load::<(User, i16)>(conn)
+            .map_err(ApiResponse::from_error)?
+            .into_iter()
+            .map(|(user, role)| MemberInfo {
+                user: PublicUser::from(&user),
+                role,
+            })
+            .collect();
+
+        Ok(WorkspaceWithMembers { workspace, members })
+    })
+    .await
+}
 
 pub async fn insert_new_workspace(
     db: &Db,
@@ -129,11 +182,31 @@ pub async fn update_workspace_information(
             }
         }
 
-        // Step 3: Update the workspace table with information from the form
+        // Update the workspace table with information from the form
         diesel::update(workspaces::table.filter(workspaces::id.eq(id)))
             .set(form)
             .get_result::<Workspace>(conn)
             .map_err(ApiResponse::from_error)
     })
     .await
+}
+
+pub async fn remove_workspace(db: &Db, id: Uuid, user: PublicUser) -> Result<Workspace, Error<Null>> {
+    db.run(move |conn| {
+        // If the user is admin there's no need to filter on the owner ID
+        if user.role == i16::from(UserRole::Admin) {
+            diesel::delete(workspaces::table.filter(workspaces::id.eq(id)))
+                .get_result::<Workspace>(conn)
+        // If the user is not admin an extra filter, if the user is the owner, will be added
+        } else {
+            diesel::delete(
+                workspaces::table
+                    .filter(workspaces::id.eq(id))
+                    .filter(workspaces::owner.eq(user.id)),
+            )
+            .get_result::<Workspace>(conn)
+        }
+    })
+    .await
+    .map_err(ApiResponse::from_error)
 }

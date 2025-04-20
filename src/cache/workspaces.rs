@@ -78,3 +78,11 @@ pub async fn update_workspace_cache(
             .await;
     }
 }
+
+pub async fn remove_workspace_cache(redis: &State<RedisMutex>, workspace_id: Uuid) {
+    let _ = redis
+        .lock()
+        .await
+        .remove_from_cache(&cache_key_workspace(workspace_id))
+        .await;
+}

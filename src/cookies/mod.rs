@@ -3,8 +3,6 @@ use serde::de::DeserializeOwned;
 
 use crate::api::{ApiResponse, Error};
 
-pub mod workspaces;
-
 pub const TOKEN_COOKIE: &str = "auth_token";
 pub const WORKSPACE_COOKIE: &str = "workspace:";
 

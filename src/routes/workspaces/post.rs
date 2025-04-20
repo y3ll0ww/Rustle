@@ -1,14 +1,23 @@
-use crate::{cache, cookies, database, models::workspaces::NewWorkspace};
+use rocket::{form::Form, State};
 
-use super::*;
+use crate::{
+    api::{ApiResponse, Error, Null, Success},
+    auth::JwtGuard,
+    cache::{self, RedisMutex},
+    database::{self, Db},
+    forms::workspace::NewWorkspaceForm,
+    models::{
+        users::UserRole,
+        workspaces::{NewWorkspace, WorkspaceWithMembers},
+    },
+};
 
 #[post("/new", data = "<form>")]
 pub async fn create_new_workspace_by_form(
     form: Form<NewWorkspaceForm>,
     guard: JwtGuard,
-    db: Db,
-    cookies: &CookieJar<'_>,
     redis: &State<RedisMutex>,
+    db: Db,
 ) -> Result<Success<WorkspaceWithMembers>, Error<Null>> {
     // Get user information from cookies
     let user = guard.get_user();
@@ -30,13 +39,6 @@ pub async fn create_new_workspace_by_form(
     // Add the workspace information to the cache
     cache::workspaces::add_workspace_cache(redis, &workspace_with_members).await;
 
-    // Add the workspace update timestamp to the cookies
-    cookies::workspaces::add_workspace_timestamp(
-        workspace_with_members.workspace.id,
-        workspace_with_members.workspace.updated_at,
-        cookies,
-    );
-
     // Return success response
     Ok(ApiResponse::success(
         format!(
@@ -46,6 +48,3 @@ pub async fn create_new_workspace_by_form(
         Some(workspace_with_members),
     ))
 }
-
-// Change owner
-// Add member
