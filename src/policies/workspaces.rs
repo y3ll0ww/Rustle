@@ -22,7 +22,6 @@ impl Policy {
         user: PublicUser,
         cookies: &CookieJar<'_>,
     ) -> Result<(), Error<Null>> {
-        println!("ADMIN: {}", user.is_admin());
         Policy::rule(user.is_admin())
             .or(user_is_at_least(WorkspaceRole::Contributor, workspace, cookies)?)
             .authorize("Not authorized to update workspace information")

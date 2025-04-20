@@ -1,5 +1,5 @@
 use chrono::NaiveDateTime;
-use diesel::{Connection, ExpressionMethods, JoinOnDsl, QueryDsl, RunQueryDsl};
+use diesel::{Connection, ExpressionMethods, JoinOnDsl, PgConnection, QueryDsl, RunQueryDsl};
 use uuid::Uuid;
 
 use crate::{
@@ -108,37 +108,32 @@ pub async fn add_members_to_workspace(
                 .values(&members)
                 .execute(conn)?;
 
-            // Fetch workspace information and all users in the same workspace
-            let results: Vec<(Workspace, WorkspaceMember, User)> = workspace_members::table
-                .inner_join(workspaces::table.on(workspace_members::workspace.eq(workspaces::id)))
-                .inner_join(users::table.on(workspace_members::member.eq(users::id)))
-                .filter(workspace_members::workspace.eq(workspace_id))
-                .select((
-                    workspaces::all_columns,
-                    workspace_members::all_columns,
-                    users::all_columns,
-                ))
-                .load::<(Workspace, WorkspaceMember, User)>(conn)?;
+            fetch_workspace_with_members(workspace_id, conn)
+        })
+    })
+    .await
+    .map_err(ApiResponse::from_error)
+}
 
-            // Return error if there are no results
-            if results.is_empty() {
+pub async fn remove_member_from_workspace(
+    db: &Db,
+    workspace: Uuid,
+    member: Uuid,
+) -> Result<WorkspaceWithMembers, Error<Null>> {
+    db.run(move |conn| {
+        conn.transaction::<_, diesel::result::Error, _>(|conn| {
+            let removed_records = diesel::delete(
+                workspace_members::table
+                    .filter(workspace_members::workspace.eq(workspace))
+                    .filter(workspace_members::member.eq(member)),
+            )
+            .execute(conn)?;
+
+            if removed_records == 0 {
                 return Err(diesel::result::Error::NotFound);
             }
 
-            // Get the workspace object from the first result (again, they're assumed all to be the same)
-            let workspace = results[0].0.clone();
-
-            // Define the members of the workspace based on the users from the result
-            let members = results
-                .iter()
-                .map(|(_, membership, user)| MemberInfo {
-                    user: PublicUser::from(user),
-                    role: membership.role,
-                })
-                .collect();
-
-            // Return the workspace information containing all public member information
-            Ok(WorkspaceWithMembers { workspace, members })
+            fetch_workspace_with_members(workspace, conn)
         })
     })
     .await
@@ -167,4 +162,41 @@ pub async fn remove_workspace(db: &Db, id: Uuid) -> Result<Workspace, Error<Null
     })
     .await
     .map_err(ApiResponse::from_error)
+}
+
+fn fetch_workspace_with_members(
+    id: Uuid,
+    conn: &mut PgConnection,
+) -> Result<WorkspaceWithMembers, diesel::result::Error> {
+    // Fetch workspace information and all users in the same workspace
+    let results: Vec<(Workspace, WorkspaceMember, User)> = workspace_members::table
+        .inner_join(workspaces::table.on(workspace_members::workspace.eq(workspaces::id)))
+        .inner_join(users::table.on(workspace_members::member.eq(users::id)))
+        .filter(workspace_members::workspace.eq(id))
+        .select((
+            workspaces::all_columns,
+            workspace_members::all_columns,
+            users::all_columns,
+        ))
+        .load::<(Workspace, WorkspaceMember, User)>(conn)?;
+
+    // Return error if there are no results
+    if results.is_empty() {
+        return Err(diesel::result::Error::NotFound);
+    }
+
+    // Get the workspace object from the first result (again, they're assumed all to be the same)
+    let workspace = results[0].0.clone();
+
+    // Define the members of the workspace based on the users from the result
+    let members = results
+        .iter()
+        .map(|(_, membership, user)| MemberInfo {
+            user: PublicUser::from(user),
+            role: membership.role,
+        })
+        .collect();
+
+    // Return the workspace information containing all public member information
+    Ok(WorkspaceWithMembers { workspace, members })
 }

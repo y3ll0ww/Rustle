@@ -6,6 +6,7 @@ use crate::{
     auth::JwtGuard,
     cache::{self, RedisMutex},
     database::{self, Db},
+    models::workspaces::WorkspaceWithMembers,
     policies::Policy,
 };
 
@@ -32,5 +33,30 @@ pub async fn delete_workspace_by_id(
     Ok(ApiResponse::success(
         format!("Workspace {} deleted", workspace.id),
         None,
+    ))
+}
+
+#[delete("/<id>/remove-member/<member>")]
+pub async fn remove_member_from_workspace(
+    id: Uuid,
+    member: Uuid,
+    guard: JwtGuard,
+    db: Db,
+    cookies: &CookieJar<'_>,
+    redis: &State<RedisMutex>,
+) -> Result<Success<WorkspaceWithMembers>, Error<Null>> {
+    Policy::update_workspaces_members(id, guard.get_user(), cookies)?;
+
+    // Remove the member from the workspace
+    let workspace_with_members =
+        database::workspaces::remove_member_from_workspace(&db, id, member).await?;
+
+    // Update the workspace in the cache
+    cache::workspaces::add_workspace_cache(redis, &workspace_with_members).await;
+
+    // Return success
+    Ok(ApiResponse::success(
+        format!("Member '{member}' removed"),
+        Some(workspace_with_members),
     ))
 }

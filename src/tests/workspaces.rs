@@ -11,6 +11,8 @@ use crate::{
 mod adding_and_updating;
 #[cfg(test)]
 mod getting_workspaces;
+#[cfg(test)]
+mod member_management;
 
 const ROUTE_WORKSPACE: &str = "/workspaces/";
 const ROUTE_WORKSPACES: &str = "/workspaces";
