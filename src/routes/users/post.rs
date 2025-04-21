@@ -7,7 +7,7 @@ use crate::{
     cookies::TOKEN_COOKIE,
     database::{users as database, Db},
     email::MailClient,
-    forms::users::{InvitedMultipleUsersForm, LoginForm, Password},
+    forms::{invite::InvitedMultipleUsersForm, login::LoginForm, password::Password},
     models::users::{PublicUser, User, UserStatus},
 };
 use rocket::{form::Form, http::CookieJar, serde::json::Json, State};

@@ -5,7 +5,7 @@ use crate::{
     database::pagination::{request::PaginationRequest, sort::UserField},
     tests::{
         test_client,
-        users::{ROUTE_GET, ROUTE_GET_ALL},
+        users::{ROUTE_BROWSE, ROUTE_GET, ROUTE_GET_ALL},
     },
 };
 
@@ -34,28 +34,7 @@ fn get_all_users() {
 }
 
 #[test]
-fn get_all_users_paginated() {
-    let client = test_client();
-
-    // Login required
-    login(&client, DEFAULT_LOGIN);
-
-    // Send get request
-    let response = client
-        .get(format!(
-            "{ROUTE_GET_ALL}?after=108026e0-c525-439d-8bda-d2e52f912d4d&limit=2"
-        ))
-        .dispatch();
-
-    let status = response.status().clone();
-
-    println!("{}", response.into_string().unwrap());
-
-    assert_eq!(status, Status::Ok)
-}
-
-#[test]
-fn second_get_all_users_paginated() {
+fn browse_users() {
     let client = test_client();
 
     // Login required
@@ -73,8 +52,8 @@ fn second_get_all_users_paginated() {
     let payload = serde_json::to_string(&params).unwrap();
 
     let response = client
-        //.get("/user/browse?role=10&status=1")
-        .get("/user/browse")
+        .get(ROUTE_BROWSE)
+        //.get(format!("{ROUTE_BROWSE}?status=0&role=0"))
         .header(ContentType::JSON)
         .body(payload)
         .dispatch();
