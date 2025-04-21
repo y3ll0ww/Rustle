@@ -4,11 +4,14 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- Create the table 'users'
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    username VARCHAR(40) UNIQUE NOT NULL,
+    first_name VARCHAR(20) NOT NULL,
+    last_name VARCHAR(20) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    phone VARCHAR(20) UNIQUE,
     role SMALLINT NOT NULL DEFAULT 0,
     status SMALLINT NOT NULL DEFAULT 0,
-    username VARCHAR(40) UNIQUE NOT NULL,
-    display_name VARCHAR(40),
-    email VARCHAR(100) UNIQUE NOT NULL,
+    job_title VARCHAR(20),
     password TEXT NOT NULL,
     bio TEXT,
     avatar_url TEXT,
@@ -29,3 +32,10 @@ CREATE TRIGGER trigger_update_timestamp
 BEFORE UPDATE ON users
 FOR EACH ROW
 EXECUTE FUNCTION update_timestamp();
+
+-- Adding indexation for the following fields
+CREATE INDEX username_lower_idx ON users (LOWER(username));
+CREATE INDEX first_name_lower_idx ON users (LOWER(first_name));
+CREATE INDEX last_name_lower_idx ON users (LOWER(last_name));
+CREATE INDEX email_lower_idx ON users (LOWER(email));
+CREATE INDEX phone_idx ON users (phone);

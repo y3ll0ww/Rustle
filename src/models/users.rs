@@ -12,12 +12,15 @@ use crate::schema::users;
 #[diesel(table_name = users)]
 pub struct User {
     pub id: Uuid,
-    pub role: i16,
-    pub status: i16,
     #[diesel(sql_type = Text)]
     pub username: String,
-    pub display_name: Option<String>,
+    pub first_name: String,
+    pub last_name: String,
     pub email: String,
+    pub phone: Option<String>,
+    pub role: i16,
+    pub status: i16,
+    pub job_title: Option<String>,
     pub password: String,
     pub bio: Option<String>,
     pub avatar_url: Option<String>,
@@ -28,7 +31,8 @@ pub struct User {
 impl User {
     pub fn new(
         username: String,
-        display_name: Option<String>,
+        first_name: String,
+        last_name: String,
         email: String,
         password: String,
     ) -> Self {
@@ -36,11 +40,14 @@ impl User {
 
         User {
             id: Uuid::new_v4(),
+            username,
+            first_name,
+            last_name,
+            email,
+            phone: None,
             role: i16::from(UserRole::Reviewer),
             status: i16::from(UserStatus::Invited),
-            username,
-            display_name,
-            email,
+            job_title: None,
             password,
             bio: None,
             avatar_url: None,
@@ -50,24 +57,18 @@ impl User {
     }
 }
 
-#[derive(Insertable, Serialize)]
-#[diesel(table_name = users)]
-pub struct NewUser {
-    pub username: String,
-    pub display_name: String,
-    pub email: String,
-    pub password: String,
-}
-
 #[derive(Clone, Debug, Deserialize, Queryable, Serialize)]
 #[diesel(table_name = users)]
 pub struct PublicUser {
     pub id: Uuid,
+    pub username: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub email: String,
+    pub phone: Option<String>,
     pub role: i16,
     pub status: i16,
-    pub username: String,
-    pub display_name: Option<String>,
-    pub email: String,
+    pub job_title: Option<String>,
     pub bio: Option<String>,
     pub avatar_url: Option<String>,
     pub created_at: NaiveDateTime,
@@ -78,11 +79,14 @@ impl PublicUser {
     pub fn from(user: &User) -> Self {
         PublicUser {
             id: user.id,
+            username: user.username.clone(),
+            first_name: user.first_name.clone(),
+            last_name: user.last_name.clone(),
+            email: user.email.clone(),
+            phone: user.phone.clone(),
             role: user.role,
             status: user.status,
-            username: user.username.clone(),
-            display_name: user.display_name.clone(),
-            email: user.email.clone(),
+            job_title: user.job_title.clone(),
             bio: user.bio.clone(),
             avatar_url: user.avatar_url.clone(),
             created_at: user.created_at,
@@ -90,8 +94,8 @@ impl PublicUser {
         }
     }
 
-    pub fn get_name(&self) -> String {
-        self.display_name.clone().unwrap_or(self.username.clone())
+    pub fn full_name(&self) -> String {
+        format!("{} {}", self.first_name, self.last_name)
     }
 }
 

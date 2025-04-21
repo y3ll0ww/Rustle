@@ -41,8 +41,9 @@ impl InvitedMultipleUsersForm<'_> {
 
         for user in self.users.iter() {
             // Define the username and the display name
-            let display_name = format!("{} {}", user.first_name, user.last_name);
-            let username = display_name.to_lowercase().replace(' ', "_");
+            let username = format!("{}_{}", user.first_name, user.last_name)
+                .to_lowercase()
+                .replace(' ', "_");
 
             base_usernames.insert(username.clone());
 
@@ -53,7 +54,8 @@ impl InvitedMultipleUsersForm<'_> {
             // Add a new user to be processed
             new_users.push(User::new(
                 username,
-                Some(display_name),
+                user.first_name.to_string(),
+                user.last_name.to_string(),
                 user.email.to_string(),
                 password,
             ));

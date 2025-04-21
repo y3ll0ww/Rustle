@@ -1,10 +1,13 @@
-use rocket::State;
+use rocket::{serde::json::Json, State};
 
 use crate::{
     api::{ApiResponse, Error, Null, Success},
     auth::JwtGuard,
     cache::{self, RedisMutex},
-    database::{users as database, Db},
+    database::{
+        pagination::{records::PaginatedRecords, request::PaginationRequest, sort::UserField},
+        users as database, Db,
+    },
     models::users::{PublicUser, UserStatus},
 };
 
@@ -18,6 +21,27 @@ pub async fn list_all_users(
     Ok(ApiResponse::success(
         format!("{} users found", users.len()),
         Some(users),
+    ))
+}
+
+//Instead of get_paginated_users, maybe browse_users or list_users_paginated — to match REST semantics more intuitively.
+#[get("/browse?<status>&<role>", format = "json", data = "<params>")]
+pub async fn get_paginated_users(
+    status: Option<i16>,
+    role: Option<i16>,
+    params: Json<PaginationRequest<UserField>>,
+    _guard: JwtGuard,
+    db: Db,
+) -> Result<Success<PaginatedRecords<PublicUser>>, Error<Null>> {
+    let page = database::get_users_paginated(&db, status, role, params).await?;
+
+    Ok(ApiResponse::success(
+        format!(
+            "{} of {} users shown",
+            page.records_on_page(),
+            page.total_records(),
+        ),
+        Some(page),
     ))
 }
 
