@@ -3,10 +3,10 @@ use serde::de::DeserializeOwned;
 
 use crate::api::{ApiResponse, Error};
 
-pub mod teams;
+pub mod workspaces;
 
 pub const TOKEN_COOKIE: &str = "auth_token";
-pub const TEAM_COOKIE: &str = "team";
+pub const WORKSPACE_COOKIE: &str = "workspaces";
 
 /// Retrieves a deserialized copy of the data from the cookie.
 pub fn get_cookie<T: DeserializeOwned>(
@@ -28,7 +28,4 @@ pub fn get_cookie<T: DeserializeOwned>(
             )))
         }
     }
-    .map_err(|e| {
-        ApiResponse::internal_server_error(format!("Couldn't deserialize the cookie: {e:?}"))
-    })
 }

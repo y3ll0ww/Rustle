@@ -21,8 +21,8 @@ use std::sync::Arc;
 
 use crate::api::{ApiResponse, Error, Null};
 
-pub mod teams;
 pub mod users;
+pub mod workspaces;
 
 pub type RedisMutex = Arc<Mutex<RedisPool>>;
 
@@ -58,13 +58,14 @@ impl RedisPool {
         })?;
 
         // If data exists, deserialize it
-        if let Some(data) = cached_data {
-            let deserialized_data: T = serde_json::from_str(&data).map_err(|e| {
-                ApiResponse::conflict(format!("Failed to deserialize: {}", e), data)
-            })?;
-            Ok(Some(deserialized_data))
-        } else {
-            Ok(None)
+        match cached_data {
+            Some(data) => {
+                let deserialized_data: T = serde_json::from_str(&data).map_err(|e| {
+                    ApiResponse::conflict(format!("Failed to deserialize: {}", e), data)
+                })?;
+                Ok(Some(deserialized_data))
+            }
+            None => Ok(None),
         }
     }
 

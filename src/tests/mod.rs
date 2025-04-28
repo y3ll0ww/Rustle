@@ -1,6 +1,6 @@
 use rocket::local::{asynchronous::Client as AsyncClient, blocking::Client};
 
-pub mod teams;
+pub mod workspaces;
 pub mod users;
 
 pub fn test_client() -> Client {

@@ -1,6 +1,12 @@
+/* -------------------------------------
+   EXTENSIONS
+------------------------------------- */
 -- Enable UUID extension if not already enabled
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+/* -------------------------------------
+   TABLES
+------------------------------------- */
 -- Create the table 'users'
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -19,6 +25,9 @@ CREATE TABLE users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
+/* -------------------------------------
+   FUNCTIONS
+------------------------------------- */
 -- Create the function that updates the 'updated_at' field
 CREATE FUNCTION update_timestamp() RETURNS TRIGGER AS $$
 BEGIN
@@ -27,15 +36,21 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+/* -------------------------------------
+   TRIGGERS
+------------------------------------- */
 -- Create the trigger that calls the function on every update
-CREATE TRIGGER trigger_update_timestamp
+CREATE TRIGGER trigger_update_users_timestamp
 BEFORE UPDATE ON users
 FOR EACH ROW
 EXECUTE FUNCTION update_timestamp();
 
+/* -------------------------------------
+   INDEXES
+------------------------------------- */
 -- Adding indexation for the following fields
-CREATE INDEX username_lower_idx ON users (LOWER(username));
-CREATE INDEX first_name_lower_idx ON users (LOWER(first_name));
-CREATE INDEX last_name_lower_idx ON users (LOWER(last_name));
-CREATE INDEX email_lower_idx ON users (LOWER(email));
-CREATE INDEX phone_idx ON users (phone);
+CREATE INDEX idx_username_lower ON users (LOWER(username));
+CREATE INDEX idx_first_name_lower ON users (LOWER(first_name));
+CREATE INDEX idx_last_name_lower ON users (LOWER(last_name));
+CREATE INDEX idx_email_lower ON users (LOWER(email));
+CREATE INDEX idx_phone ON users (phone);

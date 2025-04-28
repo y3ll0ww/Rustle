@@ -1,5 +1,5 @@
 mod delete;
-pub mod get;
+mod get;
 mod post;
 mod put;
 

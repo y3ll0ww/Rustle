@@ -1,5 +1,5 @@
 use cache::redis_fairing;
-use routes::{TEAMS, USERS};
+use routes::{USERS, WORKSPACES};
 
 #[macro_use]
 extern crate rocket;
@@ -12,6 +12,7 @@ pub mod database;
 pub mod email;
 pub mod forms;
 pub mod models;
+pub mod policies;
 pub mod routes;
 pub mod schema;
 #[cfg(test)]
@@ -22,6 +23,6 @@ fn rocket() -> _ {
     rocket::custom(rocket::Config::figment())
         .attach(database::Db::fairing())
         .attach(redis_fairing())
-        .mount(TEAMS, routes::teams::routes())
+        .mount(WORKSPACES, routes::workspaces::routes())
         .mount(USERS, routes::users::routes())
 }
