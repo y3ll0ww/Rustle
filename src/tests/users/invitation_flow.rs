@@ -15,7 +15,7 @@ use crate::{
         invite::{InvitedMultipleUsersForm, InvitedUserForm},
         password::Password,
     },
-    models::users::{PublicUser, UserStatus},
+    models::{users::{PublicUser, UserStatus}, workspaces::WorkspaceRole},
     tests::{
         async_test_client,
         users::{
@@ -24,7 +24,7 @@ use crate::{
             INVITED_USER_1_LOGIN, INVITED_USER_1_USERNAME, INVITED_USER_2_EMAIL_ADDR,
             INVITED_USER_2_FIRST_NAME, INVITED_USER_2_LAST_NAME, INVITED_USER_2_USERNAME,
             INVITED_USER_3_EMAIL_ADDR, INVITED_USER_3_FIRST_NAME, INVITED_USER_3_LAST_NAME,
-            ROUTE_GET, ROUTE_INVITE, ROUTE_INVITE_GET, ROUTE_INVITE_SET, ROUTE_LOGOUT,
+            ROUTE_GET, ROUTE_INVITE_GET, ROUTE_INVITE_SET, ROUTE_LOGOUT,
         },
     },
 };
@@ -33,48 +33,54 @@ use crate::{
 async fn invite_new_users_by_form() {
     let client = async_test_client().await;
 
+    let workspace = "ad5d4bf9-2e80-47b0-8454-1c431718b666";
+
     async_login(&client, DEFAULT_LOGIN).await;
 
     // Create a form with test data
     let invitation = InvitedMultipleUsersForm {
-        space: "Some space",
         users: vec![
             InvitedUserForm {
                 first_name: INVITED_USER_1_FIRST_NAME,
                 last_name: INVITED_USER_1_LAST_NAME,
                 email: INVITED_USER_1_EMAIL_ADDR,
                 phone: Some("0031699748558"),
+                workspace_role: i16::from(WorkspaceRole::Contributor),
             },
             InvitedUserForm {
                 first_name: INVITED_USER_1_FIRST_NAME,
                 last_name: INVITED_USER_1_LAST_NAME,
                 email: DUPLICATE_USER_1_EMAIL_ADDR,
                 phone: None,
+                workspace_role: i16::from(WorkspaceRole::Master),
             },
             InvitedUserForm {
                 first_name: INVITED_USER_2_FIRST_NAME,
                 last_name: INVITED_USER_2_LAST_NAME,
                 email: INVITED_USER_2_EMAIL_ADDR,
                 phone: Some("0683650773"),
+                workspace_role: i16::from(WorkspaceRole::Stakeholder),
             },
             InvitedUserForm {
                 first_name: INVITED_USER_2_FIRST_NAME,
                 last_name: INVITED_USER_2_LAST_NAME,
                 email: DUPLICATE_USER_2_EMAIL_ADDR,
                 phone: None,
+                workspace_role: i16::from(WorkspaceRole::Viewer),
             },
             InvitedUserForm {
                 first_name: INVITED_USER_3_FIRST_NAME,
                 last_name: INVITED_USER_3_LAST_NAME,
                 email: INVITED_USER_3_EMAIL_ADDR,
                 phone: None,
+                workspace_role: i16::from(WorkspaceRole::Viewer),
             },
         ],
     };
 
     // Send submit request
     let response = client
-        .post(ROUTE_INVITE)
+        .post(format!("/workspaces/{workspace}/invite"))
         .body(invitation.body())
         .header(ContentType::Form)
         .dispatch()

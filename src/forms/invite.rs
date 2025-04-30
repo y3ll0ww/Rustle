@@ -3,7 +3,10 @@ use std::collections::HashSet;
 use regex::Regex;
 use rocket::form;
 
-use crate::models::users::User;
+use crate::models::{
+    users::{InvitedUser, UserRole},
+    workspaces::WorkspaceRole,
+};
 
 use super::password::Password;
 
@@ -12,13 +15,12 @@ pub struct InvitedMultipleUsersForm<'v> {
     // Allow at most 10 invites per request
     #[field(validate = len(1..=10))]
     pub users: Vec<InvitedUserForm<'v>>,
-    pub space: &'v str,
 }
 
 impl InvitedMultipleUsersForm<'_> {
     pub fn body(&self) -> String {
         // Add the space field and replace any whitespaces
-        let mut body = format!("space={}", self.space).replace(' ', "+");
+        let mut body = String::new();
 
         // Iterate over users and add their bodies
         for (i, user) in self.users.iter().enumerate() {
@@ -27,11 +29,14 @@ impl InvitedMultipleUsersForm<'_> {
             body.push_str(&format!("{user_index}{user_body}"));
         }
 
-        // Return
+        // Remove the first ampersand
+        body.remove(0);
         body
     }
 
-    pub fn get_users_and_base_usernames(&self) -> Result<(Vec<User>, HashSet<String>), String> {
+    pub fn get_users_and_base_usernames(
+        &self,
+    ) -> Result<(Vec<InvitedUser>, HashSet<String>), String> {
         let mut new_users = Vec::new();
         let mut base_usernames = HashSet::new();
 
@@ -49,13 +54,16 @@ impl InvitedMultipleUsersForm<'_> {
                 Password::generate(None).map_err(|e| format!("Coudn't hash password: {e}"))?;
 
             // Add a new user to be processed
-            new_users.push(User::new(
-                username,
-                user.first_name.to_string(),
-                user.last_name.to_string(),
-                user.email.to_string(),
+            new_users.push(InvitedUser {
+                username: username.clone(),
+                first_name: user.first_name.to_string(),
+                last_name: user.last_name.to_string(),
+                email: user.email.to_string(),
+                role: i16::from(UserRole::Reviewer),
+                status: 0,
                 password,
-            ));
+                workspace_role: user.workspace_role,
+            });
         }
 
         Ok((new_users, base_usernames))
@@ -72,6 +80,8 @@ pub struct InvitedUserForm<'v> {
     pub email: &'v str,
     #[field(validate = InvitedUserForm::validate_phone())]
     pub phone: Option<&'v str>,
+    #[field(validate = InvitedUserForm::validate_workspace_role())]
+    pub workspace_role: i16,
 }
 
 impl InvitedUserForm<'_> {
@@ -137,6 +147,17 @@ impl InvitedUserForm<'_> {
         Ok(())
     }
 
+    fn validate_workspace_role<'v>(value: &i16) -> form::Result<'v, ()> {
+        let workspace_role =
+            WorkspaceRole::try_from(*value).map_err(|e| form::Error::validation(e))?;
+
+        if let WorkspaceRole::Owner = workspace_role {
+            return Err(form::Error::validation("Workspace can only have one owner").into());
+        }
+
+        Ok(())
+    }
+
     pub fn body(&self) -> String {
         let phone = if let Some(number) = self.phone {
             format!("&phone={number}")
@@ -145,8 +166,8 @@ impl InvitedUserForm<'_> {
         };
 
         format!(
-            "first_name={}&last_name={}&email={}{phone}",
-            self.first_name, self.last_name, self.email,
+            "first_name={}&last_name={}&email={}&workspace_role={}{phone}",
+            self.first_name, self.last_name, self.email, self.workspace_role
         )
         .replace(' ', "+")
     }

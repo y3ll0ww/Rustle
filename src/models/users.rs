@@ -107,6 +107,21 @@ impl PublicUser {
     }
 }
 
+//#[derive(Clone, Debug, Deserialize, Insertable, Queryable, QueryableByName, Serialize)]
+#[derive(Clone, Deserialize, Insertable, Serialize)]
+#[diesel(table_name = users)]
+pub struct InvitedUser {
+    pub username: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub email: String,
+    pub role: i16,
+    pub status: i16,
+    pub password: String,
+    #[diesel(skip_insertion)]
+    pub workspace_role: i16,
+}
+
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum UserRole {
     Admin = 1000,

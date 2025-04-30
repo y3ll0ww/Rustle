@@ -11,6 +11,8 @@ pub fn routes() -> Vec<rocket::Route> {
         put::update_workspace,                  // PUT:     /workspaces/<id>/update
         post::add_members_to_workspace,         // POST:    /workspaces/<id>/add-members
         delete::delete_workspace_by_id,         // DELETE:  /workspaces/<id>/delete
+        post::invite_new_users_to_workspace,    // POST:    /workspaces/<id>/invite
         delete::remove_member_from_workspace,   // DELETE:  /workspaces/<id>/remove-member/<member>
+
     ]
 }

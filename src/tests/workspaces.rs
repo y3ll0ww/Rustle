@@ -18,6 +18,8 @@ const ROUTE_WORKSPACE: &str = "/workspaces/";
 const ROUTE_WORKSPACES: &str = "/workspaces";
 const ROUTE_WORKSPACE_NEW: &str = "/workspaces/new";
 
+const TARGETED_WORKSPACE: &str = "ad5d4bf9-2e80-47b0-8454-1c431718b666";
+
 #[test]
 fn view_all_teams_of_default_user() {
     let client = test_client();

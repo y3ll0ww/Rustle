@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use diesel::{result::Error as DieselError, ExpressionMethods, QueryDsl, RunQueryDsl};
+use diesel::{result::Error as DieselError, ExpressionMethods, JoinOnDsl, QueryDsl, RunQueryDsl};
 use rocket::serde::json::Json;
 use uuid::Uuid;
 
@@ -8,7 +8,7 @@ use crate::{
     api::{ApiResponse, Error, Null},
     database::Db,
     models::users::{PublicUser, User, UserStatus},
-    schema::users,
+    schema::{users, workspace_members},
 };
 
 use super::pagination::{
@@ -18,6 +18,44 @@ use super::pagination::{
 pub async fn get_all_public_users(db: &Db) -> Result<Vec<PublicUser>, Error<Null>> {
     let users: Vec<PublicUser> = db
         .run(move |conn| users::table.get_results::<User>(conn))
+        .await
+        .map_err(ApiResponse::from_error)?
+        .iter()
+        .map(PublicUser::from)
+        .collect();
+
+    Ok(users)
+}
+
+pub async fn get_all_public_users_from_workspaces(db: &Db, user: Uuid) -> Result<Vec<PublicUser>, Error<Null>> {
+    let users: Vec<PublicUser> = db
+        .run(
+            move |conn| {
+                users::table
+                    .inner_join(
+                        workspace_members::table
+                            .on(workspace_members::member.eq(users::id)),
+                    )
+                    .filter(workspace_members::member.eq(user))
+                    .select((
+                        users::id,
+                        users::username,
+                        users::first_name,
+                        users::last_name,
+                        users::email,
+                        users::phone,
+                        users::role,
+                        users::status,
+                        users::job_title,
+                        users::password,
+                        users::bio,
+                        users::avatar_url,
+                        users::created_at,
+                        users::updated_at,
+                    ))
+                    .get_results::<User>(conn)
+            },
+        )
         .await
         .map_err(ApiResponse::from_error)?
         .iter()

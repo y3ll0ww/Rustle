@@ -16,14 +16,14 @@ pub async fn get_list_of_workspaces_by_user_id(
     guard: JwtGuard,
     db: Db,
 ) -> Result<Success<Vec<Workspace>>, Error<Null>> {
-    let user_id = guard.get_user().id;
+    let user = guard.get_user();
 
     // Retrieve all workspaces with the user ID
-    let workspaces = database::workspaces::get_workspaces_by_user_id(&db, user_id).await?;
+    let workspaces = database::workspaces::get_workspaces_by_user_id(&db, user.id).await?;
 
     // Return vector of workspaces
     Ok(ApiResponse::success(
-        format!("Workspaces for user '{user_id}'"),
+        format!("Workspaces for '{}'", user.username),
         Some(workspaces),
     ))
 }
