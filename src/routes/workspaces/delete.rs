@@ -20,7 +20,7 @@ pub async fn delete_workspace_by_id(
     cookies: &CookieJar<'_>,
     redis: &State<RedisMutex>,
 ) -> Result<Success<Null>, Error<Null>> {
-    Policy::remove_workspaces(id, guard.get_user(), cookies)?;
+    Policy::workspaces_remove(id, guard.get_user(), cookies)?;
 
     // Remove the workspace from the database (relevant records
     // in different tables will be cascaded by Postgres)
@@ -45,7 +45,7 @@ pub async fn remove_member_from_workspace(
     cookies: &CookieJar<'_>,
     redis: &State<RedisMutex>,
 ) -> Result<Success<WorkspaceWithMembers>, Error<Null>> {
-    Policy::update_workspaces_members(id, guard.get_user(), cookies)?;
+    Policy::workspaces_update_members(id, guard.get_user(), cookies)?;
 
     // Remove the member from the workspace
     let workspace_with_members =

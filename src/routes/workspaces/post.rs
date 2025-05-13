@@ -32,7 +32,7 @@ pub async fn create_new_workspace_by_form(
     let user = guard.get_user();
 
     // Validate user permissions
-    Policy::create_workspaces(&user)?;
+    Policy::workspaces_create(&user)?;
 
     // Insert and return a new workspace with members
     let workspace_with_members = database::workspaces::insert_new_workspace(
@@ -71,7 +71,7 @@ pub async fn add_members_to_workspace(
     db: Db,
 ) -> Result<Success<WorkspaceWithMembers>, Error<Null>> {
     // Only allow this function if the user is admin or the workspace permissions are sufficient.
-    Policy::update_workspaces_members(id, guard.get_user(), cookies)?;
+    Policy::workspaces_update_members(id, guard.get_user(), cookies)?;
 
     // Cannot add an empty vector
     if members.is_empty() {
@@ -118,7 +118,7 @@ pub async fn invite_new_users_to_workspace(
     redis: &State<RedisMutex>,
 ) -> Result<Success<Vec<String>>, Error<Null>> {
     // Only allow this function if the user is admin or the workspace permissions are sufficient.
-    Policy::update_workspaces_members(id, guard.get_user(), cookies)?;
+    Policy::workspaces_update_members(id, guard.get_user(), cookies)?;
 
     // Create a vector of Users and a HashSet of base usernames from the form
     let (mut invited_users, base_usernames) = form
@@ -186,7 +186,7 @@ pub async fn reinvite_user_by_id(
     redis: &State<RedisMutex>,
 ) -> Result<Success<String>, Error<Null>> {
     // Only allow this function if the user is admin or the workspace permissions are sufficient.
-    Policy::update_workspaces_members(id, guard.get_user(), cookies)?;
+    Policy::workspaces_update_members(id, guard.get_user(), cookies)?;
     
     // Get the user from the database
     let user = database::users::get_user_by_id(&db, member).await?;

@@ -1,14 +1,12 @@
 use crate::{
     api::{ApiResponse, Error, Null, Success},
     auth::JwtGuard,
-    cache::{self, RedisMutex},
     cookies::TOKEN_COOKIE,
     database::{users as database, Db},
-    email::MailClient,
     forms::{login::LoginForm, password::Password},
-    models::users::{PublicUser, User, UserStatus},
+    models::users::{User, UserStatus},
 };
-use rocket::{form::Form, http::CookieJar, serde::json::Json, State};
+use rocket::{form::Form, http::CookieJar, serde::json::Json};
 use uuid::Uuid;
 
 #[post("/login", data = "<credentials>")]
@@ -51,54 +49,6 @@ pub fn logout(_guard: JwtGuard, cookies: &CookieJar<'_>) -> Success<String> {
         "Logout successful - token and user info removed".to_string(),
         None,
     )
-}
-
-/// TODO!:
-/// - Adding space/project functionality
-/// - Inviting only when a certain role in space
-#[post("/invite/re/<space>/<id>")]
-pub async fn reinvite_user_by_id(
-    space: &str,
-    id: Uuid,
-    guard: JwtGuard,
-    db: Db,
-    redis: &State<RedisMutex>,
-) -> Result<Success<String>, Error<Null>> {
-    // Get the user from the database
-    let user = database::get_user_by_id(&db, id).await?;
-
-    // Extract the user status
-    let user_status =
-        UserStatus::try_from(user.status).map_err(|e| ApiResponse::conflict(e, String::new()))?;
-
-    // Make sure the user status is still on invited
-    if !matches!(user_status, UserStatus::Invited) {
-        return Err(ApiResponse::bad_request(format!(
-            "User {} has status {user_status:?}",
-            user.username,
-        )));
-    };
-
-    // Create a random token with a length of 64 characters
-    let token = cache::create_random_token(64);
-
-    // Add the token to the redis cache; containing the user ID
-    cache::users::add_invite_token(redis, &token, user.id).await?;
-
-    // Get the required information for the invitation email
-    let inviter = guard.get_user();
-    let recipient = PublicUser::from(&user);
-    let workspace_name = space.replace('_', " ");
-
-    // Send the email
-    MailClient::no_reply()
-        .send_invitation(&inviter, &recipient, &workspace_name, &token)
-        .map_err(ApiResponse::internal_server_error)?;
-
-    Ok(ApiResponse::success(
-        format!("{} invited", user.username),
-        Some(token),
-    ))
 }
 
 #[post("/create", format = "json", data = "<user>")]

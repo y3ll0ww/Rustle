@@ -19,7 +19,7 @@ pub async fn update_workspace(
     redis: &State<RedisMutex>,
 ) -> Result<Success<Workspace>, Error<Null>> {
     // Check if the user is authorized to perform this action
-    Policy::update_workspaces_info(id, guard.get_user(), cookies)?;
+    Policy::workspaces_update_info(id, guard.get_user(), cookies)?;
 
     // Update the workspace information in the database
     let updated_workspace =

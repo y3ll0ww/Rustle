@@ -13,11 +13,11 @@ use crate::{
 use super::Policy;
 
 impl Policy {
-    pub fn create_workspaces(user: &PublicUser) -> Result<(), Error<Null>> {
+    pub fn workspaces_create(user: &PublicUser) -> Result<(), Error<Null>> {
         Policy::rule(user.is_at_least(UserRole::Manager)).authorize("User not allowed to create teams")
     }
 
-    pub fn update_workspaces_info(
+    pub fn workspaces_update_info(
         workspace: Uuid,
         user: PublicUser,
         cookies: &CookieJar<'_>,
@@ -27,7 +27,7 @@ impl Policy {
             .authorize("Not authorized to update workspace information")
     }
 
-    pub fn update_workspaces_members(
+    pub fn workspaces_update_members(
         workspace: Uuid,
         user: PublicUser,
         cookies: &CookieJar<'_>,
@@ -37,7 +37,7 @@ impl Policy {
             .authorize("Not authorized to add members")
     }
 
-    pub fn remove_workspaces(
+    pub fn workspaces_remove(
         workspace: Uuid,
         user: PublicUser,
         cookies: &CookieJar<'_>,
