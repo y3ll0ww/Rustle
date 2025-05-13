@@ -56,11 +56,11 @@ pub async fn get_workspace_by_id(
     let user = guard.get_user();
 
     // Return not found if the user is not an admin or a member
-    if !user.is_admin() && workspace_with_members
-        .members
-        .iter()
-        .find(|member| member.user.id == user.id)
-        .is_none()
+    if !user.is_admin()
+        && !workspace_with_members
+            .members
+            .iter()
+            .any(|member| member.user.id == user.id)
     {
         return Err(ApiResponse::not_found("Workspace not found".to_string()));
     }

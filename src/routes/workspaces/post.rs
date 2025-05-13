@@ -79,9 +79,9 @@ pub async fn add_members_to_workspace(
     }
 
     // Cannot add a second owner
-    if let Some(_) = members
+    if members
         .iter()
-        .find(|m| m.role == i16::from(WorkspaceRole::Owner))
+        .any(|m| m.role == i16::from(WorkspaceRole::Owner))
     {
         return Err(ApiResponse::bad_request(
             "Cannot add another owner".to_string(),
@@ -187,7 +187,7 @@ pub async fn reinvite_user_by_id(
 ) -> Result<Success<String>, Error<Null>> {
     // Only allow this function if the user is admin or the workspace permissions are sufficient.
     Policy::workspaces_update_members(id, guard.get_user(), cookies)?;
-    
+
     // Get the user from the database
     let user = database::users::get_user_by_id(&db, member).await?;
 
@@ -225,11 +225,15 @@ pub async fn reinvite_user_by_id(
     ))
 }
 
-async fn get_workspace_name(id: Uuid, db: &Db, redis: &State<RedisMutex>) -> Result<String, Error<Null>> {
+async fn get_workspace_name(
+    id: Uuid,
+    db: &Db,
+    redis: &State<RedisMutex>,
+) -> Result<String, Error<Null>> {
     // Try to retrieve the workspace name from the cache or the database
     let name = match cache::workspaces::get_workspace_cache(redis, id).await {
         Ok(Some(workspace_with_members)) => workspace_with_members.workspace.name,
-        _ => database::workspaces::get_workspace_by_id(&db, id)
+        _ => database::workspaces::get_workspace_by_id(db, id)
             .await
             .map(|workspace_with_members| workspace_with_members.workspace.name)?,
     };

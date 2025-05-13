@@ -80,7 +80,7 @@ pub async fn update_role(
     Policy::users_set_role(&user, role)?;
 
     // Verify the validity of the user role
-    let user_role = UserRole::try_from(role).map_err(|e| ApiResponse::bad_request(e))?;
+    let user_role = UserRole::try_from(role).map_err(ApiResponse::bad_request)?;
 
     // Update the user role
     let updated_user = database::users::update_user_role(&db, id, role).await?;

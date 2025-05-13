@@ -14,7 +14,8 @@ use super::Policy;
 
 impl Policy {
     pub fn workspaces_create(user: &PublicUser) -> Result<(), Error<Null>> {
-        Policy::rule(user.is_at_least(UserRole::Manager)).authorize("User not allowed to create teams")
+        Policy::rule(user.is_at_least(UserRole::Manager))
+            .authorize("User not allowed to create teams")
     }
 
     pub fn workspaces_update_info(
@@ -23,7 +24,11 @@ impl Policy {
         cookies: &CookieJar<'_>,
     ) -> Result<(), Error<Null>> {
         Policy::rule(user.is_admin())
-            .or(user_is_at_least(WorkspaceRole::Contributor, workspace, cookies)?)
+            .or(user_is_at_least(
+                WorkspaceRole::Contributor,
+                workspace,
+                cookies,
+            )?)
             .authorize("Not authorized to update workspace information")
     }
 
@@ -46,10 +51,13 @@ impl Policy {
             .or(user_is_at_least(WorkspaceRole::Master, workspace, cookies)?)
             .authorize("Not authorized to remove workspace")
     }
-    
 }
 
-fn user_is_at_least(workspace_role: WorkspaceRole, workspace: Uuid, cookies: &CookieJar<'_>) -> Result<bool, Error<Null>> {
+fn user_is_at_least(
+    workspace_role: WorkspaceRole,
+    workspace: Uuid,
+    cookies: &CookieJar<'_>,
+) -> Result<bool, Error<Null>> {
     let actual = cookies::workspaces::get_workspace_permission(cookies, workspace).unwrap_or(-1);
     Ok(actual >= i16::from(workspace_role))
 }

@@ -15,7 +15,10 @@ use crate::{
         invite::{InvitedMultipleUsersForm, InvitedUserForm},
         password::Password,
     },
-    models::{users::{PublicUser, UserStatus}, workspaces::WorkspaceRole},
+    models::{
+        users::{PublicUser, UserStatus},
+        workspaces::WorkspaceRole,
+    },
     tests::{
         async_test_client,
         users::{
@@ -25,7 +28,8 @@ use crate::{
             INVITED_USER_2_FIRST_NAME, INVITED_USER_2_LAST_NAME, INVITED_USER_2_USERNAME,
             INVITED_USER_3_EMAIL_ADDR, INVITED_USER_3_FIRST_NAME, INVITED_USER_3_LAST_NAME,
             ROUTE_GET, ROUTE_INVITE_GET, ROUTE_INVITE_SET, ROUTE_LOGOUT,
-        }, workspaces::TARGETED_WORKSPACE,
+        },
+        workspaces::TARGETED_WORKSPACE,
     },
 };
 
@@ -121,13 +125,15 @@ async fn reinvite_user_by_id() {
     async_login(&client, ADMIN_LOGIN).await;
 
     let response = client
-        .post(format!("/workspaces/{TARGETED_WORKSPACE}/re-invite/{user_id}"))
+        .post(format!(
+            "/workspaces/{TARGETED_WORKSPACE}/re-invite/{user_id}"
+        ))
         .dispatch()
         .await;
 
     let status = response.status().clone();
     let deserialized_response = response.into_json::<ApiResponse<String>>().await;
-    
+
     println!("{:?}", deserialized_response);
     assert_eq!(status, Status::Ok);
 

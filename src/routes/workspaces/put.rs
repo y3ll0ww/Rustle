@@ -6,7 +6,8 @@ use crate::{
     auth::JwtGuard,
     cache::{self, RedisMutex},
     database::{self, Db},
-    models::workspaces::{Workspace, WorkspaceUpdate}, policies::Policy,
+    models::workspaces::{Workspace, WorkspaceUpdate},
+    policies::Policy,
 };
 
 #[put("/<id>/update", format = "json", data = "<update>")]

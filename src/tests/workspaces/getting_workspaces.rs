@@ -1,6 +1,10 @@
 use rocket::http::Status;
 
-use crate::tests::{test_client, users::{login, ADMIN_LOGIN}, workspaces::{ROUTE_WORKSPACE, ROUTE_WORKSPACES, TARGETED_WORKSPACE}};
+use crate::tests::{
+    test_client,
+    users::{login, ADMIN_LOGIN},
+    workspaces::{ROUTE_WORKSPACE, ROUTE_WORKSPACES, TARGETED_WORKSPACE},
+};
 
 #[test]
 fn view_workspaces_from_user() {
@@ -24,7 +28,9 @@ fn view_workspace() {
     // Log in
     login(&client, ADMIN_LOGIN);
 
-    let response = client.get(format!("{ROUTE_WORKSPACE}{TARGETED_WORKSPACE}")).dispatch();
+    let response = client
+        .get(format!("{ROUTE_WORKSPACE}{TARGETED_WORKSPACE}"))
+        .dispatch();
 
     // Assert the login request was successful
     let status = response.status().clone();

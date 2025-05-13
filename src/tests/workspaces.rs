@@ -1,10 +1,11 @@
 use rocket::http::Status;
 
 use crate::{
-    routes::WORKSPACES, tests::{
+    routes::WORKSPACES,
+    tests::{
         test_client,
         users::{login, DEFAULT_LOGIN},
-    }
+    },
 };
 
 #[cfg(test)]

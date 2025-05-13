@@ -33,9 +33,7 @@ fn add_member_to_workspace() {
 
     // Send the request
     let response = client
-        .post(format!(
-            "{ROUTE_WORKSPACE}{TARGETED_WORKSPACE}/add-members"
-        ))
+        .post(format!("{ROUTE_WORKSPACE}{TARGETED_WORKSPACE}/add-members"))
         .header(ContentType::JSON)
         .body(payload)
         .dispatch();

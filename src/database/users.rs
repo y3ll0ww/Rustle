@@ -181,11 +181,7 @@ pub async fn update_user_information(
     .await
 }
 
-pub async fn update_user_status(
-    db: &Db,
-    id: Uuid,
-    status: i16,
-) -> Result<PublicUser, Error<Null>> {
+pub async fn update_user_status(db: &Db, id: Uuid, status: i16) -> Result<PublicUser, Error<Null>> {
     db.run(move |conn| {
         diesel::update(users::table.filter(users::id.eq(id)))
             .set(users::status.eq(status))
@@ -196,11 +192,7 @@ pub async fn update_user_status(
     .await
 }
 
-pub async fn update_user_role(
-    db: &Db,
-    id: Uuid,
-    role: i16,
-) -> Result<PublicUser, Error<Null>> {
+pub async fn update_user_role(db: &Db, id: Uuid, role: i16) -> Result<PublicUser, Error<Null>> {
     db.run(move |conn| {
         diesel::update(users::table.filter(users::id.eq(id)))
             .set(users::role.eq(role))
