@@ -12,7 +12,7 @@ use crate::{
     email::MailClient,
     forms::{invite::InvitedMultipleUsersForm, workspace::NewWorkspaceForm},
     models::{
-        users::{InvitedUser, PublicUser},
+        users::{InvitedUser, PublicUser, UserStatus},
         workspaces::{NewWorkspace, WorkspaceMember, WorkspaceRole, WorkspaceWithMembers},
     },
     policies::Policy,
@@ -140,14 +140,6 @@ pub async fn invite_new_users_to_workspace(
     // Declare a vector to keep the tokens
     let mut tokens = Vec::new();
 
-    // Extract the workspace
-    let workspace_name = match cache::workspaces::get_workspace_cache(redis, id).await {
-        Ok(Some(workspace_with_members)) => workspace_with_members.workspace.name,
-        _ => database::workspaces::get_workspace_by_id(&db, id)
-            .await
-            .map(|workspace_with_members| workspace_with_members.workspace.name)?,
-    };
-
     // Loop through the collection of new users
     for user in &inserted_users {
         // Create a random token with a length of 64 characters
@@ -161,7 +153,7 @@ pub async fn invite_new_users_to_workspace(
 
         let inviter = guard.get_user();
         let recipient = PublicUser::from(user);
-        let workspace_name = workspace_name.clone();
+        let workspace_name = get_workspace_name(id, &db, redis).await?;
 
         // Send an invitation email to the new users, containing the token
         tokio::task::spawn_blocking(move || {
@@ -179,6 +171,70 @@ pub async fn invite_new_users_to_workspace(
         format!("{} users invited", inserted_users.len()),
         Some(tokens),
     ))
+}
+
+/// TODO!:
+/// - Adding space/project functionality
+/// - Inviting only when a certain role in space
+#[post("/<id>/re-invite/<member>")]
+pub async fn reinvite_user_by_id(
+    id: Uuid,
+    member: Uuid,
+    guard: JwtGuard,
+    db: Db,
+    cookies: &CookieJar<'_>,
+    redis: &State<RedisMutex>,
+) -> Result<Success<String>, Error<Null>> {
+    // Only allow this function if the user is admin or the workspace permissions are sufficient.
+    Policy::update_workspaces_members(id, guard.get_user(), cookies)?;
+    
+    // Get the user from the database
+    let user = database::users::get_user_by_id(&db, member).await?;
+
+    // Extract the user status
+    let user_status =
+        UserStatus::try_from(user.status).map_err(|e| ApiResponse::conflict(e, String::new()))?;
+
+    // Make sure the user status is still on invited
+    if !matches!(user_status, UserStatus::Invited) {
+        return Err(ApiResponse::bad_request(format!(
+            "User {} has status {user_status:?}",
+            user.username,
+        )));
+    };
+
+    // Create a random token with a length of 64 characters
+    let token = cache::create_random_token(64);
+
+    // Add the token to the redis cache; containing the user ID
+    cache::users::add_invite_token(redis, &token, user.id).await?;
+
+    // Get the required information for the invitation email
+    let inviter = guard.get_user();
+    let recipient = PublicUser::from(&user);
+    let workspace_name = get_workspace_name(id, &db, redis).await?;
+
+    // Send the email
+    MailClient::no_reply()
+        .send_invitation(&inviter, &recipient, &workspace_name, &token)
+        .map_err(ApiResponse::internal_server_error)?;
+
+    Ok(ApiResponse::success(
+        format!("{} invited", user.username),
+        Some(token),
+    ))
+}
+
+async fn get_workspace_name(id: Uuid, db: &Db, redis: &State<RedisMutex>) -> Result<String, Error<Null>> {
+    // Try to retrieve the workspace name from the cache or the database
+    let name = match cache::workspaces::get_workspace_cache(redis, id).await {
+        Ok(Some(workspace_with_members)) => workspace_with_members.workspace.name,
+        _ => database::workspaces::get_workspace_by_id(&db, id)
+            .await
+            .map(|workspace_with_members| workspace_with_members.workspace.name)?,
+    };
+
+    Ok(name)
 }
 
 fn assign_unique_usernames(

@@ -53,13 +53,13 @@ pub async fn get_workspace_by_id(
         }
     };
 
-    let user_id = guard.get_user().id;
+    let user = guard.get_user();
 
-    // Return not found if the user is not a member
-    if workspace_with_members
+    // Return not found if the user is not an admin or a member
+    if !user.is_admin() && workspace_with_members
         .members
         .iter()
-        .find(|member| member.user.id == user_id)
+        .find(|member| member.user.id == user.id)
         .is_none()
     {
         return Err(ApiResponse::not_found("Workspace not found".to_string()));
@@ -69,7 +69,7 @@ pub async fn get_workspace_by_id(
     if let Some(member) = workspace_with_members
         .members
         .iter()
-        .find(|m| m.user.id == user_id)
+        .find(|m| m.user.id == user.id)
     {
         cookies::workspaces::insert_workspace_permission(cookies, id, member.role)?;
     }
