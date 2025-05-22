@@ -63,8 +63,11 @@ pub async fn get_all_public_users_from_workspaces(
     Ok(users)
 }
 
+/// Returns user information paginated. Admin will return all users, where other users will only
+/// return users with whom they share a workspace with.
 pub async fn get_users_paginated(
     db: &Db,
+    user: PublicUser,
     status: Option<i16>,
     role: Option<i16>,
     params: Json<PaginationRequest<UserField>>,
@@ -80,7 +83,7 @@ pub async fn get_users_paginated(
             let search = params.search.as_deref().unwrap_or_default();
 
             // Build the query as COUNT to get the total
-            let total = query_users::build(search, status, role)
+            let total = query_users::build(conn, user.clone(), search, status, role)
                 .count()
                 .get_result::<i64>(conn)?;
 
@@ -95,7 +98,7 @@ pub async fn get_users_paginated(
             let offset = (page - 1) * limit;
 
             // Build the query again for LOAD and apply filtering
-            let mut query = query_users::build(search, status, role);
+            let mut query = query_users::build(conn, user, search, status, role);
 
             // Apply sorting to the query
             query = query_users::sort(query, &params.sort_by, &params.sort_dir);
