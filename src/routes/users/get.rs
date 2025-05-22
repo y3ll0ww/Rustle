@@ -13,10 +13,17 @@ use crate::{
 
 #[get("/")]
 pub async fn list_all_users(
-    _guard: JwtGuard,
+    guard: JwtGuard,
     db: Db,
 ) -> Result<Success<Vec<PublicUser>>, Error<Null>> {
-    let users = database::get_all_public_users(&db).await?;
+    let user = guard.get_user();
+
+    let users = if user.is_admin() {
+        // If the user is admin just return all users that exist
+        database::get_all_public_users(&db).await?
+    } else {
+        database::get_all_public_users_from_workspaces(&db, user.id).await?
+    };
 
     Ok(ApiResponse::success(
         format!("{} users found", users.len()),

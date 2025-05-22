@@ -22,10 +22,8 @@ pub fn get_cookie<T: DeserializeOwned>(
                 ))
             })
         }
-        None => {
-            return Err(ApiResponse::bad_request(format!(
-                "No '{cookie_key}' cookie found"
-            )))
-        }
+        None => Err(ApiResponse::bad_request(format!(
+            "No '{cookie_key}' cookie found"
+        ))),
     }
 }

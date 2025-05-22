@@ -107,6 +107,33 @@ impl PublicUser {
     }
 }
 
+#[derive(AsChangeset, Clone, Deserialize, Serialize)]
+#[diesel(table_name = users)]
+pub struct UserUpdate {
+    pub username: Option<String>,
+    pub first_name: Option<String>,
+    pub last_name: Option<String>,
+    pub phone: Option<String>,
+    pub job_title: Option<String>,
+    pub bio: Option<String>,
+    pub avatar_url: Option<String>,
+}
+
+//#[derive(Clone, Debug, Deserialize, Insertable, Queryable, QueryableByName, Serialize)]
+#[derive(Clone, Deserialize, Insertable, Serialize)]
+#[diesel(table_name = users)]
+pub struct InvitedUser {
+    pub username: String,
+    pub first_name: String,
+    pub last_name: String,
+    pub email: String,
+    pub role: i16,
+    pub status: i16,
+    pub password: String,
+    #[diesel(skip_insertion)]
+    pub workspace_role: i16,
+}
+
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 pub enum UserRole {
     Admin = 1000,
@@ -152,7 +179,7 @@ pub enum UserStatus {
     /// User is suspended
     Suspended = 3,
     /// User is deleted
-    Deleted = 4,
+    Removed = 4,
 }
 
 impl TryFrom<i16> for UserStatus {
@@ -164,7 +191,7 @@ impl TryFrom<i16> for UserStatus {
             1 => Ok(UserStatus::Inactive),
             2 => Ok(UserStatus::Active),
             3 => Ok(UserStatus::Suspended),
-            4 => Ok(UserStatus::Deleted),
+            4 => Ok(UserStatus::Removed),
             _ => Err(format!("Invalid UserStatus value: {value}")),
         }
     }

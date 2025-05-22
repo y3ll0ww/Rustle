@@ -13,21 +13,26 @@ use crate::{
 use super::Policy;
 
 impl Policy {
-    pub fn create_workspaces(user: &PublicUser) -> Result<(), Error<Null>> {
-        Policy::rule(user.is_at_least(UserRole::Manager)).authorize("User not allowed to create teams")
+    pub fn workspaces_create(user: &PublicUser) -> Result<(), Error<Null>> {
+        Policy::rule(user.is_at_least(UserRole::Manager))
+            .authorize("User not allowed to create teams")
     }
 
-    pub fn update_workspaces_info(
+    pub fn workspaces_update_info(
         workspace: Uuid,
         user: PublicUser,
         cookies: &CookieJar<'_>,
     ) -> Result<(), Error<Null>> {
         Policy::rule(user.is_admin())
-            .or(user_is_at_least(WorkspaceRole::Contributor, workspace, cookies)?)
+            .or(user_is_at_least(
+                WorkspaceRole::Contributor,
+                workspace,
+                cookies,
+            )?)
             .authorize("Not authorized to update workspace information")
     }
 
-    pub fn update_workspaces_members(
+    pub fn workspaces_update_members(
         workspace: Uuid,
         user: PublicUser,
         cookies: &CookieJar<'_>,
@@ -37,7 +42,7 @@ impl Policy {
             .authorize("Not authorized to add members")
     }
 
-    pub fn remove_workspaces(
+    pub fn workspaces_remove(
         workspace: Uuid,
         user: PublicUser,
         cookies: &CookieJar<'_>,
@@ -46,10 +51,13 @@ impl Policy {
             .or(user_is_at_least(WorkspaceRole::Master, workspace, cookies)?)
             .authorize("Not authorized to remove workspace")
     }
-    
 }
 
-fn user_is_at_least(workspace_role: WorkspaceRole, workspace: Uuid, cookies: &CookieJar<'_>) -> Result<bool, Error<Null>> {
+fn user_is_at_least(
+    workspace_role: WorkspaceRole,
+    workspace: Uuid,
+    cookies: &CookieJar<'_>,
+) -> Result<bool, Error<Null>> {
     let actual = cookies::workspaces::get_workspace_permission(cookies, workspace).unwrap_or(-1);
     Ok(actual >= i16::from(workspace_role))
 }

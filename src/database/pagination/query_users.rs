@@ -55,11 +55,6 @@ pub fn build<'a>(
         query = query.filter(role.eq(filter))
     }
 
-    // Add the following to the users table migration:
-    // CREATE INDEX username_lower_idx ON users (LOWER(username));
-    // CREATE INDEX email_lower_idx ON users (LOWER(email));
-    // CREATE INDEX display_name_lower_idx ON users (LOWER(display_name));
-
     if !filter_search.is_empty() {
         let safe_search = filter_search.replace('%', "\\%").replace('_', "\\_");
         let q = format!("{safe_search}%");

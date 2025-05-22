@@ -6,7 +6,7 @@ use crate::{
     tests::{
         test_client,
         users::{login, ADMIN_LOGIN},
-        workspaces::{ROUTE_WORKSPACE, ROUTE_WORKSPACE_NEW},
+        workspaces::{ROUTE_WORKSPACE, ROUTE_WORKSPACE_NEW, TARGETED_WORKSPACE},
     },
 };
 
@@ -40,9 +40,6 @@ fn new_workspace_by_form() {
 fn update_workspace_information() {
     let client = test_client();
 
-    // Define the workspace ID to update
-    let workspace_to_update = "2e06634d-2da3-44cb-9c81-326b6715efce";
-
     // Define the information to update
     let workspace_update = WorkspaceUpdate {
         name: None,
@@ -58,7 +55,7 @@ fn update_workspace_information() {
 
     // Send the request
     let response = client
-        .put(format!("{ROUTE_WORKSPACE}/{workspace_to_update}/update"))
+        .put(format!("{ROUTE_WORKSPACE}/{TARGETED_WORKSPACE}/update"))
         .header(ContentType::JSON)
         .body(payload)
         .dispatch();

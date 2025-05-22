@@ -8,11 +8,13 @@ pub fn routes() -> Vec<rocket::Route> {
         get::list_all_users,            // GET:     /user
         get::get_user_by_username,      // GET:     /user/<username>
         post::inject_user,              // POST:    /user/create
+        put::update_user,               // PUT:     /user/update/<id>
+        put::suspend_user,              // PUT:     /user/update/<id>/suspend
+        put::remove_user,               // PUT:     /user/update/<id>/remove
+        put::update_role,               // PUT:     /user/update/<id>/<role>
         delete::delete_user_by_id,      // DELETE:  /user/delete/<id>
-        post::invite_new_users_by_form, // POST:    /user/invite
         get::get_invited_user,          // GET:     /user/invite/get/<token>
         put::set_password_after_invite, // PUT:     /user/invite/set/<token>
-        post::reinvite_user_by_id,      // POST:    /user/invite/re/<space>/<id>
         post::login_by_form,            // POST:    /user/login
         post::logout,                   // POST:    /user/logout
         get::get_paginated_users,       // GET:     /user/browse?<status>&<role>

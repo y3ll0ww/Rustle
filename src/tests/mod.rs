@@ -1,7 +1,7 @@
 use rocket::local::{asynchronous::Client as AsyncClient, blocking::Client};
 
-pub mod workspaces;
 pub mod users;
+pub mod workspaces;
 
 pub fn test_client() -> Client {
     Client::tracked(crate::rocket()).expect("valid rocket instance")

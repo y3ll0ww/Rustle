@@ -5,7 +5,7 @@ use crate::{
     database::pagination::{request::PaginationRequest, sort::UserField},
     tests::{
         test_client,
-        users::{ROUTE_BROWSE, ROUTE_GET, ROUTE_GET_ALL},
+        users::{ADMIN_LOGIN, ROUTE_BROWSE, ROUTE_GET, ROUTE_GET_ALL},
     },
 };
 
@@ -14,7 +14,7 @@ fn get_all_users() {
     let client = test_client();
 
     // Login required
-    login(&client, DEFAULT_LOGIN);
+    login(&client, ADMIN_LOGIN);
 
     // Send get request
     let response = client.get(ROUTE_GET_ALL).dispatch();

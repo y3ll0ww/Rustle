@@ -51,8 +51,4 @@ diesel::joinable!(workspace_members -> users (member));
 diesel::joinable!(workspace_members -> workspaces (workspace));
 diesel::joinable!(workspaces -> users (owner));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    users,
-    workspace_members,
-    workspaces,
-);
+diesel::allow_tables_to_appear_in_same_query!(users, workspace_members, workspaces,);

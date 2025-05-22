@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 
 use crate::api::{ApiResponse, Error, Null};
 
+pub mod users;
 pub mod workspaces;
 
 enum Rule {

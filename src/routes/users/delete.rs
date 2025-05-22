@@ -3,8 +3,8 @@ use uuid::Uuid;
 use crate::{
     api::{ApiResponse, Error, Null, Success},
     auth::JwtGuard,
-    database::{users, Db},
-    models::users::UserRole,
+    database::{self, Db},
+    policies::Policy,
 };
 
 /// Deletes a [`User`] from the database.
@@ -37,14 +37,10 @@ pub async fn delete_user_by_id(
     let user = guard.get_user();
 
     // Return early if the user to delete is not self or admin
-    if user.role != i16::from(UserRole::Admin) && user.id != id {
-        return Err(ApiResponse::unauthorized(
-            "No permission to delete user".to_string(),
-        ));
-    }
+    Policy::users_delete(&user, id)?;
 
     // Delete the records from the database and collect the number of deleted rows
-    let deleted_rows = users::delete_user_by_id(&db, id).await?;
+    let deleted_rows = database::users::delete_user_by_id(&db, id).await?;
 
     // If there are any deleted rows, it means the user is successfully deleted
     if deleted_rows > 0 {

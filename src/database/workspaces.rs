@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::{
     api::{ApiResponse, Error, Null},
     models::{
-        users::{PublicUser, User},
+        users::{InvitedUser, PublicUser, User},
         workspaces::{
             MemberInfo, NewWorkspace, Workspace, WorkspaceMember, WorkspaceRole, WorkspaceUpdate,
             WorkspaceWithMembers,
@@ -199,4 +199,57 @@ fn fetch_workspace_with_members(
 
     // Return the workspace information containing all public member information
     Ok(WorkspaceWithMembers { workspace, members })
+}
+
+pub async fn create_transaction_bulk_invitation(
+    db: &Db,
+    workspace: Uuid,
+    invited_users: Vec<InvitedUser>,
+) -> Result<Vec<User>, Error<Null>> {
+    // Insert into database with a single transaction
+    db.run({
+        // Clone the new_users vector to move into the closure
+        let insert_users = invited_users.to_vec();
+
+        // Move the database connection into the closure
+        move |conn| {
+            // Insert all users in one transaction; if any error occurs, rollback
+            conn.build_transaction().read_write().run(|conn| {
+                // Insert the users in the users table
+                let inserted_users = diesel::insert_into(users::dsl::users)
+                    .values(&insert_users)
+                    .get_results::<User>(conn)?;
+
+                // Declare the workspace members
+                let mut workspace_members = Vec::new();
+
+                // Iterate over the inserted users
+                for user in &inserted_users {
+                    // Compare the username to the username from th request and extract the workspace role
+                    let workspace_role = invited_users
+                        .iter()
+                        .find(|invited_user| invited_user.username == user.username)
+                        .map(|invited_user| invited_user.workspace_role)
+                        .ok_or_else(|| diesel::result::Error::RollbackTransaction)?;
+
+                    // Add the workspace member to the declared vector
+                    workspace_members.push(WorkspaceMember {
+                        workspace,
+                        member: user.id,
+                        role: workspace_role,
+                    });
+                }
+
+                // Insert the workspace members in the workspace_members table
+                diesel::insert_into(workspace_members::dsl::workspace_members)
+                    .values(workspace_members)
+                    .execute(conn)?;
+
+                // Return the inserted users
+                Ok(inserted_users)
+            })
+        }
+    })
+    .await
+    .map_err(ApiResponse::from_error)
 }

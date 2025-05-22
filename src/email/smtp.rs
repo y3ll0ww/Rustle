@@ -4,8 +4,8 @@ use lettre::{
 };
 
 pub const SMTP_PORT: u16 = 587;
-pub const SMTP_USER: &str = "lonny.boehm66@ethereal.email";
-pub const SMTP_PASS: &str = "YU5AqGh7xYqqsuPwxN";
+pub const SMTP_USER: &str = "emie.schmeler@ethereal.email";
+pub const SMTP_PASS: &str = "eZ96GKrWcmqFxPwT7d";
 pub const SMTP_RELAY: &str = "smtp.ethereal.email";
 
 pub struct Smtp {
