@@ -71,7 +71,7 @@ pub fn build<'a>(
     // Add the search filter
     if !filter_search.is_empty() {
         // Add excape characters for unsafe characters
-        let safe_search = format!("{}", filter_search.replace('%', "\\%").replace('_', "\\_"));
+        let safe_search = format!("%{}%", filter_search.replace('%', "\\%").replace('_', "\\_"));
 
         // Apply the search filter on the query
         query = query.filter(
@@ -105,5 +105,7 @@ pub fn build<'a>(
         query = query.filter(users::id.eq_any(accessible_user_ids));
     }
 
+    // Remove self from the list
+    query = query.filter(users::id.ne(user.id));
     query
 }
