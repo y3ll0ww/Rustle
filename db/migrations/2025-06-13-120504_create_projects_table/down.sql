@@ -1,22 +1,22 @@
 /* -------------------------------------
    INDEXES
 ------------------------------------- */
-DROP INDEX IF EXISTS idx_workspace_id;
-DROP INDEX IF EXISTS idx_workspace_member_id;
+DROP INDEX IF EXISTS idx_project_id;
+DROP INDEX IF EXISTS idx_project_member_id;
 
 /* -------------------------------------
    TRIGGERS
 ------------------------------------- */
-DROP TRIGGER IF EXISTS trigger_update_workspaces_timestamp ON workspaces;
-DROP TRIGGER IF EXISTS trigger_workspace_members_change ON workspace_members;
+DROP TRIGGER IF EXISTS trigger_update_projects_timestamp ON projects;
+DROP TRIGGER IF EXISTS trigger_project_members_change ON project_members;
 
 /* -------------------------------------
    FUNCTIONS
 ------------------------------------- */
-DROP FUNCTION IF EXISTS handle_workspace_membership_change;
+DROP FUNCTION IF EXISTS handle_project_membership_change;
 
 /* -------------------------------------
    TABLES
 ------------------------------------- */
-DROP TABLE IF EXISTS workspace_members;
-DROP TABLE IF EXISTS workspaces;
+DROP TABLE IF EXISTS project_members;
+DROP TABLE IF EXISTS projects;
