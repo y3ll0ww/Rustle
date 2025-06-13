@@ -12,7 +12,7 @@ use crate::{
 
 /// Returns an overview of workspaces of which the request user is a member.
 #[get("/")]
-pub async fn get_list_of_workspaces_by_user_id(
+pub async fn get_workspaces_of_current_user(
     guard: JwtGuard,
     db: Db,
 ) -> Result<Success<Vec<Workspace>>, Error<Null>> {

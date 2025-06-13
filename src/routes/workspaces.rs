@@ -5,7 +5,7 @@ mod put;
 
 pub fn routes() -> Vec<rocket::Route> {
     routes![
-        get::get_list_of_workspaces_by_user_id, // GET:     /workspaces
+        get::get_workspaces_of_current_user,    // GET:     /workspaces
         post::create_new_workspace_by_form,     // POST:    /workspaces/new
         get::get_workspace_by_id,               // GET:     /workspaces/<id>
         put::update_workspace,                  // PUT:     /workspaces/<id>/update

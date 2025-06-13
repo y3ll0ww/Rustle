@@ -10,7 +10,7 @@ use crate::schema::{project_members, projects};
 
 #[derive(Clone, Debug, Deserialize, Insertable, Queryable, Serialize)]
 #[diesel(table_name = projects)]
-pub struct Projects {
+pub struct Project {
     pub id: Uuid,
     pub workspace: Uuid,
     pub name: String,
