@@ -91,7 +91,7 @@ pub async fn update_role(
     ))
 }
 
-#[put("/update/<id>/suspend")]
+#[put("/suspend/<id>")]
 pub async fn suspend_user(
     id: Uuid,
     guard: JwtGuard,
@@ -100,7 +100,7 @@ pub async fn suspend_user(
     user_status_update(&db, id, &guard.get_user(), UserStatus::Suspended).await
 }
 
-#[put("/update/<id>/remove")]
+#[put("/remove/<id>")]
 pub async fn remove_user(
     id: Uuid,
     guard: JwtGuard,

@@ -37,10 +37,10 @@ pub async fn get_paginated_users(
     status: Option<i16>,
     role: Option<i16>,
     params: Json<PaginationRequest<UserField>>,
-    _guard: JwtGuard,
+    guard: JwtGuard,
     db: Db,
 ) -> Result<Success<PaginatedRecords<PublicUser>>, Error<Null>> {
-    let page = database::get_users_paginated(&db, status, role, params).await?;
+    let page = database::get_users_paginated(&db, guard.get_user(), status, role, params).await?;
 
     Ok(ApiResponse::success(
         format!(

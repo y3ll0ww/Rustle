@@ -38,13 +38,13 @@ fn browse_users() {
     let client = test_client();
 
     // Login required
-    login(&client, DEFAULT_LOGIN);
+    login(&client, ADMIN_LOGIN);
 
     // Construct a JSON payload matching the User structure
     let params = PaginationRequest::<UserField> {
         page: Some(7),
         limit: Some(7),
-        search: None,
+        search: Some("example".to_string()),
         sort_by: None,
         sort_dir: None,
     };
