@@ -71,7 +71,7 @@ pub async fn get_workspace_by_id(
         .iter()
         .find(|m| m.user.id == user.id)
     {
-        cookies::workspaces::insert_workspace_permission(cookies, id, member.role)?;
+        cookies::permissions::insert_workspace_permission(id, member.role, cookies)?;
     }
 
     Ok(ApiResponse::success(

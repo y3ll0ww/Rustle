@@ -24,7 +24,7 @@ impl Policy {
         cookies: &CookieJar<'_>,
     ) -> Result<(), Error<Null>> {
         Policy::rule(user.is_admin())
-            .or(user_is_at_least(
+            .or(workspace_role_is_at_least(
                 WorkspaceRole::Contributor,
                 workspace,
                 cookies,
@@ -38,7 +38,11 @@ impl Policy {
         cookies: &CookieJar<'_>,
     ) -> Result<(), Error<Null>> {
         Policy::rule(user.is_admin())
-            .or(user_is_at_least(WorkspaceRole::Master, workspace, cookies)?)
+            .or(workspace_role_is_at_least(
+                WorkspaceRole::Master,
+                workspace,
+                cookies,
+            )?)
             .authorize("Not authorized to add members")
     }
 
@@ -48,16 +52,20 @@ impl Policy {
         cookies: &CookieJar<'_>,
     ) -> Result<(), Error<Null>> {
         Policy::rule(user.is_admin())
-            .or(user_is_at_least(WorkspaceRole::Master, workspace, cookies)?)
+            .or(workspace_role_is_at_least(
+                WorkspaceRole::Master,
+                workspace,
+                cookies,
+            )?)
             .authorize("Not authorized to remove workspace")
     }
 }
 
-fn user_is_at_least(
+pub fn workspace_role_is_at_least(
     workspace_role: WorkspaceRole,
     workspace: Uuid,
     cookies: &CookieJar<'_>,
 ) -> Result<bool, Error<Null>> {
-    let actual = cookies::workspaces::get_workspace_permission(cookies, workspace).unwrap_or(-1);
+    let actual = cookies::permissions::get_workspace_permission(workspace, cookies).unwrap_or(-1);
     Ok(actual >= i16::from(workspace_role))
 }

@@ -147,7 +147,7 @@ impl TryFrom<i16> for WorkspaceRole {
 }
 
 impl From<WorkspaceRole> for i16 {
-    fn from(status: WorkspaceRole) -> Self {
-        status as i16
+    fn from(role: WorkspaceRole) -> Self {
+        role as i16
     }
 }

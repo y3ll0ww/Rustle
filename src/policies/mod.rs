@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 
 use crate::api::{ApiResponse, Error, Null};
 
+pub mod projects;
 pub mod users;
 pub mod workspaces;
 

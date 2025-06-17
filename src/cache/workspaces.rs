@@ -3,13 +3,13 @@ use uuid::Uuid;
 
 use crate::{
     api::{Error, Null},
+    cache::CACHE_TTL_ONE_HOUR,
     models::workspaces::{MemberInfo, WorkspaceUpdate, WorkspaceWithMembers},
 };
 
 use super::RedisMutex;
 
 pub const CACHE_WORKSPACE: &str = "workspace:";
-pub const CACHE_TTL_ONE_HOUR: Option<u64> = Some(3600); // One hour
 
 pub fn cache_key_workspace(workspace_id: Uuid) -> String {
     format!("{CACHE_WORKSPACE}{workspace_id}")

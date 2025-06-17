@@ -6,7 +6,11 @@ use rocket_sync_db_pools::diesel;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::schema::{project_members, projects};
+use crate::{
+    forms::projects::NewProjectForm,
+    models::users::PublicUser,
+    schema::{project_members, projects},
+};
 
 #[derive(Clone, Debug, Deserialize, Insertable, Queryable, Serialize)]
 #[diesel(table_name = projects)]
@@ -27,6 +31,34 @@ pub struct ProjectMember {
     pub project: Uuid,
     pub member: Uuid,
     pub role: i16,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct ProjectMemberInfo {
+    pub user: PublicUser,
+    pub role: i16,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct ProjectWithMembers {
+    pub project: Project,
+    pub members: Vec<ProjectMemberInfo>,
+}
+
+#[derive(Insertable)]
+#[diesel(table_name = projects)]
+pub struct NewProject {
+    name: String,
+    description: Option<String>,
+}
+
+impl NewProject {
+    pub fn from_form(form: NewProjectForm) -> Self {
+        NewProject {
+            name: form.name,
+            description: form.description,
+        }
+    }
 }
 
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
@@ -61,5 +93,11 @@ impl TryFrom<i16> for ProjectRole {
             0 => Ok(ProjectRole::Viewer),
             _ => Err(format!("Invalid ProjectRole value: {value}")),
         }
+    }
+}
+
+impl From<ProjectRole> for i16 {
+    fn from(role: ProjectRole) -> Self {
+        role as i16
     }
 }

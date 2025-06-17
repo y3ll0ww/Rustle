@@ -3,9 +3,10 @@ use serde::de::DeserializeOwned;
 
 use crate::api::{ApiResponse, Error};
 
-pub mod workspaces;
+pub mod permissions;
 
 pub const TOKEN_COOKIE: &str = "auth_token";
+pub const PROJECT_COOKIE: &str = "projects";
 pub const WORKSPACE_COOKIE: &str = "workspaces";
 
 /// Retrieves a deserialized copy of the data from the cookie.

@@ -21,6 +21,7 @@ use std::sync::Arc;
 
 use crate::api::{ApiResponse, Error, Null};
 
+pub mod projects;
 pub mod users;
 pub mod workspaces;
 
@@ -28,6 +29,10 @@ pub type RedisMutex = Arc<Mutex<RedisPool>>;
 
 // QWERTY Use env var in production
 const REDIS_URL: &str = "redis://127.0.0.1:6379";
+
+// TTL values
+pub const CACHE_TTL_ONE_HOUR: Option<u64> = Some(3600);
+pub const CACHE_TTL_24_HOURS: Option<u64> = Some(86400);
 
 pub struct RedisPool {
     client: Client,

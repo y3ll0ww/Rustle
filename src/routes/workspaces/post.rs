@@ -45,10 +45,10 @@ pub async fn create_new_workspace_by_form(
     cache::workspaces::add_workspace_cache(redis, &workspace_with_members).await;
 
     // Add the workspace permission to cookies
-    cookies::workspaces::insert_workspace_permission(
-        cookies,
+    cookies::permissions::insert_workspace_permission(
         workspace_with_members.workspace.id,
         i16::from(WorkspaceRole::Owner),
+        cookies,
     )?;
 
     // Return success response

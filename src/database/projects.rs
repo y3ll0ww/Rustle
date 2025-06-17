@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 use crate::{
     api::{ApiResponse, Error, Null},
-    models::projects::Project,
+    models::projects::{NewProject, Project, ProjectWithMembers},
     schema::{project_members, projects},
 };
 
@@ -20,4 +20,23 @@ pub async fn get_projects_by_user_id(db: &Db, user: Uuid) -> Result<Vec<Project>
     })
     .await
     .map_err(ApiResponse::from_error)
+}
+
+pub async fn insert_new_project(
+    db: &Db,
+    new_project: NewProject,
+) -> Result<ProjectWithMembers, Error<Null>> {
+    let project = db
+        .run(move |conn| {
+            diesel::insert_into(projects::table)
+                .values(new_project)
+                .get_result::<Project>(conn)
+        })
+        .await
+        .map_err(ApiResponse::from_error)?;
+
+    Ok(ProjectWithMembers {
+        project,
+        members: Vec::new(),
+    })
 }
