@@ -21,11 +21,8 @@ pub async fn create_new_project_by_form(
     redis: &State<RedisMutex>,
     db: Db,
 ) -> Result<Success<ProjectWithMembers>, Error<Null>> {
-    // Get user information from cookies
-    let user = guard.get_user();
-
     // Validate user permissions
-    Policy::projects_create(workspace, user, cookies)?;
+    Policy::projects_create(workspace, guard.get_user(), cookies)?;
 
     // Extract the important information from the form
     let new_project = NewProject::from_form(form.into_inner());
