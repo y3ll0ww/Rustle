@@ -22,6 +22,18 @@ pub async fn get_projects_by_user_id(db: &Db, user: Uuid) -> Result<Vec<Project>
     .map_err(ApiResponse::from_error)
 }
 
+pub async fn get_projects_by_workspace_id(db: &Db, workspace: Uuid) -> Result<Vec<Project>, Error<Null>> {
+    // Retrieve all workspaces with the user ID
+    db.run(move |conn| {
+        projects::table
+            .filter(projects::workspace.eq(workspace))
+            .select(projects::all_columns)
+            .load::<Project>(conn)
+    })
+    .await
+    .map_err(ApiResponse::from_error)
+}
+
 pub async fn insert_new_project(
     db: &Db,
     workspace: Uuid,

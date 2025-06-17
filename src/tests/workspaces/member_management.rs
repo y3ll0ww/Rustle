@@ -8,7 +8,7 @@ use crate::{
     tests::{
         test_client,
         users::{login, ADMIN_LOGIN},
-        workspaces::{ROUTE_WORKSPACE, TARGETED_WORKSPACE},
+        workspaces::{ROUTE_WORKSPACES, TARGETED_WORKSPACE},
     },
 };
 
@@ -33,7 +33,7 @@ fn add_member_to_workspace() {
 
     // Send the request
     let response = client
-        .post(format!("{ROUTE_WORKSPACE}{TARGETED_WORKSPACE}/add-members"))
+        .post(format!("{ROUTE_WORKSPACES}{TARGETED_WORKSPACE}/add-members"))
         .header(ContentType::JSON)
         .body(payload)
         .dispatch();
@@ -56,7 +56,7 @@ fn remove_member_from_workspace() {
     // Send the request
     let response = client
         .delete(format!(
-            "{ROUTE_WORKSPACE}{TARGETED_WORKSPACE}/remove-member/{member_to_remove}"
+            "{ROUTE_WORKSPACES}{TARGETED_WORKSPACE}/remove-member/{member_to_remove}"
         ))
         .dispatch();
 

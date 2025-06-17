@@ -7,7 +7,10 @@ use crate::{
     cache::{self, RedisMutex},
     cookies,
     database::{self, Db},
-    models::workspaces::{Workspace, WorkspaceWithMembers},
+    models::{
+        projects::Project,
+        workspaces::{Workspace, WorkspaceWithMembers},
+    },
 };
 
 /// Returns an overview of workspaces of which the request user is a member.
@@ -80,5 +83,18 @@ pub async fn get_workspace_by_id(
             workspace_with_members.workspace.name
         ),
         Some(workspace_with_members),
+    ))
+}
+
+/// Returns an overview of workspaces of which the request user is a member.
+#[get("/<id>/projects")]
+pub async fn get_projects_by_id(id: Uuid, db: Db) -> Result<Success<Vec<Project>>, Error<Null>> {
+    // Retrieve all workspaces with the workspace ID
+    let projects = database::projects::get_projects_by_workspace_id(&db, id).await?;
+
+    // Return vector of projects
+    Ok(ApiResponse::success(
+        format!("Projects from '{id}'"),
+        Some(projects),
     ))
 }

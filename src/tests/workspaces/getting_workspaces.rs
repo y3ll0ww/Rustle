@@ -3,7 +3,7 @@ use rocket::http::Status;
 use crate::tests::{
     test_client,
     users::{login, ADMIN_LOGIN, DEFAULT_LOGIN},
-    workspaces::{ROUTE_WORKSPACE, ROUTE_WORKSPACES, TARGETED_WORKSPACE},
+    workspaces::{ROUTE_WORKSPACES, ROUTE_WORKSPACES_LIST, TARGETED_WORKSPACE},
 };
 
 #[test]
@@ -13,7 +13,7 @@ fn view_workspaces_from_user() {
     // Log in
     login(&client, DEFAULT_LOGIN);
 
-    let response = client.get(ROUTE_WORKSPACES).dispatch();
+    let response = client.get(ROUTE_WORKSPACES_LIST).dispatch();
 
     // Assert the login request was successful
     let status = response.status().clone();
@@ -29,7 +29,7 @@ fn view_workspace() {
     login(&client, ADMIN_LOGIN);
 
     let response = client
-        .get(format!("{ROUTE_WORKSPACE}{TARGETED_WORKSPACE}"))
+        .get(format!("{ROUTE_WORKSPACES}{TARGETED_WORKSPACE}"))
         .dispatch();
 
     // Assert the login request was successful
