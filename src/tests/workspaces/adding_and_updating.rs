@@ -18,7 +18,7 @@ fn new_workspace_by_form() {
     login(&client, ADMIN_LOGIN);
 
     // Create a form with test data
-    let new_user = NewWorkspaceForm {
+    let new_workspace = NewWorkspaceForm {
         name: "New Workspace".to_string(),
         description: None,
     };
@@ -26,7 +26,7 @@ fn new_workspace_by_form() {
     // Send submit request
     let response = client
         .post(ROUTE_WORKSPACE_NEW)
-        .body(new_user.body())
+        .body(new_workspace.body())
         .header(ContentType::Form)
         .dispatch();
 

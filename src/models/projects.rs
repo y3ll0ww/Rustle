@@ -48,8 +48,8 @@ pub struct ProjectWithMembers {
 #[derive(Insertable)]
 #[diesel(table_name = projects)]
 pub struct NewProject {
-    name: String,
-    description: Option<String>,
+    pub name: String,
+    pub description: Option<String>,
 }
 
 impl NewProject {

@@ -28,7 +28,8 @@ pub async fn create_new_project_by_form(
     let new_project = NewProject::from_form(form.into_inner());
 
     // Create a new project (without members)
-    let project_with_members = database::projects::insert_new_project(&db, new_project).await?;
+    let project_with_members =
+        database::projects::insert_new_project(&db, workspace, new_project).await?;
 
     // Add the project information to the cache
     cache::projects::add_project_cache(redis, &project_with_members).await;

@@ -1,5 +1,6 @@
 use rocket::local::{asynchronous::Client as AsyncClient, blocking::Client};
 
+pub mod projects;
 pub mod users;
 pub mod workspaces;
 

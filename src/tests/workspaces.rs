@@ -9,4 +9,4 @@ const ROUTE_WORKSPACE: &str = "/workspaces/";
 const ROUTE_WORKSPACES: &str = "/workspaces";
 const ROUTE_WORKSPACE_NEW: &str = "/workspaces/new";
 
-pub const TARGETED_WORKSPACE: &str = "ad5d4bf9-2e80-47b0-8454-1c431718b666";
+pub const TARGETED_WORKSPACE: &str = "7fa5257b-e02b-4f6f-be9f-8f579fb64147";

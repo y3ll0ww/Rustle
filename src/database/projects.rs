@@ -24,12 +24,17 @@ pub async fn get_projects_by_user_id(db: &Db, user: Uuid) -> Result<Vec<Project>
 
 pub async fn insert_new_project(
     db: &Db,
+    workspace: Uuid,
     new_project: NewProject,
 ) -> Result<ProjectWithMembers, Error<Null>> {
     let project = db
         .run(move |conn| {
             diesel::insert_into(projects::table)
-                .values(new_project)
+                .values((
+                    projects::workspace.eq(workspace),
+                    projects::name.eq(new_project.name),
+                    projects::description.eq(new_project.description),
+                ))
                 .get_result::<Project>(conn)
         })
         .await
