@@ -4,7 +4,7 @@ use super::{login, DEFAULT_LOGIN, DEFAULT_USERNAME};
 use crate::{
     database::pagination::{request::PaginationRequest, sort::UserField},
     tests::{
-        test_client,
+        response_ok, test_client,
         users::{ADMIN_LOGIN, ROUTE_BROWSE, ROUTE_GET, ROUTE_GET_ALL},
     },
 };
@@ -17,20 +17,7 @@ fn get_all_users() {
     login(&client, ADMIN_LOGIN);
 
     // Send get request
-    let response = client.get(ROUTE_GET_ALL).dispatch();
-
-    // Copy the status for later assertion
-    let status = response.status().clone();
-
-    // Extract the data to print it to the screen
-    let data = response.into_string();
-
-    // Assert the delete request was successful
-    assert_eq!(status, Status::Ok);
-
-    // Print the data to the screen
-    assert!(data.is_some());
-    println!("{:?}", data.unwrap());
+    response_ok(client.get(ROUTE_GET_ALL).dispatch());
 }
 
 #[test]
@@ -51,18 +38,15 @@ fn browse_users() {
 
     let payload = serde_json::to_string(&params).unwrap();
 
-    let response = client
-        .get(ROUTE_BROWSE)
-        //.get(format!("{ROUTE_BROWSE}?status=0&role=0"))
-        .header(ContentType::JSON)
-        .body(payload)
-        .dispatch();
-
-    let status = response.status().clone();
-
-    println!("{}", response.into_string().unwrap());
-
-    assert_eq!(status, Status::Ok)
+    // Send get request
+    response_ok(
+        client
+            //.get(format!("{ROUTE_BROWSE}?status=0&role=0"))
+            .get(ROUTE_BROWSE)
+            .header(ContentType::JSON)
+            .body(payload)
+            .dispatch(),
+    );
 }
 
 #[test]

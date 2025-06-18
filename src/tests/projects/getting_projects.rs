@@ -1,8 +1,6 @@
-use rocket::http::Status;
-
 use crate::tests::{
     projects::ROUTE_PROJECTS,
-    test_client,
+    response_ok, test_client,
     users::{login, ADMIN_LOGIN},
     workspaces::{ROUTE_WORKSPACES, TARGETED_WORKSPACE},
 };
@@ -14,14 +12,12 @@ fn view_projects_from_user() {
     // Log in
     login(&client, ADMIN_LOGIN);
 
-    let response = client
-        .get(format!(
-            "{ROUTE_WORKSPACES}{TARGETED_WORKSPACE}{ROUTE_PROJECTS}"
-        ))
-        .dispatch();
-
-    // Assert the login request was successful
-    let status = response.status().clone();
-    println!("{}", response.into_string().unwrap());
-    assert_eq!(status, Status::Ok);
+    // Fetch projects from workspace
+    response_ok(
+        client
+            .get(format!(
+                "{ROUTE_WORKSPACES}{TARGETED_WORKSPACE}{ROUTE_PROJECTS}"
+            ))
+            .dispatch(),
+    );
 }

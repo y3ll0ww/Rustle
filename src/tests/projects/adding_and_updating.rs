@@ -1,10 +1,10 @@
-use rocket::http::{ContentType, Status};
+use rocket::http::ContentType;
 
 use crate::{
     forms::projects::NewProjectForm,
     tests::{
         projects::ROUTE_PROJECTS_NEW,
-        test_client,
+        response_ok, test_client,
         users::{login, ADMIN_LOGIN},
         workspaces::TARGETED_WORKSPACE,
     },
@@ -24,14 +24,11 @@ fn new_project_by_form() {
     };
 
     // Send submit request
-    let response = client
-        .post(format!("{ROUTE_PROJECTS_NEW}{TARGETED_WORKSPACE}"))
-        .body(new_project.body())
-        .header(ContentType::Form)
-        .dispatch();
-
-    // Assert the submit request was successful
-    let status = response.status().clone();
-    println!("{:?}", response.into_string());
-    assert_eq!(status, Status::Ok);
+    response_ok(
+        client
+            .post(format!("{ROUTE_PROJECTS_NEW}{TARGETED_WORKSPACE}"))
+            .body(new_project.body())
+            .header(ContentType::Form)
+            .dispatch(),
+    );
 }
