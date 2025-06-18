@@ -56,7 +56,7 @@ async fn invite_new_users_by_form() {
                 last_name: INVITED_USER_1_LAST_NAME,
                 email: DUPLICATE_USER_1_EMAIL_ADDR,
                 phone: None,
-                workspace_role: i16::from(WorkspaceRole::Master),
+                workspace_role: i16::from(WorkspaceRole::Manager),
             },
             InvitedUserForm {
                 first_name: INVITED_USER_2_FIRST_NAME,

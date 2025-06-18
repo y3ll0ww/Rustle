@@ -28,7 +28,7 @@ pub fn routes() -> Vec<rocket::Route> {
     ]
 }
 
-/// Public function to be used by other modules as well
+/// Public function to be used by other modules
 pub async fn get_workspace_with_members(
     id: Uuid,
     db: &Db,

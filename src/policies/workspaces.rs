@@ -12,7 +12,19 @@ use crate::{
 
 use super::Policy;
 
+/// WORKSPACE PERMISSIONS:
+/// 
+/// 1. Workspaces: C -> UserRole Manager
+/// 2. Workspaces: R -> WorkspaceRole Viewer / Admin
+/// 3. Workspaces: U -> WorkspaceRole Contributer / Admin
+/// 4. Workspace members: U -> WorkspaceRole Manager / Admin
+/// 5. Workspace members: D -> WorkspaceRole Owner / Admin
+/// 
+/// Missing: WorkspaceRole Stakeholder; review functionality
+
 impl Policy {
+    /// [`Admin`](crate::models::users::UserRole::Admin) or
+    /// [`Viewer`](WorkspaceRole::Viewer)+
     pub fn workspaces_view(
         user: &PublicUser,
         workspace_with_members: &WorkspaceWithMembers,
@@ -22,11 +34,14 @@ impl Policy {
             .not_found("Workspace not found")
     }
 
+    /// [`Manager`](crate::models::users::UserRole::Manager)+
     pub fn workspaces_create(user: &PublicUser) -> Result<(), Error<Null>> {
         Policy::rule(user.is_at_least(UserRole::Manager))
             .unauthorized("User not allowed to create teams")
     }
 
+    /// [`Admin`](crate::models::users::UserRole::Admin) or
+    /// [`Contributor`](WorkspaceRole::Contributor)+
     pub fn workspaces_update_info(
         workspace: Uuid,
         user: PublicUser,
@@ -41,6 +56,8 @@ impl Policy {
             .unauthorized("Not authorized to update workspace information")
     }
 
+    /// [`Admin`](crate::models::users::UserRole::Admin) or
+    /// [`Manager`](WorkspaceRole::Manager)+
     pub fn workspaces_update_members(
         workspace: Uuid,
         user: PublicUser,
@@ -48,13 +65,15 @@ impl Policy {
     ) -> Result<(), Error<Null>> {
         Policy::rule(user.is_admin())
             .or(workspace_role_is_at_least(
-                WorkspaceRole::Master,
+                WorkspaceRole::Manager,
                 workspace,
                 cookies,
             )?)
             .unauthorized("Not authorized to add members")
     }
 
+    /// [`Admin`](crate::models::users::UserRole::Admin) or
+    /// [`Owner`](WorkspaceRole::Owner)
     pub fn workspaces_remove(
         workspace: Uuid,
         user: PublicUser,
@@ -62,7 +81,7 @@ impl Policy {
     ) -> Result<(), Error<Null>> {
         Policy::rule(user.is_admin())
             .or(workspace_role_is_at_least(
-                WorkspaceRole::Master,
+                WorkspaceRole::Owner,
                 workspace,
                 cookies,
             )?)
