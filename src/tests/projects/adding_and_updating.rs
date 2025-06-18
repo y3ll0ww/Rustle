@@ -3,10 +3,9 @@ use rocket::http::ContentType;
 use crate::{
     forms::projects::NewProjectForm,
     tests::{
-        projects::ROUTE_PROJECTS_NEW,
+        projects::route_projects_create,
         response_ok, test_client,
         users::{login, ADMIN_LOGIN},
-        workspaces::TARGETED_WORKSPACE,
     },
 };
 
@@ -26,7 +25,7 @@ fn new_project_by_form() {
     // Send submit request
     response_ok(
         client
-            .post(format!("{ROUTE_PROJECTS_NEW}{TARGETED_WORKSPACE}"))
+            .post(route_projects_create())
             .body(new_project.body())
             .header(ContentType::Form)
             .dispatch(),

@@ -88,3 +88,12 @@ pub async fn insert_new_project(
         members: Vec::new(),
     })
 }
+
+pub async fn remove_project(db: &Db, id: Uuid) -> Result<Project, Error<Null>> {
+    db.run(move |conn| {
+        diesel::delete(projects::table.filter(projects::id.eq(id)))
+            .get_result::<Project>(conn)
+    })
+    .await
+    .map_err(ApiResponse::from_error)
+}

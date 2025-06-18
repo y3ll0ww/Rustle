@@ -1,8 +1,7 @@
 use crate::tests::{
-    projects::{ROUTE_PROJECTS, ROUTE_PROJECTS_, TARGETED_PROJECT},
+    projects::{route_get_projects_from_workspace, route_projects_get},
     response_ok, test_client,
     users::{login, ADMIN_LOGIN},
-    workspaces::{ROUTE_WORKSPACES, TARGETED_WORKSPACE},
 };
 
 #[test]
@@ -13,13 +12,7 @@ fn view_projects_from_user() {
     login(&client, ADMIN_LOGIN);
 
     // Fetch projects from workspace
-    response_ok(
-        client
-            .get(format!(
-                "{ROUTE_WORKSPACES}{TARGETED_WORKSPACE}{ROUTE_PROJECTS}"
-            ))
-            .dispatch(),
-    );
+    response_ok(client.get(route_get_projects_from_workspace()).dispatch());
 }
 
 #[test]
@@ -30,11 +23,5 @@ fn view_project_by_id() {
     login(&client, ADMIN_LOGIN);
 
     // Fetch project with its ID
-    response_ok(
-        client
-            .get(format!(
-                "{ROUTE_PROJECTS_}{TARGETED_PROJECT}"
-            ))
-            .dispatch(),
-    );
+    response_ok(client.get(route_projects_get()).dispatch());
 }

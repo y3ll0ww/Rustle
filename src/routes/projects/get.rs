@@ -4,12 +4,12 @@ use uuid::Uuid;
 use crate::{
     api::{ApiResponse, Error, Null, Success},
     auth::JwtGuard,
-    cache::{self, RedisMutex},
+    cache::RedisMutex,
     cookies,
     database::{self, Db},
     models::projects::{Project, ProjectWithMembers},
     policies::Policy,
-    routes::workspaces::get_workspace_with_members,
+    routes::projects::get_workspace_and_project,
 };
 
 /// Returns an overview of workspaces of which the request user is a member.
@@ -41,12 +41,9 @@ pub async fn get_project_by_id(
 ) -> Result<Success<ProjectWithMembers>, Error<Null>> {
     let user = guard.get_user();
 
-    // Get the project with members
-    let project_with_members = get_project_with_members(id, &db, redis).await?;
-
-    // Get the workspace information with its members
-    let workspace_with_members =
-        get_workspace_with_members(project_with_members.project.workspace, &db, redis).await?;
+    // Get the workspace and the project information
+    let (workspace_with_members, project_with_members) =
+        get_workspace_and_project(id, &db, redis).await?;
 
     // Run the policy to view a project
     Policy::projects_view(&user, &workspace_with_members)?;
@@ -67,24 +64,4 @@ pub async fn get_project_by_id(
         ),
         Some(project_with_members),
     ))
-}
-
-async fn get_project_with_members(
-    id: Uuid,
-    db: &Db,
-    redis: &State<RedisMutex>,
-) -> Result<ProjectWithMembers, Error<Null>> {
-    Ok(match cache::projects::get_project_cache(redis, id).await? {
-        Some(cached_project) => cached_project,
-        None => {
-            // Get the project with members from the database
-            let project_from_database = database::projects::get_project_by_id(&db, id).await?;
-
-            // Add the project with members to the cache
-            cache::projects::add_project_cache(redis, &project_from_database).await;
-
-            // Return a fresh project with members from the database
-            project_from_database
-        }
-    })
 }
