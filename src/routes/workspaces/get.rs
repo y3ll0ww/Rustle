@@ -4,13 +4,15 @@ use uuid::Uuid;
 use crate::{
     api::{ApiResponse, Error, Null, Success},
     auth::JwtGuard,
-    cache::{self, RedisMutex},
+    cache::RedisMutex,
     cookies,
     database::{self, Db},
     models::{
         projects::Project,
         workspaces::{Workspace, WorkspaceWithMembers},
     },
+    policies::Policy,
+    routes::workspaces::get_workspace_with_members,
 };
 
 /// Returns an overview of workspaces of which the request user is a member.
@@ -40,33 +42,13 @@ pub async fn get_workspace_by_id(
     cookies: &CookieJar<'_>,
     redis: &State<RedisMutex>,
 ) -> Result<Success<WorkspaceWithMembers>, Error<Null>> {
-    // Check the cache for an existing workspace with members
-    let workspace_with_members = match cache::workspaces::get_workspace_cache(redis, id).await? {
-        Some(cached_workspace) => cached_workspace,
-        None => {
-            // Get the workspace with members from the database
-            let workspace_from_database =
-                database::workspaces::get_workspace_by_id(&db, id).await?;
-
-            // Add the workspace with members to the cache
-            cache::workspaces::add_workspace_cache(redis, &workspace_from_database).await;
-
-            // Return a fresh workspace with members from the database
-            workspace_from_database
-        }
-    };
-
     let user = guard.get_user();
 
+    // Get the workspace information with its members
+    let workspace_with_members = get_workspace_with_members(id, &db, redis).await?;
+
     // Return not found if the user is not an admin or a member
-    if !user.is_admin()
-        && !workspace_with_members
-            .members
-            .iter()
-            .any(|member| member.user.id == user.id)
-    {
-        return Err(ApiResponse::not_found("Workspace not found".to_string()));
-    }
+    Policy::workspaces_view(&user, &workspace_with_members)?;
 
     // Insert the workspace permissions in cookies
     if let Some(member) = workspace_with_members

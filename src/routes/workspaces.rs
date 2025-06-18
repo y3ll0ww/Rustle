@@ -1,3 +1,13 @@
+use rocket::State;
+use uuid::Uuid;
+
+use crate::{
+    api::{Error, Null},
+    cache::{self, RedisMutex},
+    database::{self, Db},
+    models::workspaces::WorkspaceWithMembers,
+};
+
 mod delete;
 mod get;
 mod post;
@@ -16,4 +26,28 @@ pub fn routes() -> Vec<rocket::Route> {
         post::reinvite_user_by_id,            // POST:    /workspaces/<id>/re-invite/<member>")]
         delete::remove_member_from_workspace, // DELETE:  /workspaces/<id>/remove-member/<member>
     ]
+}
+
+/// Public function to be used by other modules as well
+pub async fn get_workspace_with_members(
+    id: Uuid,
+    db: &Db,
+    redis: &State<RedisMutex>,
+) -> Result<WorkspaceWithMembers, Error<Null>> {
+    Ok(
+        match cache::workspaces::get_workspace_cache(redis, id).await? {
+            Some(cached_workspace) => cached_workspace,
+            None => {
+                // Get the workspace with members from the database
+                let workspace_from_database =
+                    database::workspaces::get_workspace_by_id(&db, id).await?;
+
+                // Add the workspace with members to the cache
+                cache::workspaces::add_workspace_cache(redis, &workspace_from_database).await;
+
+                // Return a fresh workspace with members from the database
+                workspace_from_database
+            }
+        },
+    )
 }

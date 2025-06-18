@@ -6,16 +6,25 @@ use crate::{
     cookies,
     models::{
         users::{PublicUser, UserRole},
-        workspaces::WorkspaceRole,
+        workspaces::{WorkspaceRole, WorkspaceWithMembers},
     },
 };
 
 use super::Policy;
 
 impl Policy {
+    pub fn workspaces_view(
+        user: &PublicUser,
+        workspace_with_members: &WorkspaceWithMembers,
+    ) -> Result<(), Error<Null>> {
+        Policy::rule(user.is_admin())
+            .or(user_is_member_of_workspace(user, workspace_with_members))
+            .not_found("Workspace not found")
+    }
+
     pub fn workspaces_create(user: &PublicUser) -> Result<(), Error<Null>> {
         Policy::rule(user.is_at_least(UserRole::Manager))
-            .authorize("User not allowed to create teams")
+            .unauthorized("User not allowed to create teams")
     }
 
     pub fn workspaces_update_info(
@@ -29,7 +38,7 @@ impl Policy {
                 workspace,
                 cookies,
             )?)
-            .authorize("Not authorized to update workspace information")
+            .unauthorized("Not authorized to update workspace information")
     }
 
     pub fn workspaces_update_members(
@@ -43,7 +52,7 @@ impl Policy {
                 workspace,
                 cookies,
             )?)
-            .authorize("Not authorized to add members")
+            .unauthorized("Not authorized to add members")
     }
 
     pub fn workspaces_remove(
@@ -57,7 +66,7 @@ impl Policy {
                 workspace,
                 cookies,
             )?)
-            .authorize("Not authorized to remove workspace")
+            .unauthorized("Not authorized to remove workspace")
     }
 }
 
@@ -68,4 +77,14 @@ pub fn workspace_role_is_at_least(
 ) -> Result<bool, Error<Null>> {
     let actual = cookies::permissions::get_workspace_permission(workspace, cookies).unwrap_or(-1);
     Ok(actual >= i16::from(workspace_role))
+}
+
+pub fn user_is_member_of_workspace(
+    user: &PublicUser,
+    workspace_with_members: &WorkspaceWithMembers,
+) -> bool {
+    workspace_with_members
+        .members
+        .iter()
+        .any(|member| member.user.id == user.id)
 }

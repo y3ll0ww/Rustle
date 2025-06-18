@@ -3,11 +3,39 @@ use uuid::Uuid;
 
 use crate::{
     api::{ApiResponse, Error, Null},
-    models::projects::{NewProject, Project, ProjectWithMembers},
-    schema::{project_members, projects},
+    models::{
+        projects::{NewProject, Project, ProjectMemberInfo, ProjectWithMembers},
+        users::{PublicUser, User},
+    },
+    schema::{project_members, projects, users},
 };
 
 use super::Db;
+
+pub async fn get_project_by_id(db: &Db, id: Uuid) -> Result<ProjectWithMembers, Error<Null>> {
+    db.run(move |conn| {
+        let project = projects::table
+            .filter(projects::id.eq(id))
+            .first::<Project>(conn)
+            .map_err(ApiResponse::from_error)?;
+
+        let members = project_members::table
+            .inner_join(users::table.on(users::id.eq(project_members::member)))
+            .filter(project_members::project.eq(id))
+            .select((users::all_columns, project_members::role))
+            .load::<(User, i16)>(conn)
+            .map_err(ApiResponse::from_error)?
+            .into_iter()
+            .map(|(user, role)| ProjectMemberInfo {
+                user: PublicUser::from(&user),
+                role,
+            })
+            .collect();
+
+        Ok(ProjectWithMembers { project, members })
+    })
+    .await
+}
 
 pub async fn get_projects_by_user_id(db: &Db, user: Uuid) -> Result<Vec<Project>, Error<Null>> {
     // Retrieve all workspaces with the user ID
@@ -22,7 +50,10 @@ pub async fn get_projects_by_user_id(db: &Db, user: Uuid) -> Result<Vec<Project>
     .map_err(ApiResponse::from_error)
 }
 
-pub async fn get_projects_by_workspace_id(db: &Db, workspace: Uuid) -> Result<Vec<Project>, Error<Null>> {
+pub async fn get_projects_by_workspace_id(
+    db: &Db,
+    workspace: Uuid,
+) -> Result<Vec<Project>, Error<Null>> {
     // Retrieve all workspaces with the user ID
     db.run(move |conn| {
         projects::table

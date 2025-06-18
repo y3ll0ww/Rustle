@@ -32,7 +32,7 @@ impl Policy {
         self
     }
 
-    fn authorize(&self, msg: &str) -> Result<(), Error<Null>> {
+    fn is_authorized(&self, msg: &str) -> Result<(), String> {
         let mut authorized = false;
 
         for rule in &self.rules {
@@ -42,10 +42,18 @@ impl Policy {
             }
         }
 
-        if !authorized {
-            return Err(ApiResponse::unauthorized(msg.to_string()));
+        if authorized {
+            return Ok(());
         }
 
-        Ok(())
+        Err(msg.to_string())
+    }
+
+    fn unauthorized(&self, msg: &str) -> Result<(), Error<Null>> {
+        self.is_authorized(msg).map_err(ApiResponse::unauthorized)
+    }
+
+    fn not_found(&self, msg: &str) -> Result<(), Error<Null>> {
+        self.is_authorized(msg).map_err(ApiResponse::not_found)
     }
 }

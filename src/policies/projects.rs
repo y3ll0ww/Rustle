@@ -3,13 +3,25 @@ use uuid::Uuid;
 
 use crate::{
     api::{Error, Null},
-    models::{users::PublicUser, workspaces::WorkspaceRole},
-    policies::workspaces::workspace_role_is_at_least,
+    models::{
+        users::PublicUser,
+        workspaces::{WorkspaceRole, WorkspaceWithMembers},
+    },
+    policies::workspaces::{user_is_member_of_workspace, workspace_role_is_at_least},
 };
 
 use super::Policy;
 
 impl Policy {
+    pub fn projects_view(
+        user: &PublicUser,
+        workspace_with_members: &WorkspaceWithMembers,
+    ) -> Result<(), Error<Null>> {
+        Policy::rule(user.is_admin())
+            .or(user_is_member_of_workspace(user, workspace_with_members))
+            .not_found("Project not found")
+    }
+
     pub fn projects_create(
         workspace: Uuid,
         user: PublicUser,
@@ -21,6 +33,6 @@ impl Policy {
                 workspace,
                 cookies,
             )?)
-            .authorize("Not authorized to create new projects in this workspace")
+            .unauthorized("Not authorized to create new projects in this workspace")
     }
 }

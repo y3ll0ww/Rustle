@@ -14,14 +14,14 @@ impl Policy {
         Policy::rule(user.is_at_least(UserRole::Manager))
             // Or is updating self
             .or(user.id == id)
-            .authorize("No permission to update user")
+            .unauthorized("No permission to update user")
     }
 
     /// Policy for updating the status field of a user
     pub fn users_set_status(user: &PublicUser) -> Result<(), Error<Null>> {
         // User is at least Manager
         Policy::rule(user.is_at_least(UserRole::Manager))
-            .authorize(&format!("Must be at least {}", UserRole::Manager))
+            .unauthorized(&format!("Must be at least {}", UserRole::Manager))
     }
 
     /// Policy for updating the role of a user
@@ -30,7 +30,7 @@ impl Policy {
         Policy::rule(user.is_at_least(UserRole::Manager))
             // And cannot set a role higher as self
             .and(role <= user.role)
-            .authorize("No permission to set user role")
+            .unauthorized("No permission to set user role")
     }
 
     /// Policy for deleting a user from the database
@@ -39,6 +39,6 @@ impl Policy {
         Policy::rule(user.is_admin())
             // User is self
             .or(user.id == id)
-            .authorize("No permission to delete user")
+            .unauthorized("No permission to delete user")
     }
 }
