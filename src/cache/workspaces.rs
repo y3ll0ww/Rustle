@@ -4,7 +4,10 @@ use uuid::Uuid;
 use crate::{
     api::{Error, Null},
     cache::CACHE_TTL_ONE_HOUR,
-    models::workspaces::{MemberInfo, WorkspaceUpdate, WorkspaceWithMembers},
+    models::{
+        workspaces::{WorkspaceUpdate, WorkspaceWithMembers},
+        MemberInfo,
+    },
 };
 
 use super::RedisMutex;

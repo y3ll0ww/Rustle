@@ -1,4 +1,7 @@
-use crate::{routes::{PROJECTS, WORKSPACES}, tests::workspaces::TARGETED_WORKSPACE};
+use crate::{
+    routes::{PROJECTS, WORKSPACES},
+    tests::workspaces::TARGETED_WORKSPACE,
+};
 
 #[cfg(test)]
 mod adding_and_updating;
@@ -6,11 +9,19 @@ mod adding_and_updating;
 mod deleting_projects;
 #[cfg(test)]
 mod getting_projects;
+#[cfg(test)]
+mod member_management;
 
-const TARGETED_PROJECT: &str = "3d035df3-2ea9-4731-bbd7-3ca5f270b9cf";
+const TARGETED_PROJECT: &str = "3465a06a-994f-4467-a6c4-3e949cf5e21b";
 
 fn route_get_projects_from_workspace() -> String {
     format!("{WORKSPACES}{TARGETED_WORKSPACE}/projects")
+}
+
+fn route_get_projects_by_user() -> String {
+    let mut route = format!("{PROJECTS}");
+    route.pop(); // Remove the tailing slash; it will invalidate the endpoint
+    route
 }
 
 fn route_projects_get() -> String {
@@ -18,9 +29,13 @@ fn route_projects_get() -> String {
 }
 
 fn route_projects_create() -> String {
-    format!("{PROJECTS}/new/{TARGETED_WORKSPACE}")
+    format!("{PROJECTS}{TARGETED_WORKSPACE}/new")
 }
 
 fn route_projects_delete() -> String {
     format!("{PROJECTS}{TARGETED_PROJECT}/delete")
+}
+
+fn route_projects_add_member() -> String {
+    format!("{PROJECTS}{TARGETED_PROJECT}/add-members")
 }

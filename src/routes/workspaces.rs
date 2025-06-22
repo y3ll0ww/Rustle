@@ -40,7 +40,7 @@ pub async fn get_workspace_with_members(
             None => {
                 // Get the workspace with members from the database
                 let workspace_from_database =
-                    database::workspaces::get_workspace_by_id(&db, id).await?;
+                    database::workspaces::get_workspace_by_id(db, id).await?;
 
                 // Add the workspace with members to the cache
                 cache::workspaces::add_workspace_cache(redis, &workspace_from_database).await;

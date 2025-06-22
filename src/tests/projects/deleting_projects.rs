@@ -11,5 +11,5 @@ fn delete_existing_project_by_id() {
     // Login required
     login(&client, ADMIN_LOGIN);
 
-    response_ok(client.delete(route_projects_delete()).dispatch());
+    response_ok(client.delete(route_projects_delete()));
 }

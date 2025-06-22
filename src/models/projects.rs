@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 use crate::{
     forms::projects::NewProjectForm,
-    models::users::PublicUser,
+    models::MemberInfo,
     schema::{project_members, projects},
 };
 
@@ -34,15 +34,9 @@ pub struct ProjectMember {
 }
 
 #[derive(Deserialize, Serialize)]
-pub struct ProjectMemberInfo {
-    pub user: PublicUser,
-    pub role: i16,
-}
-
-#[derive(Deserialize, Serialize)]
 pub struct ProjectWithMembers {
     pub project: Project,
-    pub members: Vec<ProjectMemberInfo>,
+    pub members: Vec<MemberInfo>,
 }
 
 #[derive(Insertable)]

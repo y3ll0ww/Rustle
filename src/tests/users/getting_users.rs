@@ -17,7 +17,7 @@ fn get_all_users() {
     login(&client, ADMIN_LOGIN);
 
     // Send get request
-    response_ok(client.get(ROUTE_GET_ALL).dispatch());
+    response_ok(client.get(ROUTE_GET_ALL));
 }
 
 #[test]
@@ -44,8 +44,7 @@ fn browse_users() {
             //.get(format!("{ROUTE_BROWSE}?status=0&role=0"))
             .get(ROUTE_BROWSE)
             .header(ContentType::JSON)
-            .body(payload)
-            .dispatch(),
+            .body(payload),
     );
 }
 

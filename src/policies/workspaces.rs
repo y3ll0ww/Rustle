@@ -13,15 +13,14 @@ use crate::{
 use super::Policy;
 
 /// WORKSPACE PERMISSIONS:
-/// 
+///
 /// 1. Workspaces: C -> UserRole Manager
 /// 2. Workspaces: R -> WorkspaceRole Viewer / Admin
 /// 3. Workspaces: U -> WorkspaceRole Contributer / Admin
 /// 4. Workspace members: U -> WorkspaceRole Manager / Admin
 /// 5. Workspace members: D -> WorkspaceRole Owner / Admin
-/// 
+///
 /// Missing: WorkspaceRole Stakeholder; review functionality
-
 impl Policy {
     /// [`Admin`](crate::models::users::UserRole::Admin) or
     /// [`Viewer`](WorkspaceRole::Viewer)+

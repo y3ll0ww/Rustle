@@ -1,11 +1,12 @@
-use diesel::{ExpressionMethods, JoinOnDsl, QueryDsl, RunQueryDsl};
+use diesel::{Connection, ExpressionMethods, JoinOnDsl, PgConnection, QueryDsl, RunQueryDsl};
 use uuid::Uuid;
 
 use crate::{
     api::{ApiResponse, Error, Null},
     models::{
-        projects::{NewProject, Project, ProjectMemberInfo, ProjectWithMembers},
+        projects::{NewProject, Project, ProjectMember, ProjectWithMembers},
         users::{PublicUser, User},
+        MemberInfo,
     },
     schema::{project_members, projects, users},
 };
@@ -26,7 +27,7 @@ pub async fn get_project_by_id(db: &Db, id: Uuid) -> Result<ProjectWithMembers, 
             .load::<(User, i16)>(conn)
             .map_err(ApiResponse::from_error)?
             .into_iter()
-            .map(|(user, role)| ProjectMemberInfo {
+            .map(|(user, role)| MemberInfo {
                 user: PublicUser::from(&user),
                 role,
             })
@@ -38,7 +39,6 @@ pub async fn get_project_by_id(db: &Db, id: Uuid) -> Result<ProjectWithMembers, 
 }
 
 pub async fn get_projects_by_user_id(db: &Db, user: Uuid) -> Result<Vec<Project>, Error<Null>> {
-    // Retrieve all workspaces with the user ID
     db.run(move |conn| {
         projects::table
             .inner_join(project_members::table.on(project_members::project.eq(projects::id)))
@@ -91,9 +91,66 @@ pub async fn insert_new_project(
 
 pub async fn remove_project(db: &Db, id: Uuid) -> Result<Project, Error<Null>> {
     db.run(move |conn| {
-        diesel::delete(projects::table.filter(projects::id.eq(id)))
-            .get_result::<Project>(conn)
+        diesel::delete(projects::table.filter(projects::id.eq(id))).get_result::<Project>(conn)
     })
     .await
     .map_err(ApiResponse::from_error)
+}
+
+pub async fn add_members_to_project(
+    db: &Db,
+    members: Vec<ProjectMember>,
+) -> Result<ProjectWithMembers, Error<Null>> {
+    // Get the project ID of the first member (they should be the same)
+    let project_id = members[0].project;
+
+    // Run database actions in a single transaction
+    db.run(move |conn| {
+        conn.transaction::<_, diesel::result::Error, _>(|conn| {
+            // Insert multiple workspace members at once
+            diesel::insert_into(project_members::table)
+                .values(&members)
+                .execute(conn)?;
+
+            fetch_project_with_members(project_id, conn)
+        })
+    })
+    .await
+    .map_err(ApiResponse::from_error)
+}
+
+fn fetch_project_with_members(
+    id: Uuid,
+    conn: &mut PgConnection,
+) -> Result<ProjectWithMembers, diesel::result::Error> {
+    let results: Vec<(Project, ProjectMember, User)> = project_members::table
+        .inner_join(projects::table.on(project_members::project.eq(projects::id)))
+        .inner_join(users::table.on(project_members::member.eq(users::id)))
+        .filter(project_members::project.eq(id))
+        .select((
+            projects::all_columns,
+            project_members::all_columns,
+            users::all_columns,
+        ))
+        .load::<(Project, ProjectMember, User)>(conn)?;
+
+    // Return error if no results
+    if results.is_empty() {
+        return Err(diesel::result::Error::NotFound);
+    }
+
+    // Get project from the first result
+    let project = results[0].0.clone();
+
+    // Build members list
+    let members = results
+        .iter()
+        .map(|(_, membership, user)| MemberInfo {
+            user: PublicUser::from(user),
+            role: membership.role,
+        })
+        .collect();
+
+    // Return the assembled result
+    Ok(ProjectWithMembers { project, members })
 }

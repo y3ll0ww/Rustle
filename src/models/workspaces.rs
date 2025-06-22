@@ -11,7 +11,7 @@ use crate::{
     schema::{workspace_members, workspaces},
 };
 
-use super::users::PublicUser;
+use super::MemberInfo;
 
 #[derive(Clone, Debug, Deserialize, Insertable, Queryable, Serialize)]
 #[diesel(table_name = workspaces)]
@@ -78,12 +78,6 @@ pub struct WorkspaceUpdate {
 pub struct WorkspaceMember {
     pub workspace: Uuid,
     pub member: Uuid,
-    pub role: i16,
-}
-
-#[derive(Deserialize, Queryable, Serialize)]
-pub struct MemberInfo {
-    pub user: PublicUser,
     pub role: i16,
 }
 

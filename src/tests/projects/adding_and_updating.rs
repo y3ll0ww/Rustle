@@ -27,7 +27,6 @@ fn new_project_by_form() {
         client
             .post(route_projects_create())
             .body(new_project.body())
-            .header(ContentType::Form)
-            .dispatch(),
+            .header(ContentType::Form),
     );
 }

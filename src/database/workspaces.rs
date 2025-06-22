@@ -7,9 +7,10 @@ use crate::{
     models::{
         users::{InvitedUser, PublicUser, User},
         workspaces::{
-            MemberInfo, NewWorkspace, Workspace, WorkspaceMember, WorkspaceRole, WorkspaceUpdate,
+            NewWorkspace, Workspace, WorkspaceMember, WorkspaceRole, WorkspaceUpdate,
             WorkspaceWithMembers,
         },
+        MemberInfo,
     },
     schema::{users, workspace_members, workspaces},
 };

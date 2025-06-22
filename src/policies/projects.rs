@@ -3,7 +3,9 @@ use uuid::Uuid;
 
 use crate::{
     api::{Error, Null},
+    cookies,
     models::{
+        projects::ProjectRole,
         users::PublicUser,
         workspaces::{WorkspaceRole, WorkspaceWithMembers},
     },
@@ -13,13 +15,12 @@ use crate::{
 use super::Policy;
 
 /// PROJECT PERMISSIONS:
-/// 
+///
 /// 1. Projects: C -> WorkspaceRole Master
 /// 2. Projects: R -> ProjectRole Viewer / Admin
 /// 3. Projects: U -> ProjectRole Contributer / Admin
 /// 4. Project members: U -> ProjectRole Manager / Admin
 /// 5. Project members: D -> WorkspaceRole Manager / Admin
-
 impl Policy {
     /// [`Admin`](crate::models::users::UserRole::Admin) or
     /// [`Viewer`](ProjectRole::Viewer)+
@@ -63,4 +64,29 @@ impl Policy {
             )?)
             .unauthorized("Not authorized to remove project")
     }
+
+    /// [`Admin`](crate::models::users::UserRole::Admin) or
+    /// [`Master`](ProjectRole::Master)+
+    pub fn project_update_members(
+        project: Uuid,
+        user: PublicUser,
+        cookies: &CookieJar<'_>,
+    ) -> Result<(), Error<Null>> {
+        Policy::rule(user.is_admin())
+            .or(project_role_is_at_least(
+                ProjectRole::Master,
+                project,
+                cookies,
+            )?)
+            .unauthorized("Not authorized to add members")
+    }
+}
+
+pub fn project_role_is_at_least(
+    project_role: ProjectRole,
+    project: Uuid,
+    cookies: &CookieJar<'_>,
+) -> Result<bool, Error<Null>> {
+    let actual = cookies::permissions::get_project_permission(project, cookies).unwrap_or(-1);
+    Ok(actual >= i16::from(project_role))
 }

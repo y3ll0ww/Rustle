@@ -2,7 +2,7 @@ use rocket::{
     http::Status,
     local::{
         asynchronous::Client as AsyncClient,
-        blocking::{Client, LocalResponse},
+        blocking::{Client, LocalRequest},
     },
 };
 use serde_json::Value;
@@ -21,7 +21,10 @@ pub async fn async_test_client() -> AsyncClient {
         .expect("valid rocket instance")
 }
 
-pub fn response_ok(response: LocalResponse<'_>) {
+pub fn response_ok(request: LocalRequest<'_>) {
+    // Get the response
+    let response = request.dispatch();
+
     // Extract the status
     let status = response.status().clone();
 
