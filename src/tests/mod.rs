@@ -21,6 +21,12 @@ pub async fn async_test_client() -> AsyncClient {
         .expect("valid rocket instance")
 }
 
+fn root_route(base: &str) -> String {
+    let mut route = base.to_string();
+    route.pop(); // Remove the tailing slash; it will invalidate the endpoint
+    route
+}
+
 pub fn response_ok(request: LocalRequest<'_>) {
     response_status(request, Status::Ok)
 }
@@ -47,10 +53,4 @@ fn response_status(request: LocalRequest<'_>, expected_status: Status) {
 
     // Check if the HTTP status is as expected
     assert_eq!(status, expected_status);
-}
-
-fn root_route(base: &str) -> String {
-    let mut route = base.to_string();
-    route.pop(); // Remove the tailing slash; it will invalidate the endpoint
-    route
 }

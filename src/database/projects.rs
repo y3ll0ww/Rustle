@@ -42,33 +42,6 @@ pub async fn get_project_by_id(db: &Db, id: Uuid) -> Result<ProjectWithMembers, 
     .await
 }
 
-pub async fn get_projects_by_user_id(db: &Db, user: Uuid) -> Result<Vec<Project>, Error<Null>> {
-    db.run(move |conn| {
-        projects::table
-            .inner_join(project_members::table.on(project_members::project.eq(projects::id)))
-            .filter(project_members::member.eq(user))
-            .select(projects::all_columns)
-            .load::<Project>(conn)
-    })
-    .await
-    .map_err(ApiResponse::from_error)
-}
-
-pub async fn get_projects_by_workspace_id(
-    db: &Db,
-    workspace: Uuid,
-) -> Result<Vec<Project>, Error<Null>> {
-    // Retrieve all workspaces with the user ID
-    db.run(move |conn| {
-        projects::table
-            .filter(projects::workspace.eq(workspace))
-            .select(projects::all_columns)
-            .load::<Project>(conn)
-    })
-    .await
-    .map_err(ApiResponse::from_error)
-}
-
 pub async fn insert_new_project(
     db: &Db,
     workspace: Uuid,
@@ -193,7 +166,8 @@ fn fetch_project_with_members(
 
 pub async fn get_projects_paginated(
     db: &Db,
-    workspace_id: Uuid,
+    workspace: Option<Uuid>,
+    user: Option<Uuid>,
     params: Json<PaginationRequest<ProjectField>>,
 ) -> Result<PaginatedRecords<Project>, Error<Null>> {
     // Number of the page (should be at least 1)
@@ -207,7 +181,7 @@ pub async fn get_projects_paginated(
             let search = params.search.as_deref().unwrap_or_default();
 
             // Build the query as COUNT to get the total
-            let total = query_projects::build(search, workspace_id)
+            let total = query_projects::build(search, workspace, user)
                 .count()
                 .get_result::<i64>(conn)?;
 
@@ -222,7 +196,7 @@ pub async fn get_projects_paginated(
             let offset = (page - 1) * limit;
 
             // Build the query again for LOAD and apply filtering
-            let mut query = query_projects::build(search, workspace_id);
+            let mut query = query_projects::build(search, workspace, user);
 
             // Apply sorting to the query
             query = query_projects::sort(query, &params.sort_by, &params.sort_dir);

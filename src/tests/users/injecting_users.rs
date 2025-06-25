@@ -6,9 +6,7 @@ use super::{ADMIN_PASSWORD, ADMIN_USERNAME, DEFAULT_PASSWORD, DEFAULT_USERNAME};
 use crate::{
     forms::password::Password,
     models::users::{User, UserRole, UserStatus},
-    tests::{
-        response_ok, test_client, users::{route_users_admin_inject_users}
-    },
+    tests::{response_ok, test_client, users::route_users_admin_inject_users},
 };
 
 #[test]

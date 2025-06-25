@@ -8,6 +8,14 @@ use crate::{
 use super::Policy;
 
 impl Policy {
+    pub fn users_get(user: &PublicUser, id: Uuid) -> Result<(), Error<Null>> {
+        // User is admin
+        Policy::rule(user.is_admin())
+            // User is self
+            .or(user.id == id)
+            .not_found("User not found")
+    }
+
     /// Policy for updating basic information of a user
     pub fn users_update_info(user: &PublicUser, id: Uuid) -> Result<(), Error<Null>> {
         // User is at least Manager

@@ -1,4 +1,7 @@
-use diesel::{pg::Pg, BoolExpressionMethods, ExpressionMethods, PgTextExpressionMethods, QueryDsl};
+use diesel::{
+    dsl::exists, pg::Pg, BoolExpressionMethods, ExpressionMethods, PgTextExpressionMethods,
+    QueryDsl,
+};
 use uuid::Uuid;
 
 use crate::{
@@ -32,14 +35,32 @@ pub fn sort<'a>(
     }
 }
 
-pub fn build<'a>(filter_search: &str, workspace_id: Uuid) -> ProjectQuery<'a, diesel::pg::Pg> {
-    use crate::schema::projects::dsl as projects;
+pub fn build<'a>(
+    filter_search: &str,
+    workspace: Option<Uuid>,
+    user: Option<Uuid>,
+) -> ProjectQuery<'a, diesel::pg::Pg> {
+    use crate::schema::{
+        project_members::dsl as project_members_dsl,
+        projects::{self, dsl as projects_dsl},
+    };
 
     // Declare the query (mutable)
-    let mut query = projects::projects.into_boxed::<diesel::pg::Pg>();
+    let mut query = projects_dsl::projects.into_boxed::<diesel::pg::Pg>();
 
-    // Filter on workspace ID
-    query = query.filter(projects::workspace.eq(workspace_id));
+    // If workspace ID is provided add it as a filter
+    if let Some(workspace_id) = workspace {
+        query = query.filter(projects::workspace.eq(workspace_id));
+    }
+
+    // If user ID is provided add it as a filter
+    if let Some(user_id) = user {
+        query = query.filter(exists(
+            project_members_dsl::project_members
+                .filter(project_members_dsl::project.eq(projects::id))
+                .filter(project_members_dsl::member.eq(user_id)),
+        ));
+    }
 
     // Add the search filter
     if !filter_search.is_empty() {

@@ -1,4 +1,4 @@
-use rocket::{http::CookieJar, State};
+use rocket::{http::CookieJar, serde::json::Json, State};
 use uuid::Uuid;
 
 use crate::{
@@ -6,29 +6,18 @@ use crate::{
     auth::JwtGuard,
     cache::RedisMutex,
     cookies,
-    database::{self, Db},
-    models::projects::{Project, ProjectWithMembers},
+    database::{
+        self,
+        pagination::{records::PaginatedRecords, request::PaginationRequest, sort::ProjectField},
+        Db,
+    },
+    models::{
+        projects::{Project, ProjectWithMembers},
+        users::UserRole,
+    },
     policies::Policy,
-    routes::projects::get_workspace_and_project,
+    routes::{projects::get_workspace_and_project, workspaces::get_workspace_with_members},
 };
-
-/// Returns an overview of workspaces of which the request user is a member.
-#[get("/")]
-pub async fn get_projects_of_current_user(
-    guard: JwtGuard,
-    db: Db,
-) -> Result<Success<Vec<Project>>, Error<Null>> {
-    let user = guard.get_user();
-
-    // Retrieve all workspaces with the user ID
-    let projects = database::projects::get_projects_by_user_id(&db, user.id).await?;
-
-    // Return vector of workspaces
-    Ok(ApiResponse::success(
-        format!("Projects for '{}'", user.username),
-        Some(projects),
-    ))
-}
 
 /// Returns information about a workspace, including its members.
 #[get("/<id>")]
@@ -63,5 +52,49 @@ pub async fn get_project_by_id(
             project_with_members.project.name,
         ),
         Some(project_with_members),
+    ))
+}
+
+//Instead of get_paginated_users, maybe browse_users or list_users_paginated — to match REST semantics more intuitively.
+#[get("/?<workspace>&<user>", format = "json", data = "<params>")]
+pub async fn get_paginated_projects(
+    workspace: Option<Uuid>,
+    user: Option<Uuid>,
+    params: Json<PaginationRequest<ProjectField>>,
+    guard: JwtGuard,
+    db: Db,
+    redis: &State<RedisMutex>,
+) -> Result<Success<PaginatedRecords<Project>>, Error<Null>> {
+    let auth_user = guard.get_user();
+
+    // If no filters are applied and the user is not admin return not found
+    if (None, None) == (workspace, user) && auth_user.role != i16::from(UserRole::Admin) {
+        return Err(ApiResponse::not_found(
+            "Nothing to show; specify user or workspace".to_string(),
+        ));
+    }
+
+    // Return not found if user is not a member of provided workspace
+    if let Some(id) = workspace {
+        // Get the workspace information with its members
+        let workspace_with_members = get_workspace_with_members(id, &db, redis).await?;
+        Policy::workspaces_view(&auth_user, &workspace_with_members)?;
+    };
+
+    // Return not found if user is not self
+    if let Some(id) = user {
+        Policy::users_get(&auth_user, id)?;
+    }
+
+    // Return the requested paginated result
+    let page = database::projects::get_projects_paginated(&db, workspace, user, params).await?;
+
+    Ok(ApiResponse::success(
+        format!(
+            "{} of {} projects shown",
+            page.records_on_page(),
+            page.total_records(),
+        ),
+        Some(page),
     ))
 }

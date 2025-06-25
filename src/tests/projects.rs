@@ -22,8 +22,17 @@ fn route_get_projects_from_workspace() -> String {
     format!("{WORKSPACES}{TARGETED_WORKSPACE}/projects")
 }
 
-fn route_get_projects_from_workspace_paginated() -> String {
-    format!("{WORKSPACES}{TARGETED_WORKSPACE}/projects/browse")
+fn route_get_projects_paginated(workspace: Option<&str>, user: Option<&str>) -> String {
+    let root = root_route(PROJECTS);
+
+    let pagination = match (workspace, user) {
+        (Some(workspace), Some(user)) => format!("?workspace={workspace}&user={user}"),
+        (Some(workspace), None) => format!("?workspace={workspace}"),
+        (None, Some(user)) => format!("?user={user}"),
+        (None, None) => String::new(),
+    };
+
+    format!("{root}{pagination}")
 }
 
 fn route_projects_get() -> String {

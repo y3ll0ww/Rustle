@@ -2,7 +2,13 @@ use rocket::{http::CookieJar, State};
 use uuid::Uuid;
 
 use crate::{
-    api::{ApiResponse, Error, Null, Success}, auth::JwtGuard, cache::{self, RedisMutex}, database::{self, Db}, models::projects::ProjectWithMembers, policies::Policy, routes::projects::get_workspace_and_project
+    api::{ApiResponse, Error, Null, Success},
+    auth::JwtGuard,
+    cache::{self, RedisMutex},
+    database::{self, Db},
+    models::projects::ProjectWithMembers,
+    policies::Policy,
+    routes::projects::get_workspace_and_project,
 };
 
 #[delete("/<id>/delete")]

@@ -6,11 +6,7 @@ use rocket::{
     },
 };
 
-use crate::{
-    cookies::TOKEN_COOKIE,
-    forms::login::LoginForm,
-    routes::USERS, tests::root_route,
-};
+use crate::{cookies::TOKEN_COOKIE, forms::login::LoginForm, routes::USERS, tests::root_route};
 
 #[cfg(test)]
 mod deleting_users;

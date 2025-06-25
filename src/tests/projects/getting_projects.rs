@@ -5,10 +5,11 @@ use crate::{
     tests::{
         projects::{
             route_get_projects_by_user, route_get_projects_from_workspace,
-            route_get_projects_from_workspace_paginated, route_projects_get,
+            route_get_projects_paginated, route_projects_get,
         },
         response_ok, test_client,
         users::{login, ADMIN_LOGIN, DEFAULT_LOGIN},
+        workspaces::TARGETED_WORKSPACE,
     },
 };
 
@@ -24,6 +25,10 @@ fn view_projects_from_workspace_paginated() {
     let client = test_client();
     login(&client, ADMIN_LOGIN);
 
+    // Apply filters
+    let workspace: Option<&str> = Some(TARGETED_WORKSPACE);
+    let user: Option<&str> = None;
+
     // Construct a JSON payload matching the User structure
     let params = PaginationRequest::<ProjectField> {
         page: None,
@@ -38,7 +43,7 @@ fn view_projects_from_workspace_paginated() {
 
     response_ok(
         client
-            .get(route_get_projects_from_workspace_paginated())
+            .get(route_get_projects_paginated(workspace, user))
             .header(ContentType::JSON)
             .body(payload),
     );
