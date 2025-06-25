@@ -4,9 +4,11 @@ use diesel::{
 };
 use uuid::Uuid;
 
-use crate::{models::users::PublicUser, schema::users::BoxedQuery as UserQuery};
-
-use super::sort::{SortDirection, UserField};
+use crate::{
+    database::pagination::sort::{SortDirection, UserField},
+    models::users::PublicUser,
+    schema::users::BoxedQuery as UserQuery,
+};
 
 pub fn sort<'a>(
     query: UserQuery<'a, Pg>,

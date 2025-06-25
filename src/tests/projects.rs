@@ -22,6 +22,10 @@ fn route_get_projects_from_workspace() -> String {
     format!("{WORKSPACES}{TARGETED_WORKSPACE}/projects")
 }
 
+fn route_get_projects_from_workspace_paginated() -> String {
+    format!("{WORKSPACES}{TARGETED_WORKSPACE}/projects/browse")
+}
+
 fn route_projects_get() -> String {
     format!("{PROJECTS}{TARGETED_PROJECT}")
 }

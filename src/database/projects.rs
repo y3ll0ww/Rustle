@@ -1,8 +1,12 @@
 use diesel::{Connection, ExpressionMethods, JoinOnDsl, PgConnection, QueryDsl, RunQueryDsl};
+use rocket::serde::json::Json;
 use uuid::Uuid;
 
 use crate::{
     api::{ApiResponse, Error, Null},
+    database::pagination::{
+        records::PaginatedRecords, request::PaginationRequest, sort::ProjectField,
+    },
     models::{
         projects::{NewProject, Project, ProjectMember, ProjectUpdate, ProjectWithMembers},
         users::{PublicUser, User},
@@ -11,7 +15,7 @@ use crate::{
     schema::{project_members, projects, users},
 };
 
-use super::Db;
+use super::{pagination::queries::projects as query_projects, Db};
 
 pub async fn get_project_by_id(db: &Db, id: Uuid) -> Result<ProjectWithMembers, Error<Null>> {
     db.run(move |conn| {
@@ -185,4 +189,54 @@ fn fetch_project_with_members(
 
     // Return the assembled result
     Ok(ProjectWithMembers { project, members })
+}
+
+pub async fn get_projects_paginated(
+    db: &Db,
+    workspace_id: Uuid,
+    params: Json<PaginationRequest<ProjectField>>,
+) -> Result<PaginatedRecords<Project>, Error<Null>> {
+    // Number of the page (should be at least 1)
+    let requested_page = params.page.unwrap_or(1).max(1);
+
+    // Number of maximum results (default 20, min 1, max 100)
+    let limit = params.limit.unwrap_or(20).clamp(1, 100);
+
+    let (projects, total_records, page, total_pages) = db
+        .run(move |conn| {
+            let search = params.search.as_deref().unwrap_or_default();
+
+            // Build the query as COUNT to get the total
+            let total = query_projects::build(search, workspace_id)
+                .count()
+                .get_result::<i64>(conn)?;
+
+            // Define the total number of pages by dividing the total by the limit and returning the upper
+            // bound from the float as integer. Make sure there is at least one page.
+            let total_pages = ((total as f64 / limit as f64).ceil() as i64).max(1);
+
+            // Cap the page to total pages
+            let page = requested_page.min(total_pages);
+
+            // Calculate the offset of the search
+            let offset = (page - 1) * limit;
+
+            // Build the query again for LOAD and apply filtering
+            let mut query = query_projects::build(search, workspace_id);
+
+            // Apply sorting to the query
+            query = query_projects::sort(query, &params.sort_by, &params.sort_dir);
+
+            // Add the offset and limit and run the query
+            let projects: Vec<Project> = query.offset(offset).limit(limit).load::<Project>(conn)?;
+
+            Ok((projects, total, page, total_pages))
+        })
+        .await
+        .map_err(ApiResponse::from_error)?;
+
+    Ok(
+        PaginatedRecords::<Project>::new(total_records, page, limit, total_pages)
+            .add_records(projects),
+    )
 }

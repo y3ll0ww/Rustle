@@ -12,7 +12,8 @@ use crate::{
 };
 
 use super::pagination::{
-    query_users, records::PaginatedRecords, request::PaginationRequest, sort::UserField,
+    queries::users as query_users, records::PaginatedRecords, request::PaginationRequest,
+    sort::UserField,
 };
 
 pub async fn get_all_public_users(db: &Db) -> Result<Vec<PublicUser>, Error<Null>> {

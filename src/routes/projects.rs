@@ -23,7 +23,7 @@ pub fn routes() -> Vec<rocket::Route> {
         delete::delete_project_by_id,       // DELETE:  /projects/<id>/delete
         delete::remove_member_from_project, // DELETE:  /projects/<id>/remove-member/<member>
         put::update_project,                // PUT:     /projects/<id>/update
-        //get::get_paginated_users,       // GET:     /user/browse?<status>&<role>
+        //get::get_paginated_projects,        // GET:     /projects/browse?<workspace>&<user>
     ]
 }
 
