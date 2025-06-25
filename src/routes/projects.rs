@@ -15,11 +15,13 @@ mod post;
 
 pub fn routes() -> Vec<rocket::Route> {
     routes![
-        get::get_projects_of_current_user, // GET:     /projects
-        post::create_new_project_by_form,  // POST:    /projects/<workspace>/new
-        get::get_project_by_id,            // GET:     /projects/<id>
-        post::add_members_to_project,      // POST:    /projects/<id>/add-members
-        delete::delete_project_by_id,      // DELETE:  /projects/<id>/delete
+        get::get_projects_of_current_user,  // GET:     /projects
+        post::create_new_project_by_form,   // POST:    /projects/<workspace>/new
+        get::get_project_by_id,             // GET:     /projects/<id>
+        post::add_members_to_project,       // POST:    /projects/<id>/add-members
+        delete::delete_project_by_id,       // DELETE:  /projects/<id>/delete
+        delete::remove_member_from_project, // DELETE:  /projects/<id>/remove-member/<member>
+        //get::get_paginated_users,       // GET:     /user/browse?<status>&<role>
     ]
 }
 

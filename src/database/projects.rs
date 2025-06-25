@@ -119,34 +119,61 @@ pub async fn add_members_to_project(
     .map_err(ApiResponse::from_error)
 }
 
+pub async fn remove_member_from_project(
+    db: &Db,
+    project: Uuid,
+    member: Uuid,
+) -> Result<ProjectWithMembers, Error<Null>> {
+    db.run(move |conn| {
+        conn.transaction::<_, diesel::result::Error, _>(|conn| {
+            let kankerhoerenkankerdiesel = project_members::table
+                .filter(project_members::project.eq(project))
+                .filter(project_members::member.eq(member))
+                .first::<ProjectMember>(conn);
+
+            println!("{kankerhoerenkankerdiesel:?}");
+
+            let removed_records = diesel::delete(
+                project_members::table
+                    .filter(project_members::project.eq(project))
+                    .filter(project_members::member.eq(member)),
+            )
+            .execute(conn)?;
+
+            println!("REMOVED RECRODS: {removed_records}");
+
+            if removed_records == 0 {
+                return Err(diesel::result::Error::NotFound);
+            }
+
+            fetch_project_with_members(project, conn)
+        })
+    })
+    .await
+    .map_err(ApiResponse::from_error)
+}
+
 fn fetch_project_with_members(
     id: Uuid,
     conn: &mut PgConnection,
 ) -> Result<ProjectWithMembers, diesel::result::Error> {
-    let results: Vec<(Project, ProjectMember, User)> = project_members::table
-        .inner_join(projects::table.on(project_members::project.eq(projects::id)))
+    // Fetch the project first
+    let project = projects::table
+        .filter(projects::id.eq(id))
+        .first::<Project>(conn)?;
+
+    // Then fetch members for that project
+    let member_results: Vec<(ProjectMember, User)> = project_members::table
         .inner_join(users::table.on(project_members::member.eq(users::id)))
         .filter(project_members::project.eq(id))
-        .select((
-            projects::all_columns,
-            project_members::all_columns,
-            users::all_columns,
-        ))
-        .load::<(Project, ProjectMember, User)>(conn)?;
-
-    // Return error if no results
-    if results.is_empty() {
-        return Err(diesel::result::Error::NotFound);
-    }
-
-    // Get project from the first result
-    let project = results[0].0.clone();
+        .select((project_members::all_columns, users::all_columns))
+        .load(conn)?;
 
     // Build members list
-    let members = results
-        .iter()
-        .map(|(_, membership, user)| MemberInfo {
-            user: PublicUser::from(user),
+    let members: Vec<MemberInfo> = member_results
+        .into_iter()
+        .map(|(membership, user)| MemberInfo {
+            user: PublicUser::from(&user),
             role: membership.role,
         })
         .collect();

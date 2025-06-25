@@ -39,3 +39,7 @@ fn route_projects_delete() -> String {
 fn route_projects_add_member() -> String {
     format!("{PROJECTS}{TARGETED_PROJECT}/add-members")
 }
+
+fn route_projects_remove_member(id: &str) -> String {
+    format!("{PROJECTS}{TARGETED_PROJECT}/remove-member/{id}")
+}
