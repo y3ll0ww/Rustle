@@ -1,6 +1,6 @@
 use crate::{
     routes::{PROJECTS, WORKSPACES},
-    tests::workspaces::TARGETED_WORKSPACE,
+    tests::{root_route, workspaces::TARGETED_WORKSPACE},
 };
 
 #[cfg(test)]
@@ -14,14 +14,12 @@ mod member_management;
 
 const TARGETED_PROJECT: &str = "3465a06a-994f-4467-a6c4-3e949cf5e21b";
 
-fn route_get_projects_from_workspace() -> String {
-    format!("{WORKSPACES}{TARGETED_WORKSPACE}/projects")
+fn route_get_projects_by_user() -> String {
+    root_route(PROJECTS)
 }
 
-fn route_get_projects_by_user() -> String {
-    let mut route = format!("{PROJECTS}");
-    route.pop(); // Remove the tailing slash; it will invalidate the endpoint
-    route
+fn route_get_projects_from_workspace() -> String {
+    format!("{WORKSPACES}{TARGETED_WORKSPACE}/projects")
 }
 
 fn route_projects_get() -> String {

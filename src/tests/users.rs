@@ -9,7 +9,7 @@ use rocket::{
 use crate::{
     cookies::TOKEN_COOKIE,
     forms::login::LoginForm,
-    routes::USERS,
+    routes::USERS, tests::root_route,
 };
 
 #[cfg(test)]
@@ -24,9 +24,7 @@ mod invitation_flow;
 mod login_logout;
 
 fn route_users_all() -> String {
-    let mut route = USERS.to_string();
-    route.pop(); // Remove the tailing slash; it will invalidate the endpoint
-    route
+    root_route(USERS)
 }
 
 fn route_users_by_name(username: &str) -> String {
