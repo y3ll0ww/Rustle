@@ -55,6 +55,14 @@ impl NewProject {
     }
 }
 
+#[derive(AsChangeset, Clone, Deserialize, Serialize)]
+#[diesel(table_name = projects)]
+pub struct ProjectUpdate {
+    pub name: Option<String>,
+    pub description: Option<String>,
+    pub image_url: Option<String>,
+}
+
 #[derive(Debug, Deserialize, PartialEq, Serialize)]
 pub enum ProjectRole {
     /// Maximum privileges; only one able to delete a workspace

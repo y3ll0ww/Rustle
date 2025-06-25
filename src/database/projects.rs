@@ -4,7 +4,7 @@ use uuid::Uuid;
 use crate::{
     api::{ApiResponse, Error, Null},
     models::{
-        projects::{NewProject, Project, ProjectMember, ProjectWithMembers},
+        projects::{NewProject, Project, ProjectMember, ProjectUpdate, ProjectWithMembers},
         users::{PublicUser, User},
         MemberInfo,
     },
@@ -87,6 +87,20 @@ pub async fn insert_new_project(
         project,
         members: Vec::new(),
     })
+}
+
+pub async fn update_project_information(
+    db: &Db,
+    id: Uuid,
+    update: ProjectUpdate,
+) -> Result<Project, Error<Null>> {
+    db.run(move |conn| {
+        diesel::update(projects::table.filter(projects::id.eq(id)))
+            .set(update)
+            .get_result::<Project>(conn)
+            .map_err(ApiResponse::from_error)
+    })
+    .await
 }
 
 pub async fn remove_project(db: &Db, id: Uuid) -> Result<Project, Error<Null>> {

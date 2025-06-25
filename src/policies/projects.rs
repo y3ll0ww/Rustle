@@ -50,6 +50,22 @@ impl Policy {
     }
 
     /// [`Admin`](crate::models::users::UserRole::Admin) or
+    /// [`Contributor`](ProjectRole::Contributor)+
+    pub fn projects_update_info(
+        project: Uuid,
+        user: PublicUser,
+        cookies: &CookieJar<'_>,
+    ) -> Result<(), Error<Null>> {
+        Policy::rule(user.is_admin())
+            .or(project_role_is_at_least(
+                ProjectRole::Contributor,
+                project,
+                cookies,
+            )?)
+            .unauthorized("Not authorized to update project information")
+    }
+
+    /// [`Admin`](crate::models::users::UserRole::Admin) or
     /// [`Manager`](WorkspaceRole::Manager)+
     pub fn projects_remove(
         workspace: Uuid,

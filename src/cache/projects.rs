@@ -4,7 +4,7 @@ use uuid::Uuid;
 use crate::{
     api::{Error, Null},
     cache::CACHE_TTL_ONE_HOUR,
-    models::projects::ProjectWithMembers,
+    models::projects::{Project, ProjectWithMembers},
 };
 
 use super::RedisMutex;
@@ -39,6 +39,22 @@ pub async fn get_project_cache(
         .await
         .get_from_cache(&cache_key_project(project_id))
         .await
+}
+
+pub async fn update_project_cache(
+    redis: &State<RedisMutex>,
+    project_id: Uuid,
+    updated_project: &Project,
+) {
+    // Get the existing project with members from the cache
+    if let Some(cached_project) = get_project_cache(redis, project_id)
+        .await
+        .unwrap_or_default()
+    {
+        let mut updated_project_with_members = cached_project;
+        updated_project_with_members.project = updated_project.clone();
+        add_project_cache(redis, &updated_project_with_members).await;
+    }
 }
 
 pub async fn remove_project_cache(redis: &State<RedisMutex>, project_id: Uuid) {

@@ -12,6 +12,7 @@ use crate::{
 mod delete;
 mod get;
 mod post;
+mod put;
 
 pub fn routes() -> Vec<rocket::Route> {
     routes![
@@ -21,6 +22,7 @@ pub fn routes() -> Vec<rocket::Route> {
         post::add_members_to_project,       // POST:    /projects/<id>/add-members
         delete::delete_project_by_id,       // DELETE:  /projects/<id>/delete
         delete::remove_member_from_project, // DELETE:  /projects/<id>/remove-member/<member>
+        put::update_project,                // PUT:     /projects/<id>/update
         //get::get_paginated_users,       // GET:     /user/browse?<status>&<role>
     ]
 }
