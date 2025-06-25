@@ -10,6 +10,7 @@ use crate::{
         Db,
     },
     models::users::{PublicUser, UserStatus},
+    policies::Policy,
 };
 
 #[get("/")]
@@ -57,18 +58,19 @@ pub async fn get_paginated_users(
 #[get("/<username>")]
 pub async fn get_user_by_username(
     username: &str,
-    _guard: JwtGuard,
+    guard: JwtGuard,
     db: Db,
 ) -> Result<Success<PublicUser>, Error<Null>> {
-    // Only get the user from the database
-    database::users::get_user_by_username(&db, username)
-        .await
-        .map(|user| {
-            ApiResponse::success(
-                format!("User '{username}' found"),
-                Some(PublicUser::from(&user)),
-            )
-        })
+    // First get the user (the ID is needed to for the policy)
+    let user = database::users::get_user_by_username(&db, username).await?;
+
+    // Make sure the user is allowed to see the requested information
+    Policy::users_get(&db, &guard.get_user(), user.id).await?;
+
+    Ok(ApiResponse::success(
+        format!("User '{username}' found"),
+        Some(PublicUser::from(&user)),
+    ))
 }
 
 #[get("/invite/get/<token>")]

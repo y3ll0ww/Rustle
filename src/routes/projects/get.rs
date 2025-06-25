@@ -67,12 +67,11 @@ pub async fn get_paginated_projects(
 ) -> Result<Success<PaginatedRecords<Project>>, Error<Null>> {
     let auth_user = guard.get_user();
 
-    // If no filters are applied and the user is not admin return not found
-    if (None, None) == (workspace, user) && auth_user.role != i16::from(UserRole::Admin) {
-        return Err(ApiResponse::not_found(
-            "Nothing to show; specify user or workspace".to_string(),
-        ));
-    }
+    // If no filters are applied and the user is not admin set self as user ID
+    let user = match (workspace, user, auth_user.role) {
+        (None, None, role) if role != i16::from(UserRole::Admin) => Some(auth_user.id),
+        _ => user,
+    };
 
     // Return not found if user is not a member of provided workspace
     if let Some(id) = workspace {
@@ -81,9 +80,9 @@ pub async fn get_paginated_projects(
         Policy::workspaces_view(&auth_user, &workspace_with_members)?;
     };
 
-    // Return not found if user is not self
+    // Return not found if user is not admin, self or part of a shared workspace
     if let Some(id) = user {
-        Policy::users_get(&auth_user, id)?;
+        Policy::users_get(&db, &auth_user, id).await?;
     }
 
     // Return the requested paginated result
