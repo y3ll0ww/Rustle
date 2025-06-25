@@ -1,31 +1,29 @@
-use rocket::http::{ContentType, Status};
+use rocket::http::ContentType;
 
 use super::{login, DEFAULT_LOGIN, DEFAULT_USERNAME};
 use crate::{
     database::pagination::{request::PaginationRequest, sort::UserField},
     tests::{
         response_ok, test_client,
-        users::{ADMIN_LOGIN, ROUTE_BROWSE, ROUTE_GET, ROUTE_GET_ALL},
+        users::{route_users_all, route_users_browse, route_users_by_name, ADMIN_LOGIN},
     },
 };
 
 #[test]
 fn get_all_users() {
     let client = test_client();
-
-    // Login required
     login(&client, ADMIN_LOGIN);
-
-    // Send get request
-    response_ok(client.get(ROUTE_GET_ALL));
+    response_ok(client.get(route_users_all()));
 }
 
 #[test]
 fn browse_users() {
     let client = test_client();
-
-    // Login required
     login(&client, ADMIN_LOGIN);
+
+    // Apply filters
+    let status: Option<u16> = None;
+    let role: Option<u16> = None;
 
     // Construct a JSON payload matching the User structure
     let params = PaginationRequest::<UserField> {
@@ -36,13 +34,12 @@ fn browse_users() {
         sort_dir: None,
     };
 
+    // Define the payload
     let payload = serde_json::to_string(&params).unwrap();
 
-    // Send get request
     response_ok(
         client
-            //.get(format!("{ROUTE_BROWSE}?status=0&role=0"))
-            .get(ROUTE_BROWSE)
+            .get(route_users_browse(status, role))
             .header(ContentType::JSON)
             .body(payload),
     );
@@ -51,25 +48,6 @@ fn browse_users() {
 #[test]
 fn get_user_by_username() {
     let client = test_client();
-
-    // Login required
     login(&client, DEFAULT_LOGIN);
-
-    // Send get request
-    let response = client
-        .get(format!("{ROUTE_GET}{DEFAULT_USERNAME}"))
-        .dispatch();
-
-    // Copy the status for later assertion
-    let status = response.status().clone();
-
-    // Extract the data to print it to the screen
-    let data = response.into_string();
-
-    // Assert the delete request was successful
-    assert_eq!(status, Status::Ok);
-
-    // Print the data to the screen
-    assert!(data.is_some());
-    println!("{:?}", data.unwrap());
+    response_ok(client.get(route_users_by_name(DEFAULT_USERNAME)));
 }

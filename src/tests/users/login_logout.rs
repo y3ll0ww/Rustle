@@ -1,34 +1,26 @@
-use rocket::http::{ContentType, Status};
+use rocket::http::ContentType;
 
 use crate::tests::{
-    test_client,
+    response_not_found, response_ok, response_unauthorized, test_client,
     users::{
-        login, logout, ADMIN_LOGIN, DEFAULT_LOGIN, INVITED_USER_2_USERNAME, ROUTE_GET, ROUTE_LOGOUT,
+        login, logout, route_users_by_name, route_users_login, route_users_logout, ADMIN_LOGIN,
+        DEFAULT_LOGIN, INVITED_USER_2_USERNAME,
     },
 };
 
-use super::{INVITED_USER_2_LOGIN, ROUTE_LOGIN};
+use super::INVITED_USER_2_LOGIN;
 
 #[test]
 fn login_existing_user_then_logout() {
     let client = test_client();
-
-    // Log in
     login(&client, DEFAULT_LOGIN);
-
-    // Log out
     logout(&client);
 }
 
 #[test]
 fn logout_without_being_logged_in() {
     let client = test_client();
-
-    // Log out
-    let logout_response = client.post(ROUTE_LOGOUT).dispatch();
-
-    // Assert that the logout request returned "Unauthorized"
-    assert_eq!(logout_response.status(), Status::Unauthorized);
+    response_unauthorized(client.post(route_users_logout()));
 }
 
 #[test]
@@ -39,24 +31,17 @@ fn login_attempt_by_invited_user() {
     // a) Login as admin
     login(&client, ADMIN_LOGIN);
 
-    // b) Get the invited user by username
-    let response = client
-        .get(format!("{ROUTE_GET}{INVITED_USER_2_USERNAME}"))
-        .dispatch();
-
-    // c) Assert it exists
-    assert_eq!(response.status(), Status::Ok);
+    // b) Get the invited user by username and assert it exists
+    response_ok(client.get(route_users_by_name(INVITED_USER_2_USERNAME)));
 
     // d) Logout
     logout(&client);
 
     // Attempt login as invited user
-    let response = client
-        .post(ROUTE_LOGIN)
-        .header(ContentType::Form)
-        .body(INVITED_USER_2_LOGIN.body())
-        .dispatch();
-
-    // Since the user status is not active, it will return not found
-    assert_eq!(response.status(), Status::NotFound);
+    response_not_found(
+        client
+            .post(route_users_login())
+            .header(ContentType::Form)
+            .body(INVITED_USER_2_LOGIN.body()),
+    );
 }

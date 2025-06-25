@@ -1,3 +1,5 @@
+use crate::routes::WORKSPACES;
+
 #[cfg(test)]
 mod adding_and_updating;
 #[cfg(test)]
@@ -10,3 +12,7 @@ const ROUTE_WORKSPACES_LIST: &str = "/workspaces";
 const ROUTE_WORKSPACES_NEW: &str = "/workspaces/new";
 
 pub const TARGETED_WORKSPACE: &str = "7fa5257b-e02b-4f6f-be9f-8f579fb64147";
+
+pub fn route_workspaces_invite_to_workspace() -> String {
+    format!("{WORKSPACES}{TARGETED_WORKSPACE}/invite")
+}

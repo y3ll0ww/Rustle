@@ -6,7 +6,11 @@ use rocket::{
     },
 };
 
-use crate::{cookies::TOKEN_COOKIE, forms::login::LoginForm};
+use crate::{
+    cookies::TOKEN_COOKIE,
+    forms::login::LoginForm,
+    routes::USERS,
+};
 
 #[cfg(test)]
 mod deleting_users;
@@ -19,13 +23,44 @@ mod invitation_flow;
 #[cfg(test)]
 mod login_logout;
 
-const ROUTE_BROWSE: &str = "/user/browse";
-const ROUTE_CREATE: &str = "/user/create";
-const ROUTE_GET_ALL: &str = "/user";
+fn route_users_all() -> String {
+    let mut route = USERS.to_string();
+    route.pop(); // Remove the tailing slash; it will invalidate the endpoint
+    route
+}
+
+fn route_users_by_name(username: &str) -> String {
+    format!("{USERS}{username}")
+}
+
+fn route_users_admin_inject_users() -> String {
+    format!("{USERS}create")
+}
+
+fn route_users_browse(status: Option<u16>, role: Option<u16>) -> String {
+    let pagination = match (status, role) {
+        (Some(status), Some(role)) => format!("?status={status}&role={role}"),
+        (Some(status), None) => format!("?status={status}"),
+        (None, Some(role)) => format!("?role={role}"),
+        (None, None) => String::new(),
+    };
+
+    format!("{USERS}browse{pagination}")
+}
+
+fn route_users_delete(id: &str) -> String {
+    format!("{USERS}delete/{id}")
+}
+
+fn route_users_login() -> String {
+    format!("{USERS}login")
+}
+
+fn route_users_logout() -> String {
+    format!("{USERS}logout")
+}
+
 const ROUTE_GET: &str = "/user/";
-const ROUTE_LOGIN: &str = "/user/login";
-const ROUTE_LOGOUT: &str = "/user/logout";
-const ROUTE_DELETE: &str = "/user/delete/";
 const ROUTE_INVITE_GET: &str = "/user/invite/get/";
 const ROUTE_INVITE_SET: &str = "/user/invite/set/";
 
@@ -74,7 +109,7 @@ pub const INVITED_USER_2_LOGIN: LoginForm = LoginForm {
 
 pub fn login(client: &Client, login_form: LoginForm) {
     let login_response = client
-        .post(ROUTE_LOGIN)
+        .post(route_users_login())
         .header(ContentType::Form)
         .body(login_form.body())
         .dispatch();
@@ -87,7 +122,7 @@ pub fn login(client: &Client, login_form: LoginForm) {
 }
 
 pub fn logout(client: &Client) {
-    let logout_response = client.post(ROUTE_LOGOUT).dispatch();
+    let logout_response = client.post(route_users_logout()).dispatch();
 
     // Assert that the logout request was successful
     assert_eq!(logout_response.status(), Status::Ok);
@@ -111,7 +146,7 @@ fn assert_authorized_cookies(response: LocalResponse<'_>, available: bool) {
 
 pub async fn async_login(client: &AsyncClient, login_form: LoginForm<'static>) {
     let login_response = client
-        .post(ROUTE_LOGIN)
+        .post(route_users_login())
         .header(ContentType::Form)
         .body(login_form.body())
         .dispatch()

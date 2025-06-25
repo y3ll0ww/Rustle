@@ -12,8 +12,6 @@ use crate::{
 #[test]
 fn new_project_by_form() {
     let client = test_client();
-
-    // Log in
     login(&client, ADMIN_LOGIN);
 
     // Create a form with test data

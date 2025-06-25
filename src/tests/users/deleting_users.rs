@@ -2,36 +2,26 @@ use rocket::http::Status;
 
 use super::{login, ADMIN_LOGIN, ADMIN_USERNAME, DEFAULT_USERNAME};
 use crate::tests::{
-    test_client,
-    users::{ROUTE_DELETE, ROUTE_GET_ALL},
+    response_ok, test_client,
+    users::{route_users_all, route_users_delete},
 };
+
+const TARGETED_USER: &str = "77987439-2fed-4d45-9f5d-4c02c66eb265";
 
 #[test]
 fn delete_existing_user_by_id() {
     let client = test_client();
-
-    // Login required
     login(&client, ADMIN_LOGIN);
-
-    // User ID: Change depending on which user tester wants to delete
-    let user_id = "77987439-2fed-4d45-9f5d-4c02c66eb265";
-
-    // Send delete request
-    let response = client.delete(format!("{ROUTE_DELETE}{user_id}")).dispatch();
-
-    // Assert the delete request was successful
-    assert_eq!(response.status(), Status::Ok);
+    response_ok(client.delete(route_users_delete(TARGETED_USER)));
 }
 
 #[test]
 fn delete_all_users_except_for_admin_and_test_user() {
     let client = test_client();
-
-    // Login required
     login(&client, ADMIN_LOGIN);
 
     // Get all the users
-    let response = client.get(ROUTE_GET_ALL).dispatch();
+    let response = client.get(route_users_all()).dispatch();
 
     // Convert the response to a Value
     let response_value: serde_json::Value =
@@ -58,15 +48,11 @@ fn delete_all_users_except_for_admin_and_test_user() {
             }
 
             // Delete the user
-            let response = client.delete(format!("{ROUTE_DELETE}{user_id}")).dispatch();
+            let response = client.delete(route_users_delete(user_id)).dispatch();
             assert_eq!(response.status(), Status::Ok);
         }
     }
 
     // Assert that the delete request was successful
-    let response = client.get(ROUTE_GET_ALL).dispatch();
-    let status = response.status().clone();
-
-    println!("{:?}", response.into_string());
-    assert_eq!(status, Status::Ok);
+    response_ok(client.get(route_users_all()));
 }

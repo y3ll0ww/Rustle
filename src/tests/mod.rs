@@ -22,6 +22,18 @@ pub async fn async_test_client() -> AsyncClient {
 }
 
 pub fn response_ok(request: LocalRequest<'_>) {
+    response_status(request, Status::Ok)
+}
+
+pub fn response_not_found(request: LocalRequest<'_>) {
+    response_status(request, Status::NotFound)
+}
+
+pub fn response_unauthorized(request: LocalRequest<'_>) {
+    response_status(request, Status::Unauthorized)
+}
+
+fn response_status(request: LocalRequest<'_>, expected_status: Status) {
     // Get the response
     let response = request.dispatch();
 
@@ -33,6 +45,6 @@ pub fn response_ok(request: LocalRequest<'_>) {
     let value = serde_json::from_str::<Value>(&body).unwrap();
     println!("{}", serde_json::to_string_pretty(&value).unwrap());
 
-    // Check if the HTTP status is OK
-    assert_eq!(status, Status::Ok);
+    // Check if the HTTP status is as expected
+    assert_eq!(status, expected_status);
 }

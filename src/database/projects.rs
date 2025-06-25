@@ -126,21 +126,12 @@ pub async fn remove_member_from_project(
 ) -> Result<ProjectWithMembers, Error<Null>> {
     db.run(move |conn| {
         conn.transaction::<_, diesel::result::Error, _>(|conn| {
-            let kankerhoerenkankerdiesel = project_members::table
-                .filter(project_members::project.eq(project))
-                .filter(project_members::member.eq(member))
-                .first::<ProjectMember>(conn);
-
-            println!("{kankerhoerenkankerdiesel:?}");
-
             let removed_records = diesel::delete(
                 project_members::table
                     .filter(project_members::project.eq(project))
                     .filter(project_members::member.eq(member)),
             )
             .execute(conn)?;
-
-            println!("REMOVED RECRODS: {removed_records}");
 
             if removed_records == 0 {
                 return Err(diesel::result::Error::NotFound);

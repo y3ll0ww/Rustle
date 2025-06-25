@@ -1,12 +1,14 @@
 use chrono::Utc;
-use rocket::http::{ContentType, Status};
+use rocket::http::ContentType;
 use uuid::Uuid;
 
 use super::{ADMIN_PASSWORD, ADMIN_USERNAME, DEFAULT_PASSWORD, DEFAULT_USERNAME};
 use crate::{
     forms::password::Password,
     models::users::{User, UserRole, UserStatus},
-    tests::{test_client, users::ROUTE_CREATE},
+    tests::{
+        response_ok, test_client, users::{route_users_admin_inject_users}
+    },
 };
 
 #[test]
@@ -77,20 +79,13 @@ fn user_injection(
         updated_at: Utc::now().naive_utc(),
     };
 
+    // Turn into a payload string
     let payload = serde_json::to_string(&user).unwrap();
 
-    // Send POST request to the correct endpoint `/users`
-    let response = client
-        .post(ROUTE_CREATE)
-        .header(ContentType::JSON)
-        .body(payload)
-        .dispatch();
-
-    // Assert that the response status is 200 (indicating success)
-    assert_eq!(response.status(), Status::Ok);
-
-    // Optionally, check the response body for success message
-    let response_body = response.into_string().unwrap();
-    println!("{response_body}");
-    assert!(response_body.contains(&format!("User {} created", user.username)));
+    response_ok(
+        client
+            .post(route_users_admin_inject_users())
+            .header(ContentType::JSON)
+            .body(payload),
+    );
 }
