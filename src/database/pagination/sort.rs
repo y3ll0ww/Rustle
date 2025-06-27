@@ -10,6 +10,7 @@ pub enum SortDirection {
 pub trait SortField {}
 
 impl SortField for UserField {}
+impl SortField for ProjectField {}
 
 #[derive(Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -20,6 +21,15 @@ pub enum UserField {
     FirstName,
     LastName,
     Email,
+    CreatedAt,
+    UpdatedAt,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProjectField {
+    Name,
+    MemberCount,
     CreatedAt,
     UpdatedAt,
 }

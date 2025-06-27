@@ -11,7 +11,7 @@ use crate::{
     schema::{workspace_members, workspaces},
 };
 
-use super::users::PublicUser;
+use super::MemberInfo;
 
 #[derive(Clone, Debug, Deserialize, Insertable, Queryable, Serialize)]
 #[diesel(table_name = workspaces)]
@@ -81,12 +81,6 @@ pub struct WorkspaceMember {
     pub role: i16,
 }
 
-#[derive(Deserialize, Queryable, Serialize)]
-pub struct MemberInfo {
-    pub user: PublicUser,
-    pub role: i16,
-}
-
 #[derive(Deserialize, Serialize)]
 pub struct WorkspaceWithMembers {
     pub workspace: Workspace,
@@ -116,7 +110,7 @@ pub enum WorkspaceRole {
     /// Maximum privileges; only one able to delete a workspace
     Owner = 10,
     /// High-level privileges; can manage members, settings, and permissions but cannot delete the workspace
-    Master = 5,
+    Manager = 5,
     /// Can contribute work but has limited administrative privileges
     Contributor = 2,
     /// Can review and approve work but cannot make direct contributions
@@ -137,7 +131,7 @@ impl TryFrom<i16> for WorkspaceRole {
     fn try_from(value: i16) -> Result<Self, Self::Error> {
         match value {
             10 => Ok(WorkspaceRole::Owner),
-            5 => Ok(WorkspaceRole::Master),
+            5 => Ok(WorkspaceRole::Manager),
             2 => Ok(WorkspaceRole::Contributor),
             1 => Ok(WorkspaceRole::Stakeholder),
             0 => Ok(WorkspaceRole::Viewer),
@@ -147,7 +141,7 @@ impl TryFrom<i16> for WorkspaceRole {
 }
 
 impl From<WorkspaceRole> for i16 {
-    fn from(status: WorkspaceRole) -> Self {
-        status as i16
+    fn from(role: WorkspaceRole) -> Self {
+        role as i16
     }
 }

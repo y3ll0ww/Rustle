@@ -5,11 +5,10 @@ use diesel::{
 use uuid::Uuid;
 
 use crate::{
+    database::pagination::sort::{SortDirection, UserField},
     models::users::PublicUser,
     schema::users::BoxedQuery as UserQuery,
 };
-
-use super::sort::{SortDirection, UserField};
 
 pub fn sort<'a>(
     query: UserQuery<'a, Pg>,
@@ -71,7 +70,10 @@ pub fn build<'a>(
     // Add the search filter
     if !filter_search.is_empty() {
         // Add excape characters for unsafe characters
-        let safe_search = format!("%{}%", filter_search.replace('%', "\\%").replace('_', "\\_"));
+        let safe_search = format!(
+            "%{}%",
+            filter_search.replace('%', "\\%").replace('_', "\\_")
+        );
 
         // Apply the search filter on the query
         query = query.filter(

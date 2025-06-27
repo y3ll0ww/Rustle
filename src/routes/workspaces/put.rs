@@ -28,7 +28,7 @@ pub async fn update_workspace(
             .await?;
 
     // Update the workspace in the cache
-    cache::workspaces::update_workspace_cache(redis, id, Some(update.into_inner()), None).await;
+    cache::workspaces::update_workspace_cache(redis, id, &updated_workspace).await;
 
     // Return a success response
     Ok(ApiResponse::success(

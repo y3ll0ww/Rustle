@@ -1,4 +1,4 @@
-pub mod query_users;
+pub mod queries;
 pub mod records;
 pub mod request;
 pub mod sort;

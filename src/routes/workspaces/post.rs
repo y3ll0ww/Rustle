@@ -10,8 +10,11 @@ use crate::{
     cookies,
     database::{self, Db},
     email::MailClient,
-    forms::{invite::InvitedMultipleUsersForm, workspace::NewWorkspaceForm},
+    forms::{
+        invite::InvitedMultipleUsersForm, projects::NewProjectForm, workspace::NewWorkspaceForm,
+    },
     models::{
+        projects::{NewProject, ProjectRole, ProjectWithMembers},
         users::{InvitedUser, PublicUser, UserStatus},
         workspaces::{NewWorkspace, WorkspaceMember, WorkspaceRole, WorkspaceWithMembers},
     },
@@ -45,10 +48,10 @@ pub async fn create_new_workspace_by_form(
     cache::workspaces::add_workspace_cache(redis, &workspace_with_members).await;
 
     // Add the workspace permission to cookies
-    cookies::workspaces::insert_workspace_permission(
-        cookies,
+    cookies::permissions::insert_workspace_permission(
         workspace_with_members.workspace.id,
         i16::from(WorkspaceRole::Owner),
+        cookies,
     )?;
 
     // Return success response
@@ -269,4 +272,39 @@ fn assign_unique_usernames(
     }
 
     Ok(())
+}
+
+#[post("/<id>/new_project", data = "<form>")]
+pub async fn create_new_project_by_form(
+    id: Uuid,
+    form: Form<NewProjectForm>,
+    guard: JwtGuard,
+    cookies: &CookieJar<'_>,
+    redis: &State<RedisMutex>,
+    db: Db,
+) -> Result<Success<ProjectWithMembers>, Error<Null>> {
+    // Validate user permissions
+    Policy::projects_create(id, guard.get_user(), cookies)?;
+
+    // Extract the important information from the form
+    let new_project = NewProject::from_form(form.into_inner());
+
+    // Create a new project (without members)
+    let project_with_members = database::projects::insert_new_project(&db, id, new_project).await?;
+
+    // Add the project information to the cache
+    cache::projects::add_project_cache(redis, &project_with_members).await;
+
+    // Add the project permission to cookies
+    cookies::permissions::insert_project_permission(
+        project_with_members.project.id,
+        i16::from(ProjectRole::Owner),
+        cookies,
+    )?;
+
+    // Return success response
+    Ok(ApiResponse::success(
+        format!("Project created: '{}'", project_with_members.project.name),
+        Some(project_with_members),
+    ))
 }

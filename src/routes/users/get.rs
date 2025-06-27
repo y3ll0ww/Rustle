@@ -5,10 +5,12 @@ use crate::{
     auth::JwtGuard,
     cache::{self, RedisMutex},
     database::{
+        self,
         pagination::{records::PaginatedRecords, request::PaginationRequest, sort::UserField},
-        users as database, Db,
+        Db,
     },
     models::users::{PublicUser, UserStatus},
+    policies::Policy,
 };
 
 #[get("/")]
@@ -20,9 +22,9 @@ pub async fn list_all_users(
 
     let users = if user.is_admin() {
         // If the user is admin just return all users that exist
-        database::get_all_public_users(&db).await?
+        database::users::get_all_public_users(&db).await?
     } else {
-        database::get_all_public_users_from_workspaces(&db, user.id).await?
+        database::users::get_all_public_users_from_workspaces(&db, user.id).await?
     };
 
     Ok(ApiResponse::success(
@@ -40,7 +42,8 @@ pub async fn get_paginated_users(
     guard: JwtGuard,
     db: Db,
 ) -> Result<Success<PaginatedRecords<PublicUser>>, Error<Null>> {
-    let page = database::get_users_paginated(&db, guard.get_user(), status, role, params).await?;
+    let page =
+        database::users::get_users_paginated(&db, guard.get_user(), status, role, params).await?;
 
     Ok(ApiResponse::success(
         format!(
@@ -55,18 +58,19 @@ pub async fn get_paginated_users(
 #[get("/<username>")]
 pub async fn get_user_by_username(
     username: &str,
-    _guard: JwtGuard,
+    guard: JwtGuard,
     db: Db,
 ) -> Result<Success<PublicUser>, Error<Null>> {
-    // Only get the user from the database
-    database::get_user_by_username(&db, username)
-        .await
-        .map(|user| {
-            ApiResponse::success(
-                format!("User '{username}' found"),
-                Some(PublicUser::from(&user)),
-            )
-        })
+    // First get the user (the ID is needed to for the policy)
+    let user = database::users::get_user_by_username(&db, username).await?;
+
+    // Make sure the user is allowed to see the requested information
+    Policy::users_get(&db, &guard.get_user(), user.id).await?;
+
+    Ok(ApiResponse::success(
+        format!("User '{username}' found"),
+        Some(PublicUser::from(&user)),
+    ))
 }
 
 #[get("/invite/get/<token>")]
@@ -79,7 +83,7 @@ pub async fn get_invited_user(
     let user_id = cache::users::get_invite_token(redis, token).await?;
 
     // Get the user from the database
-    let user = database::get_user_by_id(&db, user_id).await?;
+    let user = database::users::get_user_by_id(&db, user_id).await?;
 
     // Return not found if the user is not of status invited
     // > Returning not found avoids leaking user existence or status, preventing malicious actors

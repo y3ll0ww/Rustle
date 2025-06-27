@@ -1,6 +1,8 @@
 use std::collections::HashSet;
 
-use diesel::{result::Error as DieselError, ExpressionMethods, JoinOnDsl, QueryDsl, RunQueryDsl};
+use diesel::{
+    result::Error as DieselError, Connection, ExpressionMethods, JoinOnDsl, QueryDsl, RunQueryDsl,
+};
 use rocket::serde::json::Json;
 use uuid::Uuid;
 
@@ -12,7 +14,8 @@ use crate::{
 };
 
 use super::pagination::{
-    query_users, records::PaginatedRecords, request::PaginationRequest, sort::UserField,
+    queries::users as query_users, records::PaginatedRecords, request::PaginationRequest,
+    sort::UserField,
 };
 
 pub async fn get_all_public_users(db: &Db) -> Result<Vec<PublicUser>, Error<Null>> {
@@ -255,4 +258,43 @@ pub async fn delete_user_by_id(db: &Db, id: Uuid) -> Result<usize, Error<Null>> 
 pub async fn inject_user(db: &Db, user: User) -> Result<usize, DieselError> {
     db.run(move |conn| diesel::insert_into(users::table).values(user).execute(conn))
         .await
+}
+
+/// Returns all [`PublicUser`] information in a vector of users with whom the user (requester)
+/// shares a workspace.
+/// 
+/// What the function does (in a single database transaction):
+/// - Collects the IDs of workspaces of which the user is a member in a vector of [`Uuid`]s
+/// - Collects users who are a member of any of the workspaces in a vector of [`User`]s
+/// - Returns the vector of [`User`]s into a vector of [`PublicUser`]s
+pub async fn get_user_ids_in_same_workspaces(db: &Db, user: Uuid) -> Result<Vec<Uuid>, Error<Null>> {
+    use crate::schema::{
+        users, users::dsl as users_dsl, workspace_members::dsl as workspace_members_dsl,
+    };
+
+    db.run(move |conn| {
+        conn.transaction::<Vec<Uuid>, diesel::result::Error, _>(|conn| {
+            // 1. Get workspace IDs where the user is a member
+            let workspace_ids: Vec<Uuid> = workspace_members_dsl::workspace_members
+                .filter(workspace_members_dsl::member.eq(user))
+                .select(workspace_members_dsl::workspace)
+                .load(conn)?;
+
+            // No shared workspaces => no users
+            if workspace_ids.is_empty() {
+                return Ok(vec![]);
+            }
+
+            // 2. Find users who are members of those workspaces
+            let users_found = workspace_members_dsl::workspace_members
+                .inner_join(users_dsl::users.on(users_dsl::id.eq(workspace_members_dsl::member)))
+                .filter(workspace_members_dsl::workspace.eq_any(&workspace_ids))
+                .select(users::id)
+                .load::<Uuid>(conn)?;
+
+            Ok(users_found)
+        })
+    })
+    .await
+    .map_err(ApiResponse::from_error)
 }

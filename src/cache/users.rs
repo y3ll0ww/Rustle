@@ -1,12 +1,14 @@
 use rocket::State;
 use uuid::Uuid;
 
-use crate::api::{ApiResponse, Error, Null};
+use crate::{
+    api::{ApiResponse, Error, Null},
+    cache::CACHE_TTL_24_HOURS,
+};
 
 use super::RedisMutex;
 
 pub const CACHE_INVITE_TOKEN: &str = "invite_token:";
-pub const CACHE_TTL_24_HOURS: Option<u64> = Some(86400);
 
 pub fn cache_key_invite_token(token: &str) -> String {
     format!("{CACHE_INVITE_TOKEN}{token}")

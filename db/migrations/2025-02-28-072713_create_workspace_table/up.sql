@@ -72,4 +72,4 @@ EXECUTE FUNCTION handle_workspace_membership_change();
 ------------------------------------- */
 -- Indexes on workspace ID and user ID for optimized queries
 CREATE INDEX IF NOT EXISTS idx_workspace_id ON workspace_members(workspace);
-CREATE INDEX IF NOT EXISTS idx_user_id ON workspace_members(member);
+CREATE INDEX IF NOT EXISTS idx_workspace_member_id ON workspace_members(member);

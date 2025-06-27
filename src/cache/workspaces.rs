@@ -3,13 +3,13 @@ use uuid::Uuid;
 
 use crate::{
     api::{Error, Null},
-    models::workspaces::{MemberInfo, WorkspaceUpdate, WorkspaceWithMembers},
+    cache::CACHE_TTL_ONE_HOUR,
+    models::workspaces::{Workspace, WorkspaceWithMembers},
 };
 
 use super::RedisMutex;
 
 pub const CACHE_WORKSPACE: &str = "workspace:";
-pub const CACHE_TTL_ONE_HOUR: Option<u64> = Some(3600); // One hour
 
 pub fn cache_key_workspace(workspace_id: Uuid) -> String {
     format!("{CACHE_WORKSPACE}{workspace_id}")
@@ -44,38 +44,16 @@ pub async fn get_workspace_cache(
 pub async fn update_workspace_cache(
     redis: &State<RedisMutex>,
     workspace_id: Uuid,
-    update: Option<WorkspaceUpdate>,
-    members: Option<Vec<MemberInfo>>,
+    updated_workspace: &Workspace,
 ) {
-    // Get the existing workspace cache
+    // Get the existing workspace with members from the cache
     if let Some(cached_workspace) = get_workspace_cache(redis, workspace_id)
         .await
         .unwrap_or_default()
     {
-        // Define the new workspace for in the cache
-        let workspace_with_members = WorkspaceWithMembers {
-            // Apply the update or use the information from the cache
-            workspace: update
-                .map(|workspace_update| {
-                    let mut workspace = cached_workspace.workspace.clone();
-                    workspace.update(workspace_update);
-                    workspace
-                })
-                .unwrap_or(cached_workspace.workspace),
-            // Apply the members vector or use the information from the cache
-            members: members.unwrap_or(cached_workspace.members),
-        };
-
-        // Set the cache with the updated workspace information
-        let _ = redis
-            .lock()
-            .await
-            .set_to_cache(
-                &cache_key_workspace(workspace_id),
-                &workspace_with_members,
-                CACHE_TTL_ONE_HOUR,
-            )
-            .await;
+        let mut updated_workspace_with_members = cached_workspace;
+        updated_workspace_with_members.workspace = updated_workspace.clone();
+        add_workspace_cache(redis, &updated_workspace_with_members).await;
     }
 }
 

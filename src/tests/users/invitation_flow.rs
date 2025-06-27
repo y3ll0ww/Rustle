@@ -22,23 +22,20 @@ use crate::{
     tests::{
         async_test_client,
         users::{
-            ADMIN_LOGIN, DUPLICATE_USER_1_EMAIL_ADDR, DUPLICATE_USER_2_EMAIL_ADDR,
-            INVITED_USER_1_EMAIL_ADDR, INVITED_USER_1_FIRST_NAME, INVITED_USER_1_LAST_NAME,
-            INVITED_USER_1_LOGIN, INVITED_USER_1_USERNAME, INVITED_USER_2_EMAIL_ADDR,
-            INVITED_USER_2_FIRST_NAME, INVITED_USER_2_LAST_NAME, INVITED_USER_2_USERNAME,
-            INVITED_USER_3_EMAIL_ADDR, INVITED_USER_3_FIRST_NAME, INVITED_USER_3_LAST_NAME,
-            ROUTE_GET, ROUTE_INVITE_GET, ROUTE_INVITE_SET, ROUTE_LOGOUT,
+            route_users_logout, ADMIN_LOGIN, DUPLICATE_USER_1_EMAIL_ADDR,
+            DUPLICATE_USER_2_EMAIL_ADDR, INVITED_USER_1_EMAIL_ADDR, INVITED_USER_1_FIRST_NAME,
+            INVITED_USER_1_LAST_NAME, INVITED_USER_1_LOGIN, INVITED_USER_1_USERNAME,
+            INVITED_USER_2_EMAIL_ADDR, INVITED_USER_2_FIRST_NAME, INVITED_USER_2_LAST_NAME,
+            INVITED_USER_2_USERNAME, INVITED_USER_3_EMAIL_ADDR, INVITED_USER_3_FIRST_NAME,
+            INVITED_USER_3_LAST_NAME, ROUTE_GET, ROUTE_INVITE_GET, ROUTE_INVITE_SET,
         },
-        workspaces::TARGETED_WORKSPACE,
+        workspaces::{route_workspaces_invite_to_workspace, TARGETED_WORKSPACE},
     },
 };
 
 #[tokio::test]
 async fn invite_new_users_by_form() {
     let client = async_test_client().await;
-
-    let workspace = "ad5d4bf9-2e80-47b0-8454-1c431718b666";
-
     async_login(&client, DEFAULT_LOGIN).await;
 
     // Create a form with test data
@@ -56,7 +53,7 @@ async fn invite_new_users_by_form() {
                 last_name: INVITED_USER_1_LAST_NAME,
                 email: DUPLICATE_USER_1_EMAIL_ADDR,
                 phone: None,
-                workspace_role: i16::from(WorkspaceRole::Master),
+                workspace_role: i16::from(WorkspaceRole::Manager),
             },
             InvitedUserForm {
                 first_name: INVITED_USER_2_FIRST_NAME,
@@ -84,7 +81,7 @@ async fn invite_new_users_by_form() {
 
     // Send submit request
     let response = client
-        .post(format!("/workspaces/{workspace}/invite"))
+        .post(route_workspaces_invite_to_workspace())
         .body(invitation.body())
         .header(ContentType::Form)
         .dispatch()
@@ -255,7 +252,7 @@ async fn get_invited_user_id(client: &Client, username: &str) -> String {
     assert_eq!(public_user.status, i16::from(UserStatus::Invited));
 
     // Log out
-    let logout_response = client.post(ROUTE_LOGOUT).dispatch().await;
+    let logout_response = client.post(route_users_logout()).dispatch().await;
 
     // Assert that the logout request was handled succesfully
     assert_eq!(logout_response.status(), Status::Ok);

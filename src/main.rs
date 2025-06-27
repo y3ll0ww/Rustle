@@ -1,6 +1,8 @@
 use cache::redis_fairing;
 use routes::{USERS, WORKSPACES};
 
+use crate::routes::PROJECTS;
+
 #[macro_use]
 extern crate rocket;
 
@@ -23,6 +25,7 @@ fn rocket() -> _ {
     rocket::custom(rocket::Config::figment())
         .attach(database::Db::fairing())
         .attach(redis_fairing())
-        .mount(WORKSPACES, routes::workspaces::routes())
+        .mount(PROJECTS, routes::projects::routes())
         .mount(USERS, routes::users::routes())
+        .mount(WORKSPACES, routes::workspaces::routes())
 }
