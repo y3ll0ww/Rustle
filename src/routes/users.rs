@@ -5,7 +5,7 @@ mod put;
 
 pub fn routes() -> Vec<rocket::Route> {
     routes![
-        get::list_all_users,            // GET:     /user
+        get::get_paginated_users,       // GET:     /user?<status>&<role>
         get::get_user_by_username,      // GET:     /user/<username>
         post::inject_user,              // POST:    /user/create
         put::remove_user,               // PUT:     /user/remove/<id>
@@ -17,6 +17,5 @@ pub fn routes() -> Vec<rocket::Route> {
         put::set_password_after_invite, // PUT:     /user/invite/set/<token>
         post::login_by_form,            // POST:    /user/login
         post::logout,                   // POST:    /user/logout
-        get::get_paginated_users,       // GET:     /user/browse?<status>&<role>
     ]
 }

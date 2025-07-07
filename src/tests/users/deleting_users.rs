@@ -1,9 +1,12 @@
-use rocket::http::Status;
+use rocket::http::{ContentType, Status};
 
 use super::{login, ADMIN_LOGIN, ADMIN_USERNAME, DEFAULT_USERNAME};
-use crate::tests::{
-    response_ok, test_client,
-    users::{route_users_all, route_users_delete},
+use crate::{
+    database::pagination::{request::PaginationRequest, sort::UserField},
+    tests::{
+        response_ok, test_client,
+        users::{route_users_all, route_users_delete},
+    },
 };
 
 const TARGETED_USER: &str = "77987439-2fed-4d45-9f5d-4c02c66eb265";
@@ -20,24 +23,34 @@ fn delete_all_users_except_for_admin_and_test_user() {
     let client = test_client();
     login(&client, ADMIN_LOGIN);
 
+    let payload = serde_json::to_string(&PaginationRequest::<UserField>::new()).unwrap();
+
     // Get all the users
-    let response = client.get(route_users_all()).dispatch();
+    let response = client
+        .get(route_users_all())
+        .header(ContentType::JSON)
+        .body(payload)
+        .dispatch();
 
     // Convert the response to a Value
     let response_value: serde_json::Value =
         serde_json::from_str(&response.into_string().unwrap()).unwrap();
 
     // Extract the "data" field from the response
-    let data = serde_json::to_value(response_value)
+    let records = serde_json::to_value(response_value)
         .unwrap()
         .get("data")
+        .unwrap()
+        .get("records")
         .unwrap()
         .clone();
 
     // Check if the data is an array
-    if let serde_json::Value::Array(users) = data {
+    if let serde_json::Value::Array(users) = records {
         // Iterate over the users and delete them
         for user in users {
+            let user = user.get("data").unwrap();
+
             // Get the user ID and username
             let user_id = user.get("id").and_then(|v| v.as_str()).unwrap();
             let username = user.get("username").and_then(|v| v.as_str()).unwrap();
