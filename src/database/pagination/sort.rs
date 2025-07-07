@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SortDirection {
     Asc,
@@ -12,7 +12,7 @@ pub trait SortField {}
 impl SortField for UserField {}
 impl SortField for ProjectField {}
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum UserField {
     Role,
@@ -25,7 +25,7 @@ pub enum UserField {
     UpdatedAt,
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ProjectField {
     Name,

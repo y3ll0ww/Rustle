@@ -5,7 +5,8 @@ use uuid::Uuid;
 use crate::{
     api::{ApiResponse, Error, Null},
     database::pagination::{
-        records::PaginatedRecords, request::PaginationRequest, sort::ProjectField,
+        queries::meta::PaginationMetaData, records::PaginatedRecords, request::PaginationRequest,
+        sort::ProjectField,
     },
     models::{
         projects::{NewProject, Project, ProjectMember, ProjectUpdate, ProjectWithMembers},
@@ -170,14 +171,12 @@ pub async fn get_projects_paginated(
     user: Option<Uuid>,
     params: Json<PaginationRequest<ProjectField>>,
 ) -> Result<PaginatedRecords<Project>, Error<Null>> {
-    // Number of the page (should be at least 1)
-    let requested_page = params.page.unwrap_or(1).max(1);
+    // Extract the pagination request
+    let params = params.into_inner();
 
-    // Number of maximum results (default 20, min 1, max 100)
-    let limit = params.limit.unwrap_or(20).clamp(1, 100);
-
-    let (projects, total_records, page, total_pages) = db
+    let (meta, projects) = db
         .run(move |conn| {
+            // Define the search string
             let search = params.search.as_deref().unwrap_or_default();
 
             // Build the query as COUNT to get the total
@@ -185,15 +184,8 @@ pub async fn get_projects_paginated(
                 .count()
                 .get_result::<i64>(conn)?;
 
-            // Define the total number of pages by dividing the total by the limit and returning the upper
-            // bound from the float as integer. Make sure there is at least one page.
-            let total_pages = ((total as f64 / limit as f64).ceil() as i64).max(1);
-
-            // Cap the page to total pages
-            let page = requested_page.min(total_pages);
-
-            // Calculate the offset of the search
-            let offset = (page - 1) * limit;
+            // Calculate the pagination meta data
+            let meta = PaginationMetaData::new(total, &params);
 
             // Build the query again for LOAD and apply filtering
             let mut query = query_projects::build(search, workspace, user);
@@ -202,15 +194,15 @@ pub async fn get_projects_paginated(
             query = query_projects::sort(query, &params.sort_by, &params.sort_dir);
 
             // Add the offset and limit and run the query
-            let projects: Vec<Project> = query.offset(offset).limit(limit).load::<Project>(conn)?;
+            let projects: Vec<Project> = query
+                .offset(meta.record_offset)
+                .limit(meta.page_limit)
+                .load::<Project>(conn)?;
 
-            Ok((projects, total, page, total_pages))
+            Ok((meta, projects))
         })
         .await
         .map_err(ApiResponse::from_error)?;
 
-    Ok(
-        PaginatedRecords::<Project>::new(total_records, page, limit, total_pages)
-            .add_records(projects),
-    )
+    Ok(PaginatedRecords::<Project>::new(meta, projects))
 }

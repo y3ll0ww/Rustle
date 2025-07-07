@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use super::sort::{SortDirection, SortField};
 
-#[derive(Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 pub struct PaginationRequest<F: SortField> {
     pub page: Option<i64>,               // default = 1
     pub limit: Option<i64>,              // default = 20
