@@ -1,5 +1,5 @@
 use crate::{
-    routes::{PROJECTS, WORKSPACES},
+    routes::PROJECTS,
     tests::{root_route, workspaces::TARGETED_WORKSPACE},
 };
 
@@ -13,14 +13,6 @@ mod getting_projects;
 mod member_management;
 
 const TARGETED_PROJECT: &str = "3465a06a-994f-4467-a6c4-3e949cf5e21b";
-
-fn route_get_projects_by_user() -> String {
-    root_route(PROJECTS)
-}
-
-fn route_get_projects_from_workspace() -> String {
-    format!("{WORKSPACES}{TARGETED_WORKSPACE}/projects")
-}
 
 fn route_get_projects_paginated(workspace: Option<&str>, user: Option<&str>) -> String {
     let root = root_route(PROJECTS);
