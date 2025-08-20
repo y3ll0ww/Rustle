@@ -4,14 +4,12 @@
 -- Table for storing information about a workspace
 CREATE TABLE workspaces (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    owner UUID NOT NULL,
     name VARCHAR(40) NOT NULL,
     description TEXT,
     member_count INTEGER NOT NULL DEFAULT 0 CHECK (member_count >= 0),
     image_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    FOREIGN KEY (owner) REFERENCES users(id) ON DELETE CASCADE
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 -- Table for linking workspaces to users

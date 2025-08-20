@@ -81,16 +81,6 @@ pub async fn add_members_to_workspace(
         return Err(ApiResponse::bad_request("No members to add".to_string()));
     }
 
-    // Cannot add a second owner
-    if members
-        .iter()
-        .any(|m| m.role == i16::from(WorkspaceRole::Owner))
-    {
-        return Err(ApiResponse::bad_request(
-            "Cannot add another owner".to_string(),
-        ));
-    }
-
     // Extract the members length before going out of scope
     let members_len = members.len();
 
