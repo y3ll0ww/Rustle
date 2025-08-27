@@ -13,28 +13,8 @@ use crate::{
     policies::Policy,
 };
 
-#[get("/")]
-pub async fn list_all_users(
-    guard: JwtGuard,
-    db: Db,
-) -> Result<Success<Vec<PublicUser>>, Error<Null>> {
-    let user = guard.get_user();
-
-    let users = if user.is_admin() {
-        // If the user is admin just return all users that exist
-        database::users::get_all_public_users(&db).await?
-    } else {
-        database::users::get_all_public_users_from_workspaces(&db, user.id).await?
-    };
-
-    Ok(ApiResponse::success(
-        format!("{} users found", users.len()),
-        Some(users),
-    ))
-}
-
 //Instead of get_paginated_users, maybe browse_users or list_users_paginated — to match REST semantics more intuitively.
-#[get("/browse?<status>&<role>", format = "json", data = "<params>")]
+#[get("/?<status>&<role>", format = "json", data = "<params>")]
 pub async fn get_paginated_users(
     status: Option<i16>,
     role: Option<i16>,

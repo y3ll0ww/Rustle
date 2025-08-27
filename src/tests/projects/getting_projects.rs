@@ -3,22 +3,12 @@ use rocket::http::ContentType;
 use crate::{
     database::pagination::{request::PaginationRequest, sort::ProjectField},
     tests::{
-        projects::{
-            route_get_projects_by_user, route_get_projects_from_workspace,
-            route_get_projects_paginated, route_projects_get,
-        },
+        projects::{route_get_projects_paginated, route_projects_get},
         response_ok, test_client,
-        users::{login, ADMIN_LOGIN, DEFAULT_LOGIN},
+        users::{login, ADMIN_LOGIN},
         workspaces::TARGETED_WORKSPACE,
     },
 };
-
-#[test]
-fn view_projects_from_workspace() {
-    let client = test_client();
-    login(&client, ADMIN_LOGIN);
-    response_ok(client.get(route_get_projects_from_workspace()));
-}
 
 #[test]
 fn view_projects_from_workspace_paginated() {
@@ -47,13 +37,6 @@ fn view_projects_from_workspace_paginated() {
             .header(ContentType::JSON)
             .body(payload),
     );
-}
-
-#[test]
-fn view_projects_by_user() {
-    let client = test_client();
-    login(&client, DEFAULT_LOGIN);
-    response_ok(client.get(route_get_projects_by_user()));
 }
 
 #[test]

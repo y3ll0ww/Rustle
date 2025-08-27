@@ -8,63 +8,15 @@ use uuid::Uuid;
 
 use crate::{
     api::{ApiResponse, Error, Null},
-    database::Db,
+    database::{pagination::queries::meta::PaginationMetaData, Db},
     models::users::{PublicUser, User, UserStatus, UserUpdate},
-    schema::{users, workspace_members},
+    schema::users,
 };
 
 use super::pagination::{
     queries::users as query_users, records::PaginatedRecords, request::PaginationRequest,
     sort::UserField,
 };
-
-pub async fn get_all_public_users(db: &Db) -> Result<Vec<PublicUser>, Error<Null>> {
-    let users: Vec<PublicUser> = db
-        .run(move |conn| users::table.get_results::<User>(conn))
-        .await
-        .map_err(ApiResponse::from_error)?
-        .iter()
-        .map(PublicUser::from)
-        .collect();
-
-    Ok(users)
-}
-
-pub async fn get_all_public_users_from_workspaces(
-    db: &Db,
-    user: Uuid,
-) -> Result<Vec<PublicUser>, Error<Null>> {
-    let users: Vec<PublicUser> = db
-        .run(move |conn| {
-            users::table
-                .inner_join(workspace_members::table.on(workspace_members::member.eq(users::id)))
-                .filter(workspace_members::member.eq(user))
-                .select((
-                    users::id,
-                    users::username,
-                    users::first_name,
-                    users::last_name,
-                    users::email,
-                    users::phone,
-                    users::role,
-                    users::status,
-                    users::job_title,
-                    users::password,
-                    users::bio,
-                    users::avatar_url,
-                    users::created_at,
-                    users::updated_at,
-                ))
-                .get_results::<User>(conn)
-        })
-        .await
-        .map_err(ApiResponse::from_error)?
-        .iter()
-        .map(PublicUser::from)
-        .collect();
-
-    Ok(users)
-}
 
 /// Returns user information paginated. Admin will return all users, where other users will only
 /// return users with whom they share a workspace with.
@@ -75,14 +27,12 @@ pub async fn get_users_paginated(
     role: Option<i16>,
     params: Json<PaginationRequest<UserField>>,
 ) -> Result<PaginatedRecords<PublicUser>, Error<Null>> {
-    // Number of the page (should be at least 1)
-    let requested_page = params.page.unwrap_or(1).max(1);
+    // Extract the pagination request
+    let params = params.into_inner();
 
-    // Number of maximum results (default 20, min 1, max 100)
-    let limit = params.limit.unwrap_or(20).clamp(1, 100);
-
-    let (users, total_records, page, total_pages) = db
+    let (meta, users) = db
         .run(move |conn| {
+            // Define the search string
             let search = params.search.as_deref().unwrap_or_default();
 
             // Build the query as COUNT to get the total
@@ -90,15 +40,8 @@ pub async fn get_users_paginated(
                 .count()
                 .get_result::<i64>(conn)?;
 
-            // Define the total number of pages by dividing the total by the limit and returning the upper
-            // bound from the float as integer. Make sure there is at least one page.
-            let total_pages = ((total as f64 / limit as f64).ceil() as i64).max(1);
-
-            // Cap the page to total pages
-            let page = requested_page.min(total_pages);
-
-            // Calculate the offset of the search
-            let offset = (page - 1) * limit;
+            // Calculate the pagination meta data
+            let meta = PaginationMetaData::new(total, &params);
 
             // Build the query again for LOAD and apply filtering
             let mut query = query_users::build(conn, user, search, status, role);
@@ -108,20 +51,17 @@ pub async fn get_users_paginated(
 
             // Add the offset and limit and run the query
             let users: Vec<PublicUser> = query
-                .offset(offset)
-                .limit(limit)
+                .offset(meta.record_offset)
+                .limit(meta.page_limit)
                 .load::<User>(conn)
                 .map(|users| users.iter().map(PublicUser::from).collect())?;
 
-            Ok((users, total, page, total_pages))
+            Ok((meta, users))
         })
         .await
         .map_err(ApiResponse::from_error)?;
 
-    Ok(
-        PaginatedRecords::<PublicUser>::new(total_records, page, limit, total_pages)
-            .add_records(users),
-    )
+    Ok(PaginatedRecords::<PublicUser>::new(meta, users))
 }
 
 pub async fn get_user_by_id(db: &Db, id: Uuid) -> Result<User, Error<Null>> {
@@ -262,12 +202,15 @@ pub async fn inject_user(db: &Db, user: User) -> Result<usize, DieselError> {
 
 /// Returns all [`PublicUser`] information in a vector of users with whom the user (requester)
 /// shares a workspace.
-/// 
+///
 /// What the function does (in a single database transaction):
 /// - Collects the IDs of workspaces of which the user is a member in a vector of [`Uuid`]s
 /// - Collects users who are a member of any of the workspaces in a vector of [`User`]s
 /// - Returns the vector of [`User`]s into a vector of [`PublicUser`]s
-pub async fn get_user_ids_in_same_workspaces(db: &Db, user: Uuid) -> Result<Vec<Uuid>, Error<Null>> {
+pub async fn get_user_ids_in_same_workspaces(
+    db: &Db,
+    user: Uuid,
+) -> Result<Vec<Uuid>, Error<Null>> {
     use crate::schema::{
         users, users::dsl as users_dsl, workspace_members::dsl as workspace_members_dsl,
     };

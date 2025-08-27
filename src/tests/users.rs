@@ -23,14 +23,6 @@ fn route_users_all() -> String {
     root_route(USERS)
 }
 
-fn route_users_by_name(username: &str) -> String {
-    format!("{USERS}{username}")
-}
-
-fn route_users_admin_inject_users() -> String {
-    format!("{USERS}create")
-}
-
 fn route_users_browse(status: Option<u16>, role: Option<u16>) -> String {
     let pagination = match (status, role) {
         (Some(status), Some(role)) => format!("?status={status}&role={role}"),
@@ -39,7 +31,15 @@ fn route_users_browse(status: Option<u16>, role: Option<u16>) -> String {
         (None, None) => String::new(),
     };
 
-    format!("{USERS}browse{pagination}")
+    format!("{}{pagination}", root_route(USERS))
+}
+
+fn route_users_by_name(username: &str) -> String {
+    format!("{USERS}{username}")
+}
+
+fn route_users_admin_inject_users() -> String {
+    format!("{USERS}create")
 }
 
 fn route_users_delete(id: &str) -> String {
