@@ -1,0 +1,24 @@
+FROM rust:1.89
+
+# Install PostgreSQL + Redis
+RUN apt-get update && apt-get install -y \
+    postgresql postgresql-contrib redis-server \
+    libssl-dev pkg-config \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory (map your code here with a volume)
+WORKDIR /workspace
+
+# Install diesel CLI
+RUN cargo install diesel_cli --no-default-features --features postgres
+
+# Expose ports:
+# - 8000 -> Rustle
+# - 5432 -> PostgresQL
+# - 6379 -> Redis
+EXPOSE 8000 5432 6379
+
+# Start Postgres, Redis, and keep container alive with a shell
+CMD service postgresql start && \
+    redis-server --daemonize yes && \
+    bash
