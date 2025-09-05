@@ -9,6 +9,11 @@ services:
       - .:/workspace
     ports:
       - "8000:8000"
+    environment:
+      ROCKET_PROFILE: development
+      DATABASE_URL: postgres://admin:SYqujNZNmvEw2Ajk@db:5432/rustle
+      REDIS_URL: redis://redis:6379
+      ROCKET_SECRET_KEY: nI1EzhIwnO63bjg0k1dGbUnGbLtMoQY0lNZzTAbwkiE=
     depends_on:
       - db
       - redis
