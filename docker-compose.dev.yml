@@ -10,6 +10,8 @@ services:
     ports:
       - "8000:8000"
     environment:
+      POSTGRES_USER: "admin"
+      POSTGRES_PASSWORD: "SYqujNZNmvEw2Ajk"
       ROCKET_PROFILE: development
       DATABASE_URL: postgres://admin:SYqujNZNmvEw2Ajk@db:5432/rustle
       REDIS_URL: redis://redis:6379
