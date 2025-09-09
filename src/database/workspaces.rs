@@ -72,11 +72,17 @@ pub async fn insert_new_workspace(
     db: &Db,
     new_workspace: NewWorkspace,
 ) -> Result<WorkspaceWithMembers, Error<Null>> {
+    // Define the creator of the workspace as an owner
+    let owner = new_workspace.owner;
+
     // Insert and return a new workspace
     let workspace = db
         .run(move |conn| {
             diesel::insert_into(workspaces::table)
-                .values(new_workspace)
+                .values((
+                    workspaces::dsl::name.eq(new_workspace.name),
+                    workspaces::dsl::description.eq(new_workspace.description),
+                ))
                 .get_result::<Workspace>(conn)
         })
         .await
@@ -87,7 +93,7 @@ pub async fn insert_new_workspace(
         db,
         vec![WorkspaceMember {
             workspace: workspace.id,
-            member: workspace.owner,
+            member: owner,
             role: i16::from(WorkspaceRole::Owner),
         }],
     )

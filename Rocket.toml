@@ -1,6 +1,7 @@
-[default]
+[development]
 address = "127.0.0.1"
 port = 8000
+log = "debug"
 
-[default.databases]
-rustle_db = { url = "postgres://admin:SYqujNZNmvEw2Ajk@localhost/rustle" }
+[production]
+log = "critical"

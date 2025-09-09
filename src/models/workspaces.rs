@@ -17,7 +17,6 @@ use super::MemberInfo;
 #[diesel(table_name = workspaces)]
 pub struct Workspace {
     pub id: Uuid,
-    pub owner: Uuid,
     pub name: String,
     pub description: Option<String>,
     pub member_count: i32,
@@ -27,12 +26,11 @@ pub struct Workspace {
 }
 
 impl Workspace {
-    pub fn new(owner: Uuid, name: String, description: Option<String>) -> Self {
+    pub fn new(name: String, description: Option<String>) -> Self {
         let timestamp = Utc::now().naive_utc();
 
         Workspace {
             id: Uuid::new_v4(),
-            owner,
             name,
             description,
             member_count: 0,
@@ -57,14 +55,6 @@ impl Workspace {
     }
 }
 
-#[derive(Deserialize, Insertable, Serialize)]
-#[diesel(table_name = workspaces)]
-pub struct WorkspaceNew {
-    pub name: String,
-    pub description: Option<String>,
-    pub image_url: Option<String>,
-}
-
 #[derive(AsChangeset, Clone, Deserialize, Serialize)]
 #[diesel(table_name = workspaces)]
 pub struct WorkspaceUpdate {
@@ -87,12 +77,10 @@ pub struct WorkspaceWithMembers {
     pub members: Vec<MemberInfo>,
 }
 
-#[derive(Insertable)]
-#[diesel(table_name = workspaces)]
 pub struct NewWorkspace {
     pub owner: Uuid,
-    name: String,
-    description: Option<String>,
+    pub name: String,
+    pub description: Option<String>,
 }
 
 impl NewWorkspace {

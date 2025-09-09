@@ -68,7 +68,7 @@ impl Policy {
                 workspace,
                 cookies,
             )?)
-            .unauthorized("Not authorized to add members")
+            .unauthorized("Not authorized to edit members")
     }
 
     /// [`Admin`](crate::models::users::UserRole::Admin) or

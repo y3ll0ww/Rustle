@@ -6,9 +6,11 @@ use rocket_sync_db_pools::diesel;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::schema::users;
+use crate::{
+    env, forms::password::Password, schema::users, ENV_POSTGRES_PASSWORD, ENV_POSTGRES_USER,
+};
 
-#[derive(Clone, Debug, Deserialize, Insertable, Queryable, QueryableByName, Serialize)]
+#[derive(Clone, Default, Debug, Deserialize, Insertable, Queryable, QueryableByName, Serialize)]
 #[diesel(table_name = users)]
 pub struct User {
     pub id: Uuid,
@@ -29,30 +31,21 @@ pub struct User {
 }
 
 impl User {
-    pub fn new(
-        username: String,
-        first_name: String,
-        last_name: String,
-        email: String,
-        password: String,
-    ) -> Self {
+    pub fn init_admin() -> Self {
+        let username = env(ENV_POSTGRES_USER);
+        let password = env(ENV_POSTGRES_PASSWORD);
         let timestamp = Utc::now().naive_utc();
 
         User {
             id: Uuid::new_v4(),
             username,
-            first_name,
-            last_name,
-            email,
-            phone: None,
-            role: i16::from(UserRole::Reviewer),
-            status: i16::from(UserStatus::Invited),
-            job_title: None,
-            password,
-            bio: None,
-            avatar_url: None,
+            email: "admin@rustle.com".to_string(),
+            role: i16::from(UserRole::Admin),
+            status: i16::from(UserStatus::Active),
+            password: Password::generate(Some(&password)).unwrap(),
             created_at: timestamp,
             updated_at: timestamp,
+            ..Default::default()
         }
     }
 }

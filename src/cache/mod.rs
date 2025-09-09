@@ -19,7 +19,10 @@ use rocket::{fairing::Fairing, tokio::sync::Mutex};
 use serde::{de::DeserializeOwned, Serialize};
 use std::sync::Arc;
 
-use crate::api::{ApiResponse, Error, Null};
+use crate::{
+    api::{ApiResponse, Error, Null},
+    ENV_REDIS_URL,
+};
 
 pub mod projects;
 pub mod users;
@@ -27,8 +30,8 @@ pub mod workspaces;
 
 pub type RedisMutex = Arc<Mutex<RedisPool>>;
 
-// QWERTY Use env var in production
-const REDIS_URL: &str = "redis://127.0.0.1:6379";
+// Fallback Redis URL if the environment variable is not found
+const FALLBACK_REDIS_URL: &str = "redis://127.0.0.1:6379";
 
 // TTL values
 pub const CACHE_TTL_ONE_HOUR: Option<u64> = Some(3600);
@@ -127,7 +130,10 @@ impl RedisPool {
 
 pub fn redis_fairing() -> impl Fairing {
     rocket::fairing::AdHoc::on_ignite("Redis", |rocket| async {
-        match RedisPool::new(REDIS_URL) {
+        // Prefer env var, fallback to localhost for dev
+        let redis_url = std::env::var(ENV_REDIS_URL).unwrap_or_else(|_| FALLBACK_REDIS_URL.into());
+
+        match RedisPool::new(&redis_url) {
             Ok(pool) => rocket.manage(Arc::new(Mutex::new(pool))),
             Err(e) => {
                 // QWERTY perhaps panic here instead of returning limited rocket.

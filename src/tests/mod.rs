@@ -48,8 +48,13 @@ fn response_status(request: LocalRequest<'_>, expected_status: Status) {
 
     // Format and print the response
     let body = response.into_string().unwrap_or("{}".to_string());
-    let value = serde_json::from_str::<Value>(&body).unwrap();
-    println!("{}", serde_json::to_string_pretty(&value).unwrap());
+
+    let debug = match serde_json::from_str::<Value>(&body) {
+        Ok(value) => serde_json::to_string_pretty(&value).unwrap(),
+        Err(e) => e.to_string(),        
+    };
+
+    println!("{debug}");
 
     // Check if the HTTP status is as expected
     assert_eq!(status, expected_status);

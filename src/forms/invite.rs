@@ -148,13 +148,9 @@ impl InvitedUserForm<'_> {
     }
 
     fn validate_workspace_role<'v>(value: &i16) -> form::Result<'v, ()> {
-        let workspace_role = WorkspaceRole::try_from(*value).map_err(form::Error::validation)?;
-
-        if let WorkspaceRole::Owner = workspace_role {
-            return Err(form::Error::validation("Workspace can only have one owner").into());
-        }
-
-        Ok(())
+        Ok(WorkspaceRole::try_from(*value)
+            .map(|_| ())
+            .map_err(form::Error::validation)?)
     }
 
     pub fn body(&self) -> String {

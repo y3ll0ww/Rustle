@@ -58,7 +58,6 @@ diesel::table! {
 diesel::table! {
     workspaces (id) {
         id -> Uuid,
-        owner -> Uuid,
         #[max_length = 40]
         name -> Varchar,
         description -> Nullable<Text>,
@@ -74,7 +73,6 @@ diesel::joinable!(project_members -> users (member));
 diesel::joinable!(projects -> workspaces (workspace));
 diesel::joinable!(workspace_members -> users (member));
 diesel::joinable!(workspace_members -> workspaces (workspace));
-diesel::joinable!(workspaces -> users (owner));
 
 diesel::allow_tables_to_appear_in_same_query!(
     project_members,
