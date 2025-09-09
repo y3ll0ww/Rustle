@@ -1,0 +1,45 @@
+# -----------------------------
+# 1. Build Stage
+# -----------------------------
+FROM rust:1.89 AS builder
+
+WORKDIR /workspace
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y libssl-dev pkg-config && rm -rf /var/lib/apt/lists/*
+
+# Copy manifests first to leverage Docker layer caching
+COPY Cargo.toml Cargo.lock ./
+RUN mkdir src && echo "fn main() {}" > src/main.rs
+RUN cargo build --release || true   # build dummy just to cache deps
+RUN rm -rf src
+
+# Now copy the actual source code and build for real
+COPY . .
+RUN cargo build --release
+
+# Install diesel CLI for migrating the database
+RUN cargo install diesel_cli --no-default-features --features postgres
+
+# -----------------------------
+# 2. Runtime Stage
+# -----------------------------
+FROM debian:bookworm-slim AS runtime
+
+# Install runtime dependencies only (no build tools)
+RUN apt-get update \
+    && apt-get install -y libssl3 ca-certificates libpq5 postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy binary and diesel CLI
+COPY --from=builder /workspace/target/release/rustle ./rustle
+COPY --from=builder /usr/local/cargo/bin/diesel /usr/local/bin/diesel
+
+# Copy migrations
+COPY db/migrations ./migrations
+
+EXPOSE 8000
+
+CMD ["sh", "-c", "until pg_isready -h db -U $POSTGRES_USER; do sleep 1; done; diesel migration run && ./rustle"]
