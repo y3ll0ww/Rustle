@@ -9,6 +9,4 @@ port = 8000
 log = "normal"
 
 [production]
-address = "127.0.0.1"
-port = 8000
 log = "critical"
