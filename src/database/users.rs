@@ -18,6 +18,29 @@ use super::pagination::{
     sort::UserField,
 };
 
+pub async fn setup_admin(db: &Db) -> Result<(), diesel::result::Error> {
+    // Create the initial admin user
+    let admin = User::init_admin();
+
+    // Run on the database
+    db.run(move |conn| {
+        // Try retrieving the admin user
+        match users::table
+            .filter(users::username.eq(&admin.username))
+            .first::<User>(conn)
+        {
+            // If it doesn't exist; insert it directly into the database
+            Err(diesel::result::Error::NotFound) => diesel::insert_into(users::table)
+                .values(&admin)
+                .execute(conn)
+                .map(|_| ()),
+            // Return the result of any other outcome
+            other => other.map(|_| ()),
+        }
+    })
+    .await
+}
+
 /// Returns user information paginated. Admin will return all users, where other users will only
 /// return users with whom they share a workspace with.
 pub async fn get_users_paginated(
