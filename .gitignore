@@ -1,5 +1,6 @@
-target/
-**/target/
-
 .env
 **/.env
+
+# Temporary ignores
+frontend/INFO.md
+frontend/Zscaler Root CA.crt
