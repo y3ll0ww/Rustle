@@ -1,0 +1,56 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: rustle-frontend:dev
+    container_name: rustle-dev-frontend
+    ports:
+      - "3000:5173"       # map host port 3000 to container port 5173 (vite default)
+    volumes:
+      - .:/app            # bind mount current folder to /app inside container
+    env_file:
+      - .env
+    command: npm run dev -- --host
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile.dev
+    image: rustle-backend:dev
+    container_name: rustle-dev-backend
+    volumes:
+      - .:/workspace
+    ports:
+      - "8000:8000"
+    environment:
+      POSTGRES_USER: "admin"
+      POSTGRES_PASSWORD: "SYqujNZNmvEw2Ajk"
+      ROCKET_PROFILE: development
+      DATABASE_URL: postgres://admin:SYqujNZNmvEw2Ajk@db:5432/rustle
+      REDIS_URL: redis://redis:6379
+      ROCKET_SECRET_KEY: nI1EzhIwnO63bjg0k1dGbUnGbLtMoQY0lNZzTAbwkiE=
+    depends_on:
+      - db
+      - redis
+    command: cargo run
+
+  db:
+    image: postgres:15
+    container_name: postgres-dev
+    environment:
+      POSTGRES_USER: "admin"
+      POSTGRES_PASSWORD: "SYqujNZNmvEw2Ajk"
+      POSTGRES_DB: "rustle"
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      retries: 5
+
+  redis:
+    image: redis:7
+    container_name: redis-dev
+    ports:
+      - "6379:6379"
