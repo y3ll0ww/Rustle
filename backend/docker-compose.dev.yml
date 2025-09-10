@@ -3,8 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
-    image: rustle:dev
-    container_name: rustle-dev
+    image: rustle-backend:dev
+    container_name: rustle-dev-backend
     volumes:
       - .:/workspace
     ports:

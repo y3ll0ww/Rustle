@@ -3,8 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.prod
-    image: rustle:latest
-    container_name: rustle
+    image: rustle-backend:latest
+    container_name: rustle-backend
     restart: always
     environment:
       ROCKET_PROFILE: production
