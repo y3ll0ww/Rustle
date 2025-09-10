@@ -38,7 +38,7 @@ COPY --from=builder /workspace/target/release/rustle ./rustle
 COPY --from=builder /usr/local/cargo/bin/diesel /usr/local/bin/diesel
 
 # Copy migrations
-COPY db/migrations ./migrations
+COPY migrations ./migrations
 
 EXPOSE 8000
 
