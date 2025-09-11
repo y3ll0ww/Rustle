@@ -1,4 +1,5 @@
-use rocket::fairing::AdHoc;
+use rocket::{fairing::AdHoc, Config};
+use rocket_cors::{AllowedOrigins, CorsOptions};
 use routes::{USERS, WORKSPACES};
 
 use crate::{
@@ -34,27 +35,33 @@ pub fn env(key: &str) -> String {
 
 #[launch]
 fn rocket() -> _ {
-    // Fetch DATABASE_URL from env
-    let db_url = env(ENV_DATABASE_URL);
+    // Configure CORS options
+    let cors = CorsOptions::default()
+        .allowed_origins(AllowedOrigins::all())
+        .to_cors()
+        .expect("error creating CORS fairing");
 
-    // Merge it into Rocket's config at runtime
-    let figment = rocket::Config::figment().merge(("databases.rustle_db.url", db_url));
-
-    rocket::custom(figment)
+    // Fetch DATABASE_URL from env and merge it into Rocket's config at runtime
+    rocket::custom(Config::figment().merge(("databases.rustle_db.url", env(ENV_DATABASE_URL))))
+        .attach(cors)
         .attach(database::Db::fairing())
         .attach(cache::redis_fairing())
-        .attach(AdHoc::on_ignite("Setup Admin user", |rocket| async {
-            // Get database connection from state
-            let db = Db::get_one(&rocket).await.expect("No database connection");
-
-            // Create the initial admin user
-            if let Err(e) = setup_admin(&db).await {
-                eprintln!("{e}");
-            };
-
-            rocket
-        }))
+        .attach(create_admin())
         .mount(PROJECTS, routes::projects::routes())
         .mount(USERS, routes::users::routes())
         .mount(WORKSPACES, routes::workspaces::routes())
+}
+
+fn create_admin() -> AdHoc {
+    AdHoc::on_ignite("Setup Admin user", |rocket| async {
+        // Get database connection from state
+        let db = Db::get_one(&rocket).await.expect("No database connection");
+
+        // Create the initial admin user
+        if let Err(e) = setup_admin(&db).await {
+            eprintln!("{e}");
+        };
+
+        rocket
+    })
 }

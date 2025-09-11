@@ -20,6 +20,7 @@ rand = "0.8"
 redis = { version = "0.23", features = ["tokio-comp"] }
 regex = "1.11.1"
 rocket = { version = "0.5.1", features = ["json", "uuid", "secrets"] }
+rocket_cors = "0.6.0"
 rocket_sync_db_pools = { version = "0.1.0-rc.3", features = [
     "diesel_postgres_pool",
 ] }
