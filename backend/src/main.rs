@@ -40,7 +40,7 @@ fn rocket() -> _ {
         .attach(create_cors())
         .attach(database::Db::fairing())
         .attach(cache::redis_fairing())
-        .attach(create_admin())
+        .attach(insert_admin_user())
         .mount(PROJECTS, routes::projects::routes())
         .mount(USERS, routes::users::routes())
         .mount(WORKSPACES, routes::workspaces::routes())
@@ -53,6 +53,12 @@ fn create_cors() -> Cors {
         "http://127.0.0.1:3000", // sometimes browsers resolve like this
     ]);
 
+    //let allowed_origins = if std::env::var("ROCKET_PROFILE").unwrap_or_default() == "release" {
+    //    AllowedOrigins::some_exact(&["https://rustle.example.com"])
+    //} else {
+    //    AllowedOrigins::some_exact(&["http://localhost:3000", "http://127.0.0.1:3000"])
+    //};
+
     CorsOptions {
         allowed_origins,
         allow_credentials: true,
@@ -62,7 +68,7 @@ fn create_cors() -> Cors {
     .unwrap()
 }
 
-fn create_admin() -> AdHoc {
+fn insert_admin_user() -> AdHoc {
     AdHoc::on_ignite("Setup Admin user", |rocket| async {
         // Get database connection from state
         let db = Db::get_one(&rocket).await.expect("No database connection");
