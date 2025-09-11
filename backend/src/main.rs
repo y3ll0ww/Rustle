@@ -1,5 +1,5 @@
 use rocket::{fairing::AdHoc, Config};
-use rocket_cors::{AllowedOrigins, CorsOptions};
+use rocket_cors::{AllowedOrigins, Cors, CorsOptions};
 use routes::{USERS, WORKSPACES};
 
 use crate::{
@@ -35,21 +35,31 @@ pub fn env(key: &str) -> String {
 
 #[launch]
 fn rocket() -> _ {
-    // Configure CORS options
-    let cors = CorsOptions::default()
-        .allowed_origins(AllowedOrigins::all())
-        .to_cors()
-        .expect("error creating CORS fairing");
-
     // Fetch DATABASE_URL from env and merge it into Rocket's config at runtime
     rocket::custom(Config::figment().merge(("databases.rustle_db.url", env(ENV_DATABASE_URL))))
-        .attach(cors)
+        .attach(create_cors())
         .attach(database::Db::fairing())
         .attach(cache::redis_fairing())
         .attach(create_admin())
         .mount(PROJECTS, routes::projects::routes())
         .mount(USERS, routes::users::routes())
         .mount(WORKSPACES, routes::workspaces::routes())
+}
+
+fn create_cors() -> Cors {
+    // Allow requests only from your Vite dev server
+    let allowed_origins = AllowedOrigins::some_exact(&[
+        "http://localhost:3000", // your local frontend
+        "http://127.0.0.1:3000", // sometimes browsers resolve like this
+    ]);
+
+    CorsOptions {
+        allowed_origins,
+        allow_credentials: true,
+        ..Default::default()
+    }
+    .to_cors()
+    .unwrap()
 }
 
 fn create_admin() -> AdHoc {
