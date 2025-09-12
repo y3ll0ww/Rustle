@@ -1,19 +1,28 @@
 use rocket::http::ContentType;
 
-use crate::tests::{
+use crate::{forms::login::LoginForm, tests::{
     response_not_found, response_ok, response_unauthorized, test_client,
     users::{
         login, logout, route_users_by_name, route_users_login, route_users_logout, ADMIN_LOGIN,
         DEFAULT_LOGIN, INVITED_USER_2_USERNAME,
     },
-};
+}};
 
 use super::INVITED_USER_2_LOGIN;
 
 #[test]
-fn login_existing_user_then_logout() {
+fn login_then_logout_admin() {
+    login_then_logout(ADMIN_LOGIN);
+}
+
+#[test]
+fn login_user_then_logout() {
+    login_then_logout(DEFAULT_LOGIN);
+}
+
+fn login_then_logout(login_form: LoginForm) {
     let client = test_client();
-    login(&client, DEFAULT_LOGIN);
+    login(&client, login_form);
     logout(&client);
 }
 

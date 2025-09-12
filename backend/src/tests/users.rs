@@ -59,7 +59,7 @@ const ROUTE_INVITE_GET: &str = "/user/invite/get/";
 const ROUTE_INVITE_SET: &str = "/user/invite/set/";
 
 const ADMIN_USERNAME: &str = "admin";
-const ADMIN_PASSWORD: &str = "admin_password123";
+const ADMIN_PASSWORD: &str = "SYqujNZNmvEw2Ajk";
 
 const DEFAULT_USERNAME: &str = "test_user";
 const DEFAULT_PASSWORD: &str = "strong_password";
