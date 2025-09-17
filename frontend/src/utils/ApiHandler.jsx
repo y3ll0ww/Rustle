@@ -39,6 +39,7 @@ async function Dispatch(endpoint, { method = "GET", body, headers = {}, form = f
     }
 
     // Handle success scenario
+    console.log(response.message);
     return response.data;
 }
 
