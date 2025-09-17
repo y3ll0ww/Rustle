@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { api } from "../utils/ApiHandler";
+import { User } from "../utils/ApiHandler";
+import { Endpoint } from "../utils/EndPoints";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -13,11 +14,11 @@ export default function LoginPage() {
     e.preventDefault();
 
     try {
-      await api.post("/user/login", { username, password }, { form: true });
+      await User.login({ username, password });
       // Recheck session
       await check_session();
       // Redirect to home page (which is dashboard when authenticated)
-      navigate("/");
+      navigate(Endpoint.home);
     } catch (err) {
       console.error("Login error:", err);
       alert("Login failed.");

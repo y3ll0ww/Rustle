@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { api } from "../utils/ApiHandler";
+import { Endpoint } from "../utils/EndPoints";
 
 export default function DashboardPage() {
     const navigate = useNavigate();
@@ -9,7 +9,7 @@ export default function DashboardPage() {
     const handleClick = async (e) => {
         e.preventDefault();
         await logout();
-        navigate("/login");
+        navigate(Endpoint.home);
     };
 
     return (

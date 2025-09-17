@@ -8,9 +8,10 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import ProtectedRoute from "./context/ProtectedRoute.jsx";
 import PublicRoute from "./context/PublicRoute.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
+import { Endpoint } from "./utils/EndPoints.jsx";
 
 const homeRoute = <Route
-  path="/"
+  path={Endpoint.home}
   element={
     <ProtectedRoute fallback={<App />}>
       <DashboardPage />
@@ -19,11 +20,11 @@ const homeRoute = <Route
 />;
 
 const publicRoutes = [
-  { path: "/login", element: <LoginPage /> },
+  { path: Endpoint.login, element: <LoginPage /> },
 ]
 
 const protectedRoutes = [
-  { path: "/dashboard", element: <DashboardPage /> }
+  { path: Endpoint.dashboard, element: <DashboardPage /> }
 ];
 
 ReactDOM.createRoot(document.getElementById("root")).render(

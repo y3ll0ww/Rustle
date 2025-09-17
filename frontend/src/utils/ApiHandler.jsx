@@ -1,5 +1,20 @@
 // API url will be extracted from the environment
 const API_URL = import.meta.env.VITE_API_URL;
+const USER_ENDPOINT = "/user";
+
+export const User = {
+    me: () => dispatcher.get(`${USER_ENDPOINT}/me`),
+    login: (credentials) => dispatcher.post(`${USER_ENDPOINT}/login`, credentials, { form: true }),
+    logout: () => dispatcher.post(`${USER_ENDPOINT}/logout`),
+};
+
+// Convenience helpers
+const dispatcher = {
+    get: (endpoint, options) => Dispatch(endpoint, { ...options, method: "GET" }),
+    post: (endpoint, body, options) => Dispatch(endpoint, { ...options, method: "POST", body }),
+    put: (endpoint, body, options) => Dispatch(endpoint, { ...options, method: "PUT", body }),
+    del: (endpoint, options) => Dispatch(endpoint, { ...options, method: "DELETE" }),
+};
 
 async function Dispatch(endpoint, { method = "GET", body, headers = {}, form = false } = {}) {
     // Create the request configuration
@@ -42,11 +57,3 @@ async function Dispatch(endpoint, { method = "GET", body, headers = {}, form = f
     console.log(response.message);
     return response.data;
 }
-
-// Convenience helpers
-export const api = {
-    get: (endpoint, options) => Dispatch(endpoint, { ...options, method: "GET" }),
-    post: (endpoint, body, options) => Dispatch(endpoint, { ...options, method: "POST", body }),
-    put: (endpoint, body, options) => Dispatch(endpoint, { ...options, method: "PUT", body }),
-    del: (endpoint, options) => Dispatch(endpoint, { ...options, method: "DELETE" }),
-};

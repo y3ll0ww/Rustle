@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { api } from "../utils/ApiHandler";
+import { User } from "../utils/ApiHandler";
 
 const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
@@ -12,8 +12,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const data = await api.get("/user/me");
-        console.log(data);
+        const data = await User.me();
         setUser(data);
       } catch (err) {
         setUser(null);
@@ -27,15 +26,15 @@ export const AuthProvider = ({ children }) => {
 
   // Checks if a user is stored in the JWT guard.
   // Should be triggerd after login, but can be checked at any time.
-  const check_session = async (credentials) => {
-    const user = await api.get("/user/me");
+  const check_session = async () => {
+    const user = await User.me();
     setUser(user);
   };
 
   // Logout (optional endpoint on backend)
   const logout = async () => {
     try {
-      await api.post("/user/logout");
+      await User.logout();
     } catch (err) {
       console.error("Login error:", err);
       alert("Login failed.");
