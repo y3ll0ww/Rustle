@@ -5,6 +5,7 @@ mod put;
 
 pub fn routes() -> Vec<rocket::Route> {
     routes![
+        get::get_self_from_token,       // GET:     /user/me
         get::get_paginated_users,       // GET:     /user?<status>&<role>
         get::get_user_by_username,      // GET:     /user/<username>
         post::inject_user,              // POST:    /user/create

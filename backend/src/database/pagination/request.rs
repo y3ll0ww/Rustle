@@ -11,6 +11,12 @@ pub struct PaginationRequest<F: SortField> {
     pub sort_dir: Option<SortDirection>, // "asc" or "desc"
 }
 
+impl<F: SortField> Default for PaginationRequest<F> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<F: SortField> PaginationRequest<F> {
     pub fn new() -> Self {
         PaginationRequest {

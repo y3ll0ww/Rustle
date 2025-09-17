@@ -1,12 +1,15 @@
 use rocket::http::ContentType;
 
-use crate::{forms::login::LoginForm, tests::{
-    response_not_found, response_ok, response_unauthorized, test_client,
-    users::{
-        login, logout, route_users_by_name, route_users_login, route_users_logout, ADMIN_LOGIN,
-        DEFAULT_LOGIN, INVITED_USER_2_USERNAME,
+use crate::{
+    forms::login::LoginForm,
+    tests::{
+        response_not_found, response_ok, response_unauthorized, test_client,
+        users::{
+            login, logout, route_users_by_name, route_users_login, route_users_logout, ADMIN_LOGIN,
+            DEFAULT_LOGIN, INVITED_USER_2_USERNAME,
+        },
     },
-}};
+};
 
 use super::INVITED_USER_2_LOGIN;
 

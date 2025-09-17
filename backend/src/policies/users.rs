@@ -17,10 +17,8 @@ impl Policy {
 
         // If user is not admin or self; return only if the user is in a shared workspace
         // This call if run independently to prevent an unnecessary database transaction
-        if let Err(_) = base_policy {
-            if user_is_in_same_workspace(db, user.id, id).await {
-                return Ok(());
-            }
+        if base_policy.is_err() && user_is_in_same_workspace(db, user.id, id).await {
+            return Ok(());
         }
 
         base_policy

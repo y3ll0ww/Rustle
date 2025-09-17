@@ -13,6 +13,17 @@ use crate::{
     policies::Policy,
 };
 
+// Get self for verification purposes
+#[get("/me")]
+pub fn get_self_from_token(guard: JwtGuard) -> Result<Success<PublicUser>, Error<Null>> {
+    let user = guard.get_user();
+
+    Ok(ApiResponse::success(
+        format!("User '{}' found", user.username),
+        Some(user),
+    ))
+}
+
 //Instead of get_paginated_users, maybe browse_users or list_users_paginated — to match REST semantics more intuitively.
 #[get("/?<status>&<role>", format = "json", data = "<params>")]
 pub async fn get_paginated_users(

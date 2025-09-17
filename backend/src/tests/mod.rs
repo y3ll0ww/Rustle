@@ -51,7 +51,7 @@ fn response_status(request: LocalRequest<'_>, expected_status: Status) {
 
     let debug = match serde_json::from_str::<Value>(&body) {
         Ok(value) => serde_json::to_string_pretty(&value).unwrap(),
-        Err(e) => e.to_string(),        
+        Err(e) => e.to_string(),
     };
 
     println!("{debug}");

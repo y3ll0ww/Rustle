@@ -35,8 +35,8 @@ impl JwtGuard {
 
         let cookie = Cookie::build((TOKEN_COOKIE, token))
             .http_only(true) // Prevent JavaScript access (mitigates XSS)
-            .same_site(SameSite::Strict) // Prevent CSRF attacks
-            .secure(true) // Only send cookie over HTTPS
+            .same_site(SameSite::Lax) // Lax so frontend can reach it. SameSite to prevent CSRF attacks
+            .secure(false) // TODO!: Set to 'true': Only send cookie over HTTPS
             .path("/"); // Available site-wide
 
         cookies.add_private(cookie);

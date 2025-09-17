@@ -30,7 +30,7 @@ pub const ENV_POSTGRES_USER: &str = "POSTGRES_USER";
 pub const ENV_POSTGRES_PASSWORD: &str = "POSTGRES_PASSWORD";
 
 pub fn env(key: &str) -> String {
-    std::env::var(key).expect(&format!("Environment variable '{key}' missing"))
+    std::env::var(key).unwrap_or_else(|_| panic!("Environment variable '{key}' missing"))
 }
 
 #[launch]
