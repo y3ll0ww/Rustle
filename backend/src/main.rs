@@ -1,0 +1,83 @@
+use rocket::{fairing::AdHoc, Config};
+use rocket_cors::{AllowedOrigins, Cors, CorsOptions};
+use routes::{USERS, WORKSPACES};
+
+use crate::{
+    database::{users::setup_admin, Db},
+    routes::PROJECTS,
+};
+
+#[macro_use]
+extern crate rocket;
+
+pub mod api;
+pub mod auth;
+pub mod cache;
+pub mod cookies;
+pub mod database;
+pub mod email;
+pub mod forms;
+pub mod models;
+pub mod policies;
+pub mod routes;
+pub mod schema;
+#[cfg(test)]
+mod tests;
+
+pub const ENV_REDIS_URL: &str = "REDIS_URL";
+pub const ENV_DATABASE_URL: &str = "DATABASE_URL";
+pub const ENV_POSTGRES_USER: &str = "POSTGRES_USER";
+pub const ENV_POSTGRES_PASSWORD: &str = "POSTGRES_PASSWORD";
+
+pub fn env(key: &str) -> String {
+    std::env::var(key).unwrap_or_else(|_| panic!("Environment variable '{key}' missing"))
+}
+
+#[launch]
+fn rocket() -> _ {
+    // Fetch DATABASE_URL from env and merge it into Rocket's config at runtime
+    rocket::custom(Config::figment().merge(("databases.rustle_db.url", env(ENV_DATABASE_URL))))
+        .attach(create_cors())
+        .attach(database::Db::fairing())
+        .attach(cache::redis_fairing())
+        .attach(insert_admin_user())
+        .mount(PROJECTS, routes::projects::routes())
+        .mount(USERS, routes::users::routes())
+        .mount(WORKSPACES, routes::workspaces::routes())
+}
+
+fn create_cors() -> Cors {
+    // Allow requests only from your Vite dev server
+    let allowed_origins = AllowedOrigins::some_exact(&[
+        "http://localhost:3000", // your local frontend
+        "http://127.0.0.1:3000", // sometimes browsers resolve like this
+    ]);
+
+    //let allowed_origins = if std::env::var("ROCKET_PROFILE").unwrap_or_default() == "release" {
+    //    AllowedOrigins::some_exact(&["https://rustle.example.com"])
+    //} else {
+    //    AllowedOrigins::some_exact(&["http://localhost:3000", "http://127.0.0.1:3000"])
+    //};
+
+    CorsOptions {
+        allowed_origins,
+        allow_credentials: true,
+        ..Default::default()
+    }
+    .to_cors()
+    .unwrap()
+}
+
+fn insert_admin_user() -> AdHoc {
+    AdHoc::on_ignite("Setup Admin user", |rocket| async {
+        // Get database connection from state
+        let db = Db::get_one(&rocket).await.expect("No database connection");
+
+        // Create the initial admin user
+        if let Err(e) = setup_admin(&db).await {
+            eprintln!("{e}");
+        };
+
+        rocket
+    })
+}

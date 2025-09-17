@@ -1,37 +1,12 @@
-networks:
-  rustle-net:
-
 services:
-  frontend:
-    networks:
-      - rustle-net
+  app:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile.dev
-    image: rustle-frontend:dev
-    container_name: rustle-dev-frontend
-    ports:
-      - "3000:5173"       # map host port 3000 to container port 5173 (vite default)
-    volumes:
-    - ./frontend:/app     # bind mount current folder to /app inside container
-    - /app/node_modules
-    env_file:
-      - .env
-    depends_on:
-      - backend
-    command: npm run dev -- --host
-
-  backend:
-    networks:
-      - rustle-net
-    build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile.dev
     image: rustle-backend:dev
     container_name: rustle-dev-backend
     volumes:
-      - ./backend:/workspace
-      - /workspace/target   # keep target cache inside container for faster builds
+      - .:/workspace
     ports:
       - "8000:8000"
     environment:
@@ -47,8 +22,6 @@ services:
     command: cargo run
 
   db:
-    networks:
-      - rustle-net
     image: postgres:15
     container_name: postgres-dev
     environment:
@@ -63,8 +36,6 @@ services:
       retries: 5
 
   redis:
-    networks:
-      - rustle-net
     image: redis:7
     container_name: redis-dev
     ports:
