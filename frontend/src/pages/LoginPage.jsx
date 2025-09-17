@@ -1,38 +1,28 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { api } from "../utils/ApiHandler";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { check_session } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/user/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({ username, password }).toString(),
-        credentials: "include", // Allow cookie to be stored
-      });
-
-      if (res.ok) {
-        console.log(res);
-      }
-
-      if (!res.ok) throw new Error("Login failed");
-
-      await login(); // Recheck session
-      navigate("/"); // Optional redirect
+      await api.post("/user/login", { username, password }, { form: true });
+      // Recheck session
+      await check_session();
+      // Redirect to home page (which is dashboard when authenticated)
+      navigate("/");
     } catch (err) {
       console.error("Login error:", err);
       alert("Login failed.");
     }
   };
-
 
   return (
     <div className="flex items-center justify-center min-h-screen p-4">

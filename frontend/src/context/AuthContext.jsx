@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { api } from "../utils/ApiHandler";
 
 const AuthContext = createContext();
 export const useAuth = () => useContext(AuthContext);
@@ -11,17 +12,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkSession = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/user/me`, {
-          credentials: "include",
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setUser(data);
-        } else {
-          setUser(null);
-        }
+        const data = await api.get("/user/me");
+        console.log(data);
+        setUser(data);
       } catch (err) {
-        console.error("Session check failed:", err);
         setUser(null);
       } finally {
         setLoading(false);
@@ -31,33 +25,26 @@ export const AuthProvider = ({ children }) => {
     checkSession();
   }, []);
 
-  // Triggered after login
-  const login = async () => {
-    // After /user/login succeeds, re-check session
-    await new Promise((resolve) => setTimeout(resolve, 200)); // small delay in case cookie not set yet
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/user/me`, {
-      credentials: "include",
-    });
-    if (res.ok) {
-      const response = await res.json();
-      console.log(response.data);
-      setUser(response.data);
-    }
+  // Checks if a user is stored in the JWT guard.
+  // Should be triggerd after login, but can be checked at any time.
+  const check_session = async (credentials) => {
+    const user = await api.get("/user/me");
+    setUser(user);
   };
 
   // Logout (optional endpoint on backend)
   const logout = async () => {
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/user/logout`, {
-        method: "POST",
-        credentials: "include",
-      });
-    } catch {}
+      await api.post("/user/logout");
+    } catch (err) {
+      console.error("Login error:", err);
+      alert("Login failed.");
+    }
     setUser(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, check_session, logout }}>
       {children}
     </AuthContext.Provider>
   );
