@@ -1,33 +1,38 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Logging in with", username, password);
 
     try {
       const res = await fetch(`${import.meta.env.VITE_API_URL}/user/login`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({ username, password }).toString(),
+        credentials: "include", // Allow cookie to be stored
       });
 
-      if (!res.ok) throw new Error(`Login failed: ${res.status}`);
+      if (res.ok) {
+        console.log(res);
+      }
 
-      const data = await res.json();
-      console.log("Login successful:", data);
+      if (!res.ok) throw new Error("Login failed");
 
-      if (data.token) localStorage.setItem("token", data.token);
-    } catch (error) {
-      console.error("Login error:", error);
-      alert("Login failed. Check credentials.");
+      await login(); // Recheck session
+      navigate("/"); // Optional redirect
+    } catch (err) {
+      console.error("Login error:", err);
+      alert("Login failed.");
     }
   };
+
 
   return (
     <div className="flex items-center justify-center min-h-screen p-4">
