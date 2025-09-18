@@ -1,24 +1,65 @@
+/* Tailwind base */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* Root app container */
 #root {
-  @apply flex items-center justify-center min-h-screen;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
+/* ------------------------------ */
+/* THEME VARIABLES (Dark by default) */
+/* ------------------------------ */
 :root {
+  --bg: #242424;
+  --text: rgba(255, 255, 255, 0.87);
+  --sidebar-bg: #1a1a1a;
+  --sidebar-hover: #333333;
+  --topbar-bg: #1f1f1f;
+  --search-bg: #2a2a2a;
+  --dropdown-bg: #1a1a1a;
+  --card-bg: #1a1a1a;
+  --border-color: #333;
+
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Light theme overrides */
+[data-theme="light"] {
+  --bg: #ffffff;
+  --text: #213547;
+  --sidebar-bg: #f0f0f5;
+  --sidebar-hover: #d6d6ea;
+  --topbar-bg: #f9f9f9;
+  --search-bg: #e5e5e5;
+  --dropdown-bg: #ffffff;
+  --card-bg: #ffffff;
+  --border-color: #ddd;
+}
+
+/* ------------------------------ */
+/* GLOBAL STYLES */
+/* ------------------------------ */
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  background-color: var(--bg);
+  color: var(--text);
 }
 
 a {
@@ -28,17 +69,6 @@ a {
 }
 a:hover {
   color: #535bf2;
-}
-
-body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
 }
 
 h1 {
@@ -53,18 +83,20 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--btn-bg);
+  color: var(--btn-text);
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: border-color 0.25s, background-color 0.25s;
 }
 button:hover {
-  border-color: #646cff;
+  border-color: var(--btn-hover-border);
 }
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+/* Old light-mode media query (you can drop this if you prefer theme toggle only) */
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;
@@ -76,4 +108,60 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+/* ------------------------------ */
+/* DASHBOARD STYLES (basic version, you can enhance in dashboard.css) */
+/* ------------------------------ */
+.dashboard {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 250px;
+  background-color: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  padding: 2rem 1rem;
+}
+
+.sidebar a {
+  color: var(--text);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+.sidebar a:hover {
+  background-color: var(--sidebar-hover);
+}
+
+.main {
+  flex: 1;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  background-color: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
 }

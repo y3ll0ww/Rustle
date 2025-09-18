@@ -10,6 +10,7 @@ import PublicRoute from "./context/PublicRoute.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import { Endpoint } from "./utils/EndPoints.jsx";
 import LoadingPage from "./pages/LoadingPage.jsx";
+import DashboardLayout from "./layouts/DashboardLayout.jsx";
 
 const homeRoute = <Route
   path={Endpoint.home}
@@ -59,13 +60,16 @@ ReactDOM.createRoot(document.getElementById("root")).render(
             />
           ))}
 
-          {protectedRoutes.map((route) => (
-            <Route
-              key={route.path}
-              path={route.path}
-              element={<ProtectedRoute>{route.element}</ProtectedRoute>}
-            />
-          ))}
+          <Route element={<DashboardLayout />}>
+            {protectedRoutes.map((route) => (
+              <Route
+                key={route.path}
+                path={route.path}
+                element={<ProtectedRoute>{route.element}</ProtectedRoute>}
+              />
+            ))}
+          </Route>
+
         </Routes>
       </BrowserRouter>
     </AuthProvider>

@@ -7,6 +7,7 @@ const ProtectedRoute = ({ fallback, children }) => {
   const { user, loading } = useAuth();
 
   if (loading) return <LoadingPage />;
+  
   if (!user) {
     return fallback ? fallback : <Navigate to={Endpoint.login} replace />;
   }
