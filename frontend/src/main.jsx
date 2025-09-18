@@ -11,15 +11,18 @@ import DashboardPage from "./pages/DashboardPage.jsx";
 import { Endpoint } from "./utils/EndPoints.jsx";
 import LoadingPage from "./pages/LoadingPage.jsx";
 import DashboardLayout from "./layouts/DashboardLayout.jsx";
+import ConditionalLayout from "./layouts/ConditionalLayout.jsx";
 
 const homeRoute = <Route
   path={Endpoint.home}
-  element={
-    <ProtectedRoute fallback={<App />}>
-      <DashboardPage />
-    </ProtectedRoute>
-  }
-/>;
+  element={<ConditionalLayout publicElement={<PublicRoute><App /></PublicRoute>} />}
+>
+  {/* Child route for protected content */}
+  <Route
+    index
+    element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}
+  />
+</Route>;
 
 const publicRoutes = [
   { path: Endpoint.login, element: <LoginPage /> },
@@ -73,5 +76,5 @@ ReactDOM.createRoot(document.getElementById("root")).render(
         </Routes>
       </BrowserRouter>
     </AuthProvider>
-  </React.StrictMode>
+  </React.StrictMode >
 );
