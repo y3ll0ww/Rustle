@@ -1,7 +1,7 @@
 import "../assets/dashboard.css";
 import React, { useEffect, useState, useRef } from "react";
 import { Outlet, Link } from "react-router-dom";
-import { Menu, ChevronDown, LogOut, Home, Settings, Users, Search } from "lucide-react";
+import { Menu, ChevronDown, LogOut, Home, Settings, Users, Search, SunMoon } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function DashboardLayout() {
@@ -48,7 +48,7 @@ export default function DashboardLayout() {
         <div className="sidebar-header">
           {sidebarOpen && <span className="logo">Rustle</span>}
           <button className="menu-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            <Menu size={22} />
+            <Menu size={sidebarOpen ? 22 : 16} />
           </button>
         </div>
 
@@ -94,9 +94,13 @@ export default function DashboardLayout() {
             {profileOpen && (
               <div className="dropdown-menu">
                 <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
-                  Toggle Theme
+                  <SunMoon size={22} />
+                  <span>Toggle Theme</span>
                 </button>
-                <button onClick={logout}>Logout</button>
+                <button onClick={logout}>
+                  <LogOut size={22} />
+                  <span>Logout</span>
+                </button>
               </div>
             )}
           </div>

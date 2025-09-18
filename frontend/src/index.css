@@ -24,6 +24,7 @@
   --dropdown-bg: #1a1a1a;
   --card-bg: #1a1a1a;
   --border-color: #333;
+  --error: #950000;
 
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -46,6 +47,7 @@
   --dropdown-bg: #ffffff;
   --card-bg: #ffffff;
   --border-color: #ddd;
+  --error: #c73924;
 }
 
 /* ------------------------------ */
@@ -88,13 +90,7 @@ button {
   cursor: pointer;
   transition: border-color 0.25s, background-color 0.25s;
 }
-button:hover {
-  border-color: var(--btn-hover-border);
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
+
 
 /* Old light-mode media query (you can drop this if you prefer theme toggle only) */
 @media (prefers-color-scheme: light) {
