@@ -21,7 +21,7 @@
 }
 
 .sidebar.collapsed {
-  width: 60px;
+  width: 80px;
 }
 
 /* Sidebar sections */
@@ -179,6 +179,8 @@
 /* Page content */
 .page-content {
   flex: 1;
+  display: flex;
+  justify-content: center;
   overflow-y: auto;
   padding: 1.5rem;
 }

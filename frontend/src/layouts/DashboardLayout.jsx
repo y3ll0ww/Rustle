@@ -1,19 +1,38 @@
 import "../assets/dashboard.css";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Outlet, Link } from "react-router-dom";
 import { Menu, ChevronDown, LogOut, Home, Settings, Users, Search } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
 export default function DashboardLayout() {
+  const { user, logout } = useAuth();
   const [theme, setTheme] = useState("dark");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setProfileOpen(false);
+      }
+    }
+    if (profileOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [profileOpen]);
+
+  function handleEscape(e) {
+    if (e.key === "Escape") setProfileOpen(false);
+  }
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
-
-  const { user, logout } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [profileOpen, setProfileOpen] = useState(false);
 
   const navLinks = [
     { to: "/dashboard", label: "Dashboard", icon: Home },
@@ -23,12 +42,6 @@ export default function DashboardLayout() {
 
   return (
     <div className="dashboard-layout">
-      <button
-        onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-        className="absolute top-4 right-4 px-3 py-1 rounded bg-indigo-600 text-white"
-      >
-        Toggle Theme
-      </button>
 
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? "open" : "collapsed"}`}>
@@ -65,8 +78,11 @@ export default function DashboardLayout() {
             <input type="text" placeholder="Search..." />
           </div>
 
-          <div className="profile-dropdown">
-            <button onClick={() => setProfileOpen(!profileOpen)} className="profile-btn">
+          <div className="profile-dropdown" ref={dropdownRef}>
+            <button
+              onClick={() => setProfileOpen(!profileOpen)}
+              className="profile-btn"
+            >
               <img
                 src={`https://ui-avatars.com/api/?name=${user?.username || "U"}`}
                 alt="avatar"
@@ -77,6 +93,9 @@ export default function DashboardLayout() {
 
             {profileOpen && (
               <div className="dropdown-menu">
+                <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+                  Toggle Theme
+                </button>
                 <button onClick={logout}>Logout</button>
               </div>
             )}
