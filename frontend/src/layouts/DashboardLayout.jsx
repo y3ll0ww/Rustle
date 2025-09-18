@@ -1,8 +1,13 @@
 import "../assets/dashboard.css";
+import LogoDark from "../assets/logo-dark.png";
+import LogoLight from "../assets/logo-light.png";
+import LogoDarkIcon from "../assets/logo-dark-icon.png";
+import LogoLightIcon from "../assets/logo-light-icon.png";
 import React, { useEffect, useState, useRef } from "react";
 import { Outlet, Link } from "react-router-dom";
 import { Menu, ChevronDown, LogOut, Home, Settings, Users, Search, SunMoon } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { Endpoint } from "../utils/EndPoints";
 
 export default function DashboardLayout() {
   const { user, logout } = useAuth();
@@ -46,9 +51,32 @@ export default function DashboardLayout() {
       {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? "open" : "collapsed"}`}>
         <div className="sidebar-header">
-          {sidebarOpen && <span className="logo">Rustle</span>}
+          {sidebarOpen &&
+            <Link
+              to={Endpoint.home}
+              style={{
+                all: "unset",
+                cursor: "pointer",
+                display: "inline",
+                marginTop: "4px",
+              }}
+            >
+              <img
+                src={theme === "dark" ? LogoLight : LogoDark}
+                width="100px"
+                alt="Logo"
+              />
+            </Link>
+          }
           <button className="menu-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            <Menu size={sidebarOpen ? 22 : 16} />
+            {sidebarOpen
+              ? <Menu size={22} />
+              : <img
+                src={theme === "dark" ? LogoLightIcon : LogoDarkIcon}
+                width="22px"
+                alt="Expand Sidebar"
+              />
+            }
           </button>
         </div>
 
