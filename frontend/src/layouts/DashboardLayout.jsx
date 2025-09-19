@@ -8,11 +8,12 @@ import { Outlet, Link } from "react-router-dom";
 import { Menu, ChevronDown, LogOut, Home, Settings, Users, Search, SunMoon } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { Endpoint } from "../utils/EndPoints";
+import Sidebar from "./components/Sidebar";
+import { useTheme } from "../context/ThemeContext";
 
 export default function DashboardLayout() {
   const { user, logout } = useAuth();
-  const [theme, setTheme] = useState("dark");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { toggleTheme } = useTheme();
   const [profileOpen, setProfileOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -35,10 +36,6 @@ export default function DashboardLayout() {
     if (e.key === "Escape") setProfileOpen(false);
   }
 
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [theme]);
-
   const navLinks = [
     { to: "/dashboard", label: "Dashboard", icon: Home },
     { to: "/users", label: "Users", icon: Users },
@@ -48,54 +45,7 @@ export default function DashboardLayout() {
   return (
     <div className="dashboard-layout">
 
-      {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? "open" : "collapsed"}`}>
-        <div className="sidebar-header">
-          {sidebarOpen &&
-            <Link
-              to={Endpoint.home}
-              style={{
-                all: "unset",
-                cursor: "pointer",
-                display: "inline",
-                marginTop: "4px",
-              }}
-            >
-              <img
-                src={theme === "dark" ? LogoLight : LogoDark}
-                width="100px"
-                alt="Logo"
-              />
-            </Link>
-          }
-          <button className="menu-btn" onClick={() => setSidebarOpen(!sidebarOpen)}>
-            {sidebarOpen
-              ? <Menu size={22} />
-              : <img
-                src={theme === "dark" ? LogoLightIcon : LogoDarkIcon}
-                width="22px"
-                alt="Expand Sidebar"
-              />
-            }
-          </button>
-        </div>
-
-        <nav className="sidebar-nav">
-          {navLinks.map(({ to, label, icon: Icon }) => (
-            <Link key={to} to={to} className="nav-link">
-              <Icon size={20} />
-              {sidebarOpen && <span>{label}</span>}
-            </Link>
-          ))}
-        </nav>
-
-        <div className="sidebar-footer">
-          <button onClick={logout} className="logout-btn">
-            <LogOut size={18} />
-            {sidebarOpen && <span>Logout</span>}
-          </button>
-        </div>
-      </aside>
+      <Sidebar />
 
       {/* Main content */}
       <div className="main-content">
@@ -115,13 +65,13 @@ export default function DashboardLayout() {
                 src={`https://ui-avatars.com/api/?name=${user?.username || "U"}`}
                 alt="avatar"
               />
-              {sidebarOpen && <span>{user?.username || "Guest"}</span>}
+              <span>{user?.name || user?.username || "Guest"}</span>
               <ChevronDown size={16} />
             </button>
 
             {profileOpen && (
               <div className="dropdown-menu">
-                <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+                <button onClick={toggleTheme}>
                   <SunMoon size={22} />
                   <span>Toggle Theme</span>
                 </button>
