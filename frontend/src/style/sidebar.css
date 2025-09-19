@@ -1,0 +1,107 @@
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--sidebar-bg);
+  transition: width 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar.open {
+  width: 250px;
+}
+
+/* Sidebar collapse */
+.sidebar.collapsed {
+  width: 80px;
+}
+.sidebar.collapsed .nav-link span,
+.sidebar.collapsed .logout-btn span,
+.sidebar.collapsed .logo {
+  display: none;
+}
+.sidebar.collapsed .logout-btn {
+  justify-content: center; /* center the icon when collapsed */
+}
+
+/* Sidebar sections */
+.sidebar-header,
+.sidebar-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0rem 0.75rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.logo {
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+.sidebar.collapsed .menu-btn {
+  justify-content: center;
+  padding: 0.5rem;
+  margin-left: -9px;
+}
+
+/* Menu button behaves like nav-link */
+.menu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  background: none;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.menu-btn:active {
+  border-width: 0;
+}
+
+/* Sidebar nav */
+.sidebar-nav {
+  flex: 1;
+  padding: 1rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.2s;
+}
+.nav-link:hover {
+  background-color: var(--sidebar-hover);
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  justify-content: flex-start;
+  color: inherit;
+  transition: background 0.2s;
+}
+.logout-btn:hover {
+  background-color: var(--error);
+  color: rgba(255, 255, 255, 0.87);
+}
