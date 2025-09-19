@@ -12,6 +12,7 @@ import { Endpoint } from "./utils/EndPoints.jsx";
 import LoadingPage from "./pages/LoadingPage.jsx";
 import DashboardLayout from "./layouts/DashboardLayout.jsx";
 import ConditionalLayout from "./layouts/ConditionalLayout.jsx";
+import { ThemeProvider } from "./context/ThemeContext.jsx";
 
 const homeRoute = <Route
   path={Endpoint.home}
@@ -43,38 +44,40 @@ export default function SharedRoute({ children }) {
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {homeRoute}
+      <ThemeProvider>
+        <BrowserRouter>
+          <Routes>
+            {homeRoute}
 
-          {publicRoutes.map((route) => (
-            <Route
-              key={route.path}
-              path={route.path}
-              element={<PublicRoute>{route.element}</PublicRoute>}
-            />
-          ))}
-
-          {sharedRoutes.map((route) => (
-            <Route
-              key={route.path}
-              path={route.path}
-              element={route.element}
-            />
-          ))}
-
-          <Route element={<DashboardLayout />}>
-            {protectedRoutes.map((route) => (
+            {publicRoutes.map((route) => (
               <Route
                 key={route.path}
                 path={route.path}
-                element={<ProtectedRoute>{route.element}</ProtectedRoute>}
+                element={<PublicRoute>{route.element}</PublicRoute>}
               />
             ))}
-          </Route>
 
-        </Routes>
-      </BrowserRouter>
+            {sharedRoutes.map((route) => (
+              <Route
+                key={route.path}
+                path={route.path}
+                element={route.element}
+              />
+            ))}
+
+            <Route element={<DashboardLayout />}>
+              {protectedRoutes.map((route) => (
+                <Route
+                  key={route.path}
+                  path={route.path}
+                  element={<ProtectedRoute>{route.element}</ProtectedRoute>}
+                />
+              ))}
+            </Route>
+
+          </Routes>
+        </BrowserRouter>
+      </ThemeProvider>
     </AuthProvider>
   </React.StrictMode >
 );
