@@ -2,6 +2,7 @@ import "../style/loading.css";
 
 export default function LoadingPage() {
   return (
+    <div>
     <svg
       className="pl"
       viewBox="0 0 420 420"
@@ -45,5 +46,6 @@ export default function LoadingPage() {
         </g>
       </g>
     </svg>
+    </div>
   );
 }
