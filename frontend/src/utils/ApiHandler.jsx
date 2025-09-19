@@ -1,12 +1,17 @@
 // API url will be extracted from the environment
 const API_URL = import.meta.env.VITE_API_URL;
-const USER_ENDPOINT = "/user";
+const EP_USER = "/user";
+const EP_WORKSPACES = "/workspaces";
 
 export const User = {
-    me: () => dispatcher.get(`${USER_ENDPOINT}/me`),
-    login: (credentials) => dispatcher.post(`${USER_ENDPOINT}/login`, credentials, { form: true }),
-    logout: () => dispatcher.post(`${USER_ENDPOINT}/logout`),
+    me: () => dispatcher.get(`${EP_USER}/me`),
+    login: (credentials) => dispatcher.post(`${EP_USER}/login`, credentials, { form: true }),
+    logout: () => dispatcher.post(`${EP_USER}/logout`),
 };
+
+export const Workspaces = {
+    from_user: () => dispatcher.get(`${EP_WORKSPACES}`),
+}
 
 // Convenience helpers
 const dispatcher = {

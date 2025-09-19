@@ -1,28 +1,43 @@
-import BgImg from "../assets/20945431.png";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import { Endpoint } from "../utils/EndPoints";
+import { useEffect, useState } from "react";
+import { Workspaces } from "../utils/ApiHandler";
+import NoWorkspacesPage from "./NoWorkspacePage";
+import LoadingPage from "./LoadingPage";
 
 export default function DashboardPage() {
-    const navigate = useNavigate();
-    const { logout } = useAuth();
+    const [workspaces, setWorkspaces] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const handleClick = async (e) => {
-        e.preventDefault();
-        await logout();
-        navigate(Endpoint.home);
-    };
+    // Get user's workspaces via API
+    useEffect(() => {
+      const getWorkspaces = async () => {
+        try {
+          const data = await Workspaces.from_user();
+          setWorkspaces(data || []);
+        } catch {
+          setWorkspaces([]);
+        } finally {
+          setLoading(false);
+        }
+      }
 
+      getWorkspaces();
+    }, []);
+
+    // Return loading screen when the workspaces are being fetched
+    if (loading) {
+      return <div className="flex items-center justify-center h-full">
+        <LoadingPage />
+      </div>;
+    }
+
+    // Return the content of the page
     return (
-        <div className="flex flex-col items-center h-screen">
-            <img src={BgImg} width="500px" alt="illustration" className="grayscale" />
-            <div className="mt-4 text-lg font-semibold">Protected Area</div>
-            <button
-                onClick={(e) => handleClick(e)}
-                className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-            >
-                Logout
-            </button>
-        </div>
+      <>
+        {workspaces.length === 0 ? (
+          <NoWorkspacesPage />
+        ) : (
+          <div>{/* workspace UI */}</div>
+        )}
+      </>
     )
 }
