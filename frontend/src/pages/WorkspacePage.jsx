@@ -1,23 +1,26 @@
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { Workspaces } from "../utils/ApiHandler";
 import NoWorkspacesPage from "./NoWorkspacePage";
 import LoadingPage from "./LoadingPage";
-import WorkspaceGrid from "./components/WorkspaceGrid";
-import { useAuth } from "../context/AuthContext";
 
-export default function WorkspacesPage() {
-    const { user } = useAuth();
-    const [workspaces, setWorkspaces] = useState([]);
+export default function WorkspacePage() {
+    const { id } = useParams();
+    const [workspace, setWorkspace] = useState(null);
+    const [members, setMembers] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // Function for fetching workspaces of user
-    const getWorkspaces = async () => {
+
+    // Function for fetching workspace information
+    const getWorkspaceById = async () => {
       try {
-        const data = await Workspaces.from_user();
+        const data = await Workspaces.by_id(id);
         console.log(data);
-        setWorkspaces(data || []);
+        setWorkspace(data.workspace || null);
+        setMembers(data.members || []);
       } catch {
-        setWorkspaces([]);
+        setWorkspace(null);
+        setMembers([]);
       } finally {
         setLoading(false);
       }
@@ -26,7 +29,7 @@ export default function WorkspacesPage() {
     // Get user's workspaces via API
     useEffect(() => {
       // Initial fetch
-      getWorkspaces();
+      getWorkspaceById();
 
       // Poll every 30s
       const interval = setInterval(() => {
@@ -45,12 +48,14 @@ export default function WorkspacesPage() {
     }
 
     // Return no content page if user is not part of any workspace
-    if (workspaces.length === 0) {
+    if (!workspace) {
         return <NoWorkspacesPage />;
     }
 
     // Return the content of the page
     return <div className="flex w-screen">
-        <WorkspaceGrid workspaces={workspaces} />
+        <p>{workspace.id}</p>
+        <p>{workspace.name}</p>
+        <p></p>
     </div>;
 }

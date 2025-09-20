@@ -13,6 +13,7 @@ import LoadingPage from "./pages/LoadingPage.jsx";
 import DashboardLayout from "./layouts/DashboardLayout.jsx";
 import ConditionalLayout from "./layouts/ConditionalLayout.jsx";
 import { ThemeProvider } from "./context/ThemeContext.jsx";
+import WorkspacePage from './pages/WorkspacePage.jsx';
 
 const homeRoute = <Route
   path={Endpoint.home}
@@ -34,7 +35,8 @@ const sharedRoutes = [
 ]
 
 const protectedRoutes = [
-  { path: Endpoint.dashboard, element: <DashboardPage /> }
+  { path: Endpoint.dashboard, element: <DashboardPage /> },
+  { path: `${Endpoint.workspace}/:id`, element: <WorkspacePage /> },
 ];
 
 export default function SharedRoute({ children }) {

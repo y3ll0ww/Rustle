@@ -1,7 +1,5 @@
 import "../../style/cardgrid.css";
-import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Workspaces } from "../../utils/ApiHandler";
 import { Users, RotateCcw, Calendar, Image as ImageIcon } from "lucide-react";
 import { TimeAgo } from "../../utils/TimeAgo";
 import { Endpoint } from "../../utils/EndPoints";
