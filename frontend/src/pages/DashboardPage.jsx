@@ -2,25 +2,37 @@ import { useEffect, useState } from "react";
 import { Workspaces } from "../utils/ApiHandler";
 import NoWorkspacesPage from "./NoWorkspacePage";
 import LoadingPage from "./LoadingPage";
+import WorkspaceGrid from "./components/WorkspaceGrid";
 
 export default function DashboardPage() {
     const [workspaces, setWorkspaces] = useState([]);
     const [loading, setLoading] = useState(true);
 
+    // Function for fetching workspaces of user
+    const getWorkspaces = async () => {
+      try {
+        const data = await Workspaces.from_user();
+        console.log(data);
+        setWorkspaces(data || []);
+      } catch {
+        setWorkspaces([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     // Get user's workspaces via API
     useEffect(() => {
-      const getWorkspaces = async () => {
-        try {
-          const data = await Workspaces.from_user();
-          setWorkspaces(data || []);
-        } catch {
-          setWorkspaces([]);
-        } finally {
-          setLoading(false);
-        }
-      }
-
+      // Initial fetch
       getWorkspaces();
+
+      // Poll every 30s
+      const interval = setInterval(() => {
+        getWorkspaces();
+      }, 30000);
+
+      // Cleanup interval on unmount
+      return () => clearInterval(interval);
     }, []);
 
     // Return loading screen when the workspaces are being fetched
@@ -30,14 +42,11 @@ export default function DashboardPage() {
       </div>;
     }
 
+    // Return no content page if user is not part of any workspace
+    if (workspaces.length === 0) {
+        return <NoWorkspacesPage />;
+    }
+
     // Return the content of the page
-    return (
-      <>
-        {workspaces.length === 0 ? (
-          <NoWorkspacesPage />
-        ) : (
-          <div>{/* workspace UI */}</div>
-        )}
-      </>
-    )
+    return <WorkspaceGrid workspaces={workspaces} />;
 }

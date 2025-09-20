@@ -7,7 +7,7 @@ mod getting_workspaces;
 #[cfg(test)]
 mod member_management;
 
-pub const TARGETED_WORKSPACE: &str = "7fa5257b-e02b-4f6f-be9f-8f579fb64147";
+pub const TARGETED_WORKSPACE: &str = "ec10c387-a999-470f-a458-b7f1b2f79b13";
 
 fn route_workspaces_all() -> String {
     root_route(WORKSPACES)

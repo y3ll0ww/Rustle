@@ -160,18 +160,19 @@ button.btn-primary:hover {
   align-items: center;
   margin-bottom: 2rem;
 }
-
+/*
 .card-grid {
   display: flex;
   flex-wrap: wrap;
-  justify-content: start;
+  justify-content: flex-start;
   gap: 1.5rem;
   padding: 1rem;
+  max-width: fit-content;
 }
 
 .card-grid .card {
-  flex: 1 1 350px;
-  max-width: 600px;
+  flex: 1 1 30%;
+  min-width: 300px;
   background-color: var(--card-bg);
   padding: 1.5rem;
   border-radius: 8px;
@@ -183,3 +184,4 @@ button.btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 12px rgba(0,0,0,0.1) !important;
 }
+*/
