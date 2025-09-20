@@ -3,17 +3,14 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import App from "./App.jsx";
-import LoginPage from "./pages/LoginPage.jsx";
 import { AuthProvider } from "./context/AuthContext.jsx";
 import ProtectedRoute from "./context/ProtectedRoute.jsx";
 import PublicRoute from "./context/PublicRoute.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
-import { Endpoint } from "./utils/EndPoints.jsx";
-import LoadingPage from "./pages/LoadingPage.jsx";
+import { Endpoint, publicRoutes, sharedRoutes, protectedRoutes } from "./utils/EndPoints.jsx";
 import DashboardLayout from "./layouts/DashboardLayout.jsx";
 import ConditionalLayout from "./layouts/ConditionalLayout.jsx";
 import { ThemeProvider } from "./context/ThemeContext.jsx";
-import WorkspacePage from './pages/WorkspacePage.jsx';
 
 const homeRoute = <Route
   path={Endpoint.home}
@@ -25,19 +22,6 @@ const homeRoute = <Route
     element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}
   />
 </Route>;
-
-const publicRoutes = [
-  { path: Endpoint.login, element: <LoginPage /> },
-]
-
-const sharedRoutes = [
-  { path: "/loading-preview", element: <LoadingPage /> },
-]
-
-const protectedRoutes = [
-  { path: Endpoint.dashboard, element: <DashboardPage /> },
-  { path: `${Endpoint.workspace}/:id`, element: <WorkspacePage /> },
-];
 
 export default function SharedRoute({ children }) {
   return children;

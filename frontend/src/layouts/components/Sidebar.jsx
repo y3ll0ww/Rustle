@@ -1,7 +1,7 @@
 import "../../style/sidebar.css";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Menu, LogOut, Home, Settings, Users } from "lucide-react";
+import { BrainCircuit, Menu, LogOut, Home, Settings, Users } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { Endpoint } from "../../utils/EndPoints";
 import { useTheme } from "../../context/ThemeContext";
@@ -46,6 +46,7 @@ export default function Sidebar() {
   function Navigation() {
     const navLinks = [
       { to: Endpoint.home, label: "Dashboard", icon: Home },
+      { to: Endpoint.workspaces, label: "Workspaces", icon: BrainCircuit },
       { to: "/users", label: "Users", icon: Users },
       { to: "/settings", label: "Settings", icon: Settings },
     ];
