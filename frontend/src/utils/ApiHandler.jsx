@@ -11,6 +11,7 @@ export const User = {
 
 export const Workspaces = {
     from_user: () => dispatcher.get(`${EP_WORKSPACES}`),
+    by_id: (id) => dispatcher.get(`${EP_WORKSPACES}/${id}`)
 }
 
 // Convenience helpers

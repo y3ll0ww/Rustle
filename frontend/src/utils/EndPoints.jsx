@@ -3,4 +3,5 @@ export const Endpoint = {
     login: "/login",
     logout: "/logout",
     dashboard: "/dashboard",
+    workspace: "/workspace",
 };

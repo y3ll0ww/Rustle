@@ -5,7 +5,7 @@ import LoadingPage from "./LoadingPage";
 import WorkspaceGrid from "./components/WorkspaceGrid";
 import { useAuth } from "../context/AuthContext";
 
-export default function DashboardPage() {
+export default function WorkspacesPage() {
     const { user } = useAuth();
     const [workspaces, setWorkspaces] = useState([]);
     const [loading, setLoading] = useState(true);
