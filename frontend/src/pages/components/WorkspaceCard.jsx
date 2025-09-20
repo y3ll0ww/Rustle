@@ -1,6 +1,6 @@
 import "../../style/cardgrid.css";
 import { useNavigate } from "react-router-dom";
-import { Users, RotateCcw, Calendar, Image as ImageIcon } from "lucide-react";
+import { Users, RotateCcw, Calendar, Image } from "lucide-react";
 import { TimeAgo } from "../../utils/TimeAgo";
 import { Endpoint } from "../../utils/EndPoints";
 
@@ -15,8 +15,8 @@ export default function WorkspaceCard({ workspace }) {
         if (image_url) {
             return <img src={image_url} alt="Workspace avatar" />
         } else {
-            <div className="avatar-icon">
-                <ImageIcon size={20} />
+            return <div className="avatar-icon">
+                <Image size={20} />
             </div>
         }
     }
