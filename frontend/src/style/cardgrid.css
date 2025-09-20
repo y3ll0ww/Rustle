@@ -11,28 +11,17 @@
   min-width: 500px;
   max-width: 500px;
   background-color: var(--card-bg);
-  border-radius: 12px;
-  /*box-shadow: 0 4px 12px rgba(0,0,0,0.1);*/
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  /*transition: transform 0.2s ease, box-shadow 0.2s ease;*/
-}
-
-.card {
-  background-color: var(--card-bg);
   padding: 1.5rem;
-  border: 2px solid var(--border-color);
-  border-radius: 8px;
-  /*box-shadow: 0 2px 8px rgba(0,0,0,0.2);*/
-  /*transition: transform 0.2s;*/
   transition: border-color 0.3s ease;
 }
 
 .card:hover {
-  /*transform: translateY(-4px);*/
-  border: 2px solid var(--primary); 
-  /*box-shadow: 0 12px 20px rgba(0,0,0,0.15);*/
+  border: 2px solid var(--primary);
 }
 
 /* Card header: image + members */

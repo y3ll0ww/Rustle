@@ -1,0 +1,19 @@
+/* Dates under title */
+.dates {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  color: var(--text);
+}
+
+.dates > div {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.dates svg {
+  margin-right: 0.5rem;
+}

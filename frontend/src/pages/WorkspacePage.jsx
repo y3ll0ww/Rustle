@@ -3,7 +3,8 @@ import { useParams } from "react-router-dom";
 import { Workspaces } from "../utils/ApiHandler";
 import NoWorkspacesPage from "./NoWorkspacePage";
 import LoadingPage from "./LoadingPage";
-import WorkspaceCard from "./components/WorkspaceCard";
+import Title from "./components/Title";
+import MemberListItem from "./components/MemberListItem";
 
 export default function WorkspacePage() {
   const { id } = useParams();
@@ -11,6 +12,17 @@ export default function WorkspacePage() {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  function Members() {
+    return <div>
+      <h2>Members</h2>
+      <ul className="member-list">
+        {members.map((member) => {
+          const key = member.user.id;
+          return <MemberListItem key={key} member={member} />;
+        })}
+      </ul>
+    </div>
+  }
 
   // Function for fetching workspace information
   const getWorkspaceById = async () => {
@@ -34,7 +46,7 @@ export default function WorkspacePage() {
 
     // Poll every 30s
     const interval = setInterval(() => {
-      getWorkspaces();
+      getWorkspaceById();
     }, 30000);
 
     // Cleanup interval on unmount
@@ -55,6 +67,14 @@ export default function WorkspacePage() {
 
   // Return the content of the page
   return <div className="flex w-screen">
-    {workspace.name}
+    <Title
+      name={workspace.name}
+      created_at={workspace.created_at}
+      updated_at={workspace.updated_at}
+    />
+    <p>{workspace.description}</p>
+
+    <Members />
+
   </div>;
 }
