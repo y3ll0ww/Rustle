@@ -1,7 +1,26 @@
 import "../../style/cardgrid.css";
 import { useEffect, useState } from "react";
 import { Workspaces } from "../../utils/ApiHandler";
-import { Users, Clock, Calendar, Image as ImageIcon, FileText } from "lucide-react";
+import { Users, RotateCcw, Calendar, Image as ImageIcon } from "lucide-react";
+
+function timeAgo(date) {
+  const now = new Date();
+  const diff = now - new Date(date); // difference in ms
+
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  const months = Math.floor(days / 30);
+  const years = Math.floor(days / 365);
+
+  if (years > 0) return `${years} year${years > 1 ? 's' : ''} ago`;
+  if (months > 0) return `${months} month${months > 1 ? 's' : ''} ago`;
+  if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+  if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+  if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+  return `${seconds} second${seconds !== 1 ? 's' : ''} ago`;
+}
 
 export default function WorkspaceGrid({ workspaces }) {
 
@@ -25,10 +44,12 @@ export default function WorkspaceGrid({ workspaces }) {
 
                         <div className="card-dates">
                             <div className="created">
-                                <Calendar size={14} /> {new Date(workspace.created_at).toLocaleDateString()}
+                                <Calendar size={14} />
+                                <span>{new Date(workspace.created_at).toLocaleDateString()}</span>
                             </div>
                             <div className="updated">
-                                <Calendar size={14} /> {new Date(workspace.updated_at).toLocaleDateString()}
+                                <RotateCcw size={14} />
+                                <span>{timeAgo(new Date(workspace.updated_at))}</span>
                             </div>
                         </div>
                     </div>

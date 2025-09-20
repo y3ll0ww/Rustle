@@ -56,7 +56,6 @@
   display: flex;
   flex-direction: column;
   flex: 1;
-  gap: 0.2rem; /* small gap between title and dates */
 }
 
 /* Title */
@@ -74,17 +73,23 @@
 /* Dates under title */
 .card-dates {
   display: flex;
+  align-items: center;
   gap: 1rem;
   font-size: 0.85rem;
   color: var(--text);
 }
 
-/* Optional: icon spacing inside dates */
-.card-dates svg {
-  vertical-align: middle;
-  margin-right: 0.25rem;
+.card-dates > div {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--text);
 }
 
+.card-dates svg {
+  margin-right: 0.5rem;
+}
 
 .card-description {
   margin-top: 0.2rem;
@@ -92,7 +97,7 @@
   font-size: 0.9rem;
   color: var(--text);
   line-height: 1.2em;
-  max-height: 3.6em; /* 3 lines × line-height */
+  max-height: 3.6em;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 3;

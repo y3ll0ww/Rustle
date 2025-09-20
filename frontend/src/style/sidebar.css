@@ -5,6 +5,22 @@
   transition: width 0.3s ease;
   position: relative;
   overflow: hidden;
+  width: 250px;
+  padding: 2rem 1rem;
+}
+
+.sidebar a {
+  color: var(--text);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  padding: 0.5rem;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.sidebar a:hover {
+  background-color: var(--sidebar-hover);
 }
 
 .sidebar.open {
