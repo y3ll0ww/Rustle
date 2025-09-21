@@ -5,7 +5,8 @@ use crate::{
     database::pagination::{request::PaginationRequest, sort::UserField},
     tests::{
         response_ok, test_client,
-        users::{route_users_browse, route_users_by_name, ADMIN_LOGIN}, workspaces::TARGETED_WORKSPACE,
+        users::{route_users_browse, route_users_by_name, ADMIN_LOGIN},
+        workspaces::TARGETED_WORKSPACE,
     },
 };
 
@@ -32,7 +33,7 @@ fn browse_users() {
 
     response_ok(
         client
-            .get(route_users_browse(status, role))
+            .post(route_users_browse(status, role))
             .header(ContentType::JSON)
             .body(payload),
     );

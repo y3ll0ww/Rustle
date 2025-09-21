@@ -2,12 +2,37 @@ use crate::{
     api::{ApiResponse, Error, Null, Success},
     auth::JwtGuard,
     cookies::TOKEN_COOKIE,
-    database::{users as database, Db},
+    database::{
+        self,
+        pagination::{records::PaginatedRecords, request::PaginationRequest, sort::UserField},
+        Db,
+    },
     forms::{login::LoginForm, password::Password},
-    models::users::{User, UserStatus},
+    models::users::{PublicUser, User, UserStatus},
 };
 use rocket::{form::Form, http::CookieJar, serde::json::Json};
 use uuid::Uuid;
+
+#[get("/?<status>&<role>", format = "json", data = "<params>")]
+pub async fn get_paginated_users(
+    status: Option<i16>,
+    role: Option<i16>,
+    params: Json<PaginationRequest<UserField>>,
+    guard: JwtGuard,
+    db: Db,
+) -> Result<Success<PaginatedRecords<PublicUser>>, Error<Null>> {
+    let page =
+        database::users::get_users_paginated(&db, guard.get_user(), status, role, params).await?;
+
+    Ok(ApiResponse::success(
+        format!(
+            "{} of {} users shown",
+            page.records_on_page(),
+            page.total_records(),
+        ),
+        Some(page),
+    ))
+}
 
 #[post("/login", data = "<credentials>")]
 pub async fn login_by_form(
@@ -16,7 +41,7 @@ pub async fn login_by_form(
     cookies: &CookieJar<'_>,
 ) -> Result<Success<Null>, Error<Null>> {
     // Get the user from the database
-    let user = database::get_user_by_username(&db, credentials.username).await?;
+    let user = database::users::get_user_by_username(&db, credentials.username).await?;
 
     // Return not found if the user is not active
     if user.status != i16::from(UserStatus::Active) {
@@ -58,7 +83,7 @@ pub async fn inject_user(user: Json<User>, db: Db) -> String {
     new_user.id = Uuid::new_v4(); // Generate a new UUID
 
     // Use Diesel to insert the new user
-    match database::inject_user(&db, new_user).await {
+    match database::users::inject_user(&db, new_user).await {
         Ok(_) => format!("User {username} created"),
         Err(e) => format!("Error creating user: {e}"), // Print error details
     }

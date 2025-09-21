@@ -16,7 +16,7 @@ mod put;
 
 pub fn routes() -> Vec<rocket::Route> {
     routes![
-        get::get_paginated_projects,  // GET:     /projects?<workspace>&<user>
+        post::get_paginated_projects, // POST:    /projects?<workspace>&<user>
         get::get_project_by_id,       // GET:     /projects/<id>
         post::add_members_to_project, // POST:    /projects/<id>/add-members
         delete::delete_project_by_id, // DELETE:  /projects/<id>/delete

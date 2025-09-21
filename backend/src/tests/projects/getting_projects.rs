@@ -33,7 +33,7 @@ fn view_projects_from_workspace_paginated() {
 
     response_ok(
         client
-            .get(route_get_projects_paginated(workspace, user))
+            .post(route_get_projects_paginated(workspace, user))
             .header(ContentType::JSON)
             .body(payload),
     );
