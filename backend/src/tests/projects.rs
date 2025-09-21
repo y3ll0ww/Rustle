@@ -1,5 +1,5 @@
 use crate::{
-    routes::PROJECTS,
+    routes::{PROJECTS, WORKSPACES},
     tests::{root_route, workspaces::TARGETED_WORKSPACE},
 };
 
@@ -32,7 +32,7 @@ fn route_projects_get() -> String {
 }
 
 fn route_projects_create() -> String {
-    format!("{PROJECTS}{TARGETED_WORKSPACE}/new")
+    format!("{WORKSPACES}{TARGETED_WORKSPACE}/new_project")
 }
 
 fn route_projects_delete() -> String {
