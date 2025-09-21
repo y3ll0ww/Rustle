@@ -1,42 +1,47 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Workspaces } from "../utils/ApiHandler";
+import { Projects } from "../utils/ApiHandler";
 import NoWorkspacesPage from "./NoWorkspacePage";
 import LoadingPage from "./LoadingPage";
+import { usePagination } from "../hooks/usePagination";
 import ItemCard from "./components/ItemCard";
 import { Endpoint } from "../utils/EndPoints";
 
-export default function WorkspaceListPage({ cap, isSection }) {
+export default function ProjectsPaginatedPage({ workspace_id }) {
     const navigate = useNavigate();
-    const [workspaces, setWorkspaces] = useState([]);
+    const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
+    const { paginationState, updateFromResponse, nextPage, prevPage } = usePagination();
 
-    // Function for fetching workspaces of user
-    const getWorkspaces = async () => {
+    // Function for fetching projects from workspace
+    const getProjectsInWorkspace = async () => {
         try {
-            const data = await Workspaces.from_user();
-            console.log(data);
-            setWorkspaces(data || []);
+            const data = await Projects.paginated({ workspace: workspace_id });
+            updateFromResponse(data);
         } catch {
-            setWorkspaces([]);
+            updateFromResponse(null);
         } finally {
             setLoading(false);
         }
     };
 
-    // Get user's workspaces via API
+    // Get workspaces projects via API
     useEffect(() => {
         // Initial fetch
-        getWorkspaces();
+        getProjectsInWorkspace();
 
         // Poll every 30s
         const interval = setInterval(() => {
-            getWorkspaces();
+            getProjectsInWorkspace();
         }, 30000);
 
         // Cleanup interval on unmount
         return () => clearInterval(interval);
     }, []);
+
+    useEffect(() => {
+        setProjects(paginationState?.records || []);
+    }, [paginationState])
 
     // Return loading screen when the workspaces are being fetched
     if (loading) {
@@ -46,29 +51,24 @@ export default function WorkspaceListPage({ cap, isSection }) {
     }
 
     // Return no content page if user is not part of any workspace
-    if (workspaces.length === 0) {
+    if (projects.length === 0) {
         return <NoWorkspacesPage />;
     }
 
-    const handleOpenWorkspace = async (id) => {
+    const handleOpenProject = async (id) => {
         navigate(`${Endpoint.workspace}/${id}`)
     }
 
     // Return the content of the page
-    const max = cap === undefined ? workspaces.length : cap;
     return <div className="flex w-screen">
-        <div>
-            {isSection ? <h2>Workspaces</h2> : <h1>Workspaces</h1>}
-            <div className="card-grid">
-                {workspaces.slice(0, max).map((workspace) => (
-                    <ItemCard
-                        key={workspace.id}
-                        type="Workspace"
-                        item={workspace}
-                        handleOpen={handleOpenWorkspace}
-                    />
-                ))}
-            </div>
-        </div>
+        {paginationState.records.map((record) => {
+            const project = record.data;
+            return <ItemCard
+                key={project.id}
+                type="Project"
+                item={project}
+                handleOpen={handleOpenProject}
+            />
+        })}
     </div>;
 }

@@ -1,19 +1,11 @@
 import "../../style/cardgrid.css";
-import { useNavigate } from "react-router-dom";
 import { Users, RotateCcw, Calendar, Image } from "lucide-react";
 import { TimeAgo } from "../../utils/TimeAgo";
-import { Endpoint } from "../../utils/EndPoints";
 
-export default function WorkspaceCard({ workspace }) {
-    const navigate = useNavigate();
-
-    const handleOpenWorkspace = async (id) => {
-        navigate(`${Endpoint.workspace}/${id}`)
-    }
-    
+export default function ItemCard({ item, type, handleOpen }) {
     function Avatar({ image_url }) {
         if (image_url) {
-            return <img src={image_url} alt="Workspace avatar" />
+            return <img src={image_url} alt="Avatar" />
         } else {
             return <div className="avatar-icon">
                 <Image size={20} />
@@ -47,23 +39,23 @@ export default function WorkspaceCard({ workspace }) {
     return (
         <div className="card">
             <div className="card-header">
-                <Avatar image_url={workspace.image_url} />
+                <Avatar image_url={item.image_url} />
                 <Title
-                    title={workspace.name}
-                    created_at={workspace.created_at}
-                    updated_at={workspace.updated_at}
+                    title={item.name}
+                    created_at={item.created_at}
+                    updated_at={item.updated_at}
                 />
-                <MemberCount member_count={workspace.member_count} />
+                <MemberCount member_count={item.member_count} />
             </div>
 
             {/* Description */}
-            <div className="card-description" title={workspace.description}>
-                {workspace.description || "No description"}
+            <div className="card-description" title={item.description}>
+                {item.description || "No description"}
             </div>
 
             {/* Button */}
-            <button className="btn-primary" onClick={() => handleOpenWorkspace(workspace.id)}>
-                Open Workspace
+            <button className="btn-primary" onClick={() => handleOpen(item.id)}>
+                Open {type}
             </button>
         </div>
     );

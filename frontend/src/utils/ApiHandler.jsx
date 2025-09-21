@@ -3,7 +3,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 const EP_USER = "/user";
 const EP_WORKSPACES = "/workspaces";
 
-const defaultPagination = {
+export const defaultPagination = {
     page: 1,
     per_page: 20,
     sort_by: "created_at",

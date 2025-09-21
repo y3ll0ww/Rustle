@@ -7,6 +7,6 @@ export default function DashboardPage() {
     return <div className="flex w-screen">
         <h1>Dashboard</h1>
         {/*<WorkspaceGrid workspaces={workspaces} />*/}
-        <WorkspaceListPage cap={MAX_WORKSPACES_IN_GRID}/>
+        <WorkspaceListPage cap={MAX_WORKSPACES_IN_GRID} isSection={true} />
     </div>;
 }

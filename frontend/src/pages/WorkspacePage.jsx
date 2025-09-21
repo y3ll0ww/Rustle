@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { Projects, Workspaces } from "../utils/ApiHandler";
+import { Workspaces } from "../utils/ApiHandler";
 import NoWorkspacesPage from "./NoWorkspacePage";
 import LoadingPage from "./LoadingPage";
 import Title from "./components/Title";
 import MemberListItem from "./components/MemberListItem";
+import ProjectsPaginatedPage from "./ProjectsPaginated";
 
 export default function WorkspacePage() {
   const { id } = useParams();
   const [workspace, setWorkspace] = useState(null);
-  const [projects, setProjects] = useState([]);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -38,22 +38,6 @@ export default function WorkspacePage() {
       setLoading(false);
     }
   };
-
-  // Function for fetching projects from workspace
-  const getProjectsInWorkspace = async () => {
-    try {
-      const data = await Projects.paginated({ workspace: workspace.id });
-      setProjects(data || []);
-    } catch {
-      setProjects([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    getProjectsInWorkspace();
-  }, [workspace])
 
   // Get user's workspaces via API
   useEffect(() => {
@@ -89,6 +73,8 @@ export default function WorkspacePage() {
       updated_at={workspace.updated_at}
     />
     <p>{workspace.description}</p>
+    
+    <ProjectsPaginatedPage workspace_id={workspace.id} />
 
     <Members />
 
