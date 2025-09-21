@@ -4,10 +4,10 @@ const EP_USER = "/user";
 const EP_WORKSPACES = "/workspaces";
 
 const defaultPagination = {
-  page: 1,
-  per_page: 20,
-  sort_by: "created_at",
-  sort_order: "desc",
+    page: 1,
+    per_page: 20,
+    sort_by: "created_at",
+    sort_order: "desc",
 };
 
 export const User = {
@@ -18,17 +18,18 @@ export const User = {
 
 export const Workspaces = {
     from_user: () => dispatcher.get(`${EP_WORKSPACES}`),
-    by_id: (id) => dispatcher.get(`${EP_WORKSPACES}/${id}`)
+    by_id: (id) => dispatcher.get(`${EP_WORKSPACES}/${id}`),
+    new_project: ({ id, project_form }) => dispatcher.post(`${EP_WORKSPACES}/${id}`, project_form, { form: true }),
 }
 
 export const Projects = {
-  paginated: ({ workspace, user, pagination }) => {
-    const params = new URLSearchParams();
-    if (workspace) params.append("workspace", workspace);
-    if (user) params.append("user", user);
+    paginated: ({ workspace, user, pagination }) => {
+        const params = new URLSearchParams();
+        if (workspace) params.append("workspace", workspace);
+        if (user) params.append("user", user);
 
-    return dispatcher.get(`/projects?${params.toString()}`, pagination || defaultPagination);
-  },
+        return dispatcher.post(`/projects?${params.toString()}`, pagination || defaultPagination);
+    },
 };
 
 // Convenience helpers
