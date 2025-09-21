@@ -5,7 +5,7 @@ use crate::{
     database::pagination::{request::PaginationRequest, sort::UserField},
     tests::{
         response_ok, test_client,
-        users::{route_users_browse, route_users_by_name, ADMIN_LOGIN},
+        users::{route_users_browse, route_users_by_name, ADMIN_LOGIN}, workspaces::TARGETED_WORKSPACE,
     },
 };
 
@@ -22,7 +22,7 @@ fn browse_users() {
     let params = PaginationRequest::<UserField> {
         page: Some(7),
         limit: Some(7),
-        search: Some("example".to_string()),
+        search: Some(TARGETED_WORKSPACE.to_string()),
         sort_by: None,
         sort_dir: None,
     };

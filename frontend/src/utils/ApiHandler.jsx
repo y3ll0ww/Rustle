@@ -3,6 +3,13 @@ const API_URL = import.meta.env.VITE_API_URL;
 const EP_USER = "/user";
 const EP_WORKSPACES = "/workspaces";
 
+const defaultPagination = {
+  page: 1,
+  per_page: 20,
+  sort_by: "created_at",
+  sort_order: "desc",
+};
+
 export const User = {
     me: () => dispatcher.get(`${EP_USER}/me`),
     login: (credentials) => dispatcher.post(`${EP_USER}/login`, credentials, { form: true }),
@@ -13,6 +20,16 @@ export const Workspaces = {
     from_user: () => dispatcher.get(`${EP_WORKSPACES}`),
     by_id: (id) => dispatcher.get(`${EP_WORKSPACES}/${id}`)
 }
+
+export const Projects = {
+  paginated: ({ workspace, user, pagination }) => {
+    const params = new URLSearchParams();
+    if (workspace) params.append("workspace", workspace);
+    if (user) params.append("user", user);
+
+    return dispatcher.get(`/projects?${params.toString()}`, pagination || defaultPagination);
+  },
+};
 
 // Convenience helpers
 const dispatcher = {
@@ -61,5 +78,6 @@ async function Dispatch(endpoint, { method = "GET", body, headers = {}, form = f
 
     // Handle success scenario
     console.log(response.message);
+    console.log(response.data);
     return response.data;
 }

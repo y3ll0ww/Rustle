@@ -2,11 +2,9 @@ import { useEffect, useState } from "react";
 import { Workspaces } from "../utils/ApiHandler";
 import NoWorkspacesPage from "./NoWorkspacePage";
 import LoadingPage from "./LoadingPage";
-import { useAuth } from "../context/AuthContext";
 import WorkspaceCard from "./components/WorkspaceCard";
 
 export default function WorkspaceListPage({ cap }) {
-    const { user } = useAuth();
     const [workspaces, setWorkspaces] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -53,7 +51,7 @@ export default function WorkspaceListPage({ cap }) {
     const max = cap === undefined ? workspaces.length : cap;
     return <div className="flex w-screen">
         <div>
-            <h2 style={{ marginLeft: "1.5rem" }}>Workspaces</h2>
+            <h1>Workspaces</h1>
             <div className="card-grid">
                 {workspaces.slice(0, max).map((workspace) => (
                     <WorkspaceCard workspace={workspace} key={workspace.id} />
