@@ -9,7 +9,7 @@ use uuid::Uuid;
 use crate::{
     api::{ApiResponse, Error, Null},
     database::{pagination::queries::meta::PaginationMetaData, Db},
-    models::users::{PublicUser, User, UserStatus, UserUpdate},
+    models::users::{PublicUser, PublicUserWithRole, User, UserStatus, UserUpdate},
     schema::users,
 };
 
@@ -51,7 +51,7 @@ pub async fn get_users_paginated(
     workspace: Option<Uuid>,
     exclude_self: bool,
     params: Json<PaginationRequest<UserField>>,
-) -> Result<PaginatedRecords<PublicUser>, Error<Null>> {
+) -> Result<PaginatedRecords<PublicUserWithRole>, Error<Null>> {
     // Extract the pagination request
     let params = params.into_inner();
 
@@ -95,7 +95,34 @@ pub async fn get_users_paginated(
         .await
         .map_err(ApiResponse::from_error)?;
 
-    Ok(PaginatedRecords::<PublicUser>::new(meta, users))
+    let public_users_with_roles: Vec<PublicUserWithRole> = if let Some(workspace_id) = workspace {
+        // Get (user_id, role) pairs for the workspace
+        let workspace_roles = get_user_ids_and_workspace_roles(db, workspace_id).await?;
+
+        // Map users to PublicUserWithRole
+        users
+            .iter()
+            .map(|user| {
+                PublicUserWithRole {
+                    user: user.clone(),
+                    role: workspace_roles
+                        .iter()
+                        .find(|(id, _)| id == &user.id)
+                        .map(|(_, role)| *role),
+                }
+            })
+            .collect()
+    } else {
+        users
+            .iter()
+            .map(|user| PublicUserWithRole {
+                user: user.clone(),
+                role: None,
+            })
+            .collect()
+    };
+
+    Ok(PaginatedRecords::<PublicUserWithRole>::new(meta, public_users_with_roles))
 }
 
 pub async fn get_user_by_id(db: &Db, id: Uuid) -> Result<User, Error<Null>> {
@@ -268,6 +295,26 @@ pub async fn get_user_ids_in_same_workspaces(
                 .filter(workspace_members_dsl::workspace.eq_any(&workspace_ids))
                 .select(users::id)
                 .load::<Uuid>(conn)?;
+
+            Ok(users_found)
+        })
+    })
+    .await
+    .map_err(ApiResponse::from_error)
+}
+
+pub async fn get_user_ids_and_workspace_roles(
+    db: &Db,
+    workspace_id: Uuid,
+) -> Result<Vec<(Uuid, i16)>, Error<Null>> {
+    use crate::schema::workspace_members::{self, dsl as workspace_members_dsl};
+
+    db.run(move |conn| {
+        conn.transaction::<Vec<(Uuid, i16)>, diesel::result::Error, _>(|conn| {
+            let users_found = workspace_members_dsl::workspace_members
+                .filter(workspace_members_dsl::workspace.eq(&workspace_id))
+                .select((workspace_members::member, workspace_members::role))
+                .load::<(Uuid, i16)>(conn)?;
 
             Ok(users_found)
         })

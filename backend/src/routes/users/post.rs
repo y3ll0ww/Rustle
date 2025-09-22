@@ -8,7 +8,7 @@ use crate::{
         Db,
     },
     forms::{login::LoginForm, password::Password},
-    models::users::{PublicUser, User, UserStatus},
+    models::users::{PublicUserWithRole, User, UserStatus},
 };
 use rocket::{form::Form, http::CookieJar, serde::json::Json};
 use uuid::Uuid;
@@ -26,7 +26,7 @@ pub async fn get_paginated_users(
     params: Json<PaginationRequest<UserField>>,
     guard: JwtGuard,
     db: Db,
-) -> Result<Success<PaginatedRecords<PublicUser>>, Error<Null>> {
+) -> Result<Success<PaginatedRecords<PublicUserWithRole>>, Error<Null>> {
     let page = database::users::get_users_paginated(
         &db,
         guard.get_user(),

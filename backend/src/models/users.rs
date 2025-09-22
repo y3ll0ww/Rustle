@@ -100,6 +100,12 @@ impl PublicUser {
     }
 }
 
+#[derive(Clone, Debug, Deserialize, Queryable, Serialize)]
+pub struct PublicUserWithRole {
+    pub user: PublicUser,
+    pub role: Option<i16>,
+}
+
 #[derive(AsChangeset, Clone, Deserialize, Serialize)]
 #[diesel(table_name = users)]
 pub struct UserUpdate {
