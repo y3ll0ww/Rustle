@@ -1,10 +1,8 @@
 import "../../style/members.css";
-import { User, Mail, Shield, Calendar } from "lucide-react";
+import { User } from "lucide-react";
 import { workspaceMemberType, workspaceRoleColor } from "../../utils/RoleInterpreter";
 
-export default function MemberListItem({ member }) {
-    const role = member.role;
-    const user = member.user;
+export default function UserListItem({ index, user, role, handleClick }) {
     const displayName =
         user.first_name && user.last_name
             ? `${user.first_name} ${user.last_name}`
@@ -37,7 +35,13 @@ export default function MemberListItem({ member }) {
     }
 
     return (
-        <li key={user.id} className="member-item">
+        <li
+            key={user.id}
+            className="member-item"
+            onClick={handleClick}
+        >
+            <div className="member-index">{index}</div>
+
             <Avatar url={user.avatar_url} />
 
             {/* Info */}

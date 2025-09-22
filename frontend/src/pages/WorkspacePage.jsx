@@ -4,26 +4,14 @@ import { Workspaces } from "../utils/ApiHandler";
 import NoWorkspacesPage from "./NoWorkspacePage";
 import LoadingPage from "./LoadingPage";
 import Title from "./components/Title";
-import MemberListItem from "./components/MemberListItem";
 import ProjectsPaginatedPage from "./ProjectsPaginated";
+import UsersPaginatedList from "./components/UsersPaginatedList";
 
 export default function WorkspacePage() {
   const { id } = useParams();
   const [workspace, setWorkspace] = useState(null);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  function Members() {
-    return <div>
-      <h2>Members</h2>
-      <ul className="member-list">
-        {members.map((member) => {
-          const key = member.user.id;
-          return <MemberListItem key={key} member={member} />;
-        })}
-      </ul>
-    </div>
-  }
 
   // Function for fetching workspace information
   const getWorkspaceById = async () => {
@@ -76,7 +64,8 @@ export default function WorkspacePage() {
     
     <ProjectsPaginatedPage workspace_id={workspace.id} />
 
-    <Members />
+    <h2>Members</h2>
+    <UsersPaginatedList exclude_self={false} workspace={workspace.id} />
 
   </div>;
 }

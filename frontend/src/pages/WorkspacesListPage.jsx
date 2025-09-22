@@ -15,7 +15,6 @@ export default function WorkspaceListPage({ cap, isSection }) {
     const getWorkspaces = async () => {
         try {
             const data = await Workspaces.from_user();
-            console.log(data);
             setWorkspaces(data || []);
         } catch {
             setWorkspaces([]);

@@ -20,7 +20,7 @@ export function usePagination(initial = {}) {
             setPaginationState((prev) => ({ ...prev }));
             return;
         }
-        console.log(data.records);
+
         setPaginationState((prev) => ({
             ...prev,
             hasNext: data.has_next,
@@ -31,7 +31,6 @@ export function usePagination(initial = {}) {
             total: data.total,
             totalPages: data.total_pages,
         }));
-        console.log(paginationState);
     };
 
     // Helpers

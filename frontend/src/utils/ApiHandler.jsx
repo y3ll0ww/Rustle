@@ -14,6 +14,16 @@ export const User = {
     me: () => dispatcher.get(`${EP_USER}/me`),
     login: (credentials) => dispatcher.post(`${EP_USER}/login`, credentials, { form: true }),
     logout: () => dispatcher.post(`${EP_USER}/logout`),
+    paginated: ({ exclude_self, status, role, workspace, pagination }) => {
+        // /user/?<status>&<role>&<workspace>&<exclude_self>
+        const params = new URLSearchParams();
+        if (status) params.append("status", status);
+        if (role) params.append("role", role);
+        if (workspace) params.append("workspace", workspace);
+        params.append("exclude_self", exclude_self);
+
+        return dispatcher.post(`${EP_USER}?${params.toString()}`, pagination || defaultPagination);
+    },
 };
 
 export const Workspaces = {
