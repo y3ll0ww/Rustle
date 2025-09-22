@@ -50,6 +50,8 @@ pub fn build<'a>(
     filter_search: &str,
     filter_status: Option<i16>,
     filter_role: Option<i16>,
+    filter_workspace: Option<Uuid>,
+    exclude_self: bool,
 ) -> UserQuery<'a, diesel::pg::Pg> {
     use crate::schema::users::dsl as users;
     use crate::schema::workspace_members::dsl as workspace_members;
@@ -59,12 +61,24 @@ pub fn build<'a>(
 
     // Add the status filter
     if let Some(filter) = filter_status {
-        query = query.filter(users::status.eq(filter))
+        query = query.filter(users::status.eq(filter));
     }
 
     // Add the role filter
     if let Some(filter) = filter_role {
-        query = query.filter(users::role.eq(filter))
+        query = query.filter(users::role.eq(filter));
+    }
+
+    // Add the workspace filter
+    if let Some(workspace_id) = filter_workspace {
+        // Get user IDs of users in requested workspace
+        let user_ids_in_workspace: Vec<Uuid> = workspace_members::workspace_members
+            .filter(workspace_members::workspace.eq(workspace_id))
+            .select(workspace_members::member)
+            .load(conn)
+            .expect("Failed to fetch workspace users");
+
+        query = query.filter(users::id.eq_any(user_ids_in_workspace));
     }
 
     // Add the search filter
@@ -107,7 +121,10 @@ pub fn build<'a>(
         query = query.filter(users::id.eq_any(accessible_user_ids));
     }
 
-    // Remove self from the list
-    query = query.filter(users::id.ne(user.id));
+    if exclude_self {
+        // Remove self from the list
+        query = query.filter(users::id.ne(user.id));
+    }
+
     query
 }

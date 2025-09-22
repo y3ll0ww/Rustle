@@ -13,16 +13,30 @@ use crate::{
 use rocket::{form::Form, http::CookieJar, serde::json::Json};
 use uuid::Uuid;
 
-#[get("/?<status>&<role>", format = "json", data = "<params>")]
+#[post(
+    "/?<status>&<role>&<workspace>&<exclude_self>",
+    format = "json",
+    data = "<params>"
+)]
 pub async fn get_paginated_users(
     status: Option<i16>,
     role: Option<i16>,
+    workspace: Option<Uuid>,
+    exclude_self: bool,
     params: Json<PaginationRequest<UserField>>,
     guard: JwtGuard,
     db: Db,
 ) -> Result<Success<PaginatedRecords<PublicUser>>, Error<Null>> {
-    let page =
-        database::users::get_users_paginated(&db, guard.get_user(), status, role, params).await?;
+    let page = database::users::get_users_paginated(
+        &db,
+        guard.get_user(),
+        status,
+        role,
+        workspace,
+        exclude_self,
+        params,
+    )
+    .await?;
 
     Ok(ApiResponse::success(
         format!(

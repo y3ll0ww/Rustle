@@ -5,6 +5,7 @@ use rocket::{
         blocking::{Client, LocalResponse},
     },
 };
+use uuid::Uuid;
 
 use crate::{cookies::TOKEN_COOKIE, forms::login::LoginForm, routes::USERS, tests::root_route};
 
@@ -23,15 +24,38 @@ fn route_users_all() -> String {
     root_route(USERS)
 }
 
-fn route_users_browse(status: Option<u16>, role: Option<u16>) -> String {
-    let pagination = match (status, role) {
-        (Some(status), Some(role)) => format!("?status={status}&role={role}"),
-        (Some(status), None) => format!("?status={status}"),
-        (None, Some(role)) => format!("?role={role}"),
-        (None, None) => String::new(),
+fn route_users_browse(
+    status: Option<u16>,
+    role: Option<u16>,
+    workspace: Option<Uuid>,
+    exclude_self: bool,
+) -> String {
+    let mut query_parts: Vec<String> = Vec::new();
+
+    if let Some(status) = status {
+        query_parts.push(format!("status={status}"));
+    }
+
+    if let Some(role) = role {
+        query_parts.push(format!("role={role}"));
+    }
+
+    if let Some(workspace) = workspace {
+        query_parts.push(format!("workspace={workspace}"));
+    }
+
+    // Only include exclude_self if true
+    if exclude_self {
+        query_parts.push("exclude_self=true".to_string());
+    }
+
+    let pagination = if query_parts.is_empty() {
+        String::new()
+    } else {
+        format!("?{}", query_parts.join("&"))
     };
 
-    format!("{}{pagination}", root_route(USERS))
+    format!("{}{}", root_route(USERS), pagination)
 }
 
 fn route_users_by_name(username: &str) -> String {

@@ -48,6 +48,8 @@ pub async fn get_users_paginated(
     user: PublicUser,
     status: Option<i16>,
     role: Option<i16>,
+    workspace: Option<Uuid>,
+    exclude_self: bool,
     params: Json<PaginationRequest<UserField>>,
 ) -> Result<PaginatedRecords<PublicUser>, Error<Null>> {
     // Extract the pagination request
@@ -59,15 +61,24 @@ pub async fn get_users_paginated(
             let search = params.search.as_deref().unwrap_or_default();
 
             // Build the query as COUNT to get the total
-            let total = query_users::build(conn, user.clone(), search, status, role)
-                .count()
-                .get_result::<i64>(conn)?;
+            let total = query_users::build(
+                conn,
+                user.clone(),
+                search,
+                status,
+                role,
+                workspace,
+                exclude_self,
+            )
+            .count()
+            .get_result::<i64>(conn)?;
 
             // Calculate the pagination meta data
             let meta = PaginationMetaData::new(total, &params);
 
             // Build the query again for LOAD and apply filtering
-            let mut query = query_users::build(conn, user, search, status, role);
+            let mut query =
+                query_users::build(conn, user, search, status, role, workspace, exclude_self);
 
             // Apply sorting to the query
             query = query_users::sort(query, &params.sort_by, &params.sort_dir);

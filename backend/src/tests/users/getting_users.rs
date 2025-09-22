@@ -1,4 +1,5 @@
 use rocket::http::ContentType;
+use uuid::Uuid;
 
 use super::{login, DEFAULT_LOGIN, DEFAULT_USERNAME};
 use crate::{
@@ -18,12 +19,14 @@ fn browse_users() {
     // Apply filters
     let status: Option<u16> = None;
     let role: Option<u16> = None;
+    let workspace: Option<Uuid> = Some(Uuid::try_from(TARGETED_WORKSPACE).unwrap());
+    let exclude_self: bool = false;
 
     // Construct a JSON payload matching the User structure
     let params = PaginationRequest::<UserField> {
         page: Some(7),
         limit: Some(7),
-        search: Some(TARGETED_WORKSPACE.to_string()),
+        search: Some("rustle".to_string()),
         sort_by: None,
         sort_dir: None,
     };
@@ -33,7 +36,7 @@ fn browse_users() {
 
     response_ok(
         client
-            .post(route_users_browse(status, role))
+            .post(route_users_browse(status, role, workspace, exclude_self))
             .header(ContentType::JSON)
             .body(payload),
     );
