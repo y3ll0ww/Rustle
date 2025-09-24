@@ -9,6 +9,8 @@ import UserListItem from "./UserListItem";
 import { userRoleColor, userType, workspaceMemberType, workspaceRoleColor } from "../../utils/RoleInterpreter";
 
 export default function UsersPaginatedList({
+    paginationState,
+    updateFromResponse,
     exclude_self,
     status,
     role,
@@ -18,13 +20,11 @@ export default function UsersPaginatedList({
     const navigate = useNavigate();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
-    const { paginationState, updateFromResponse } = usePagination();
 
     // Function for fetching projects from workspace
     const getUsers = async () => {
         try {
             const data = await User.paginated({ exclude_self, status, role, workspace, pagination });
-            //user?exclude_self=false&workspace=ec10c387-a999-470f-a458-b7f1b2f79b13
             updateFromResponse(data);
         } catch {
             updateFromResponse(null);
