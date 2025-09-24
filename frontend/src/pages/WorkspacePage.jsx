@@ -6,12 +6,14 @@ import LoadingPage from "./LoadingPage";
 import Title from "./components/Title";
 import ProjectsPaginatedPage from "./ProjectsPaginated";
 import UsersPaginatedList from "./components/UsersPaginatedList";
+import { usePagination } from "../hooks/usePagination";
 
 export default function WorkspacePage() {
   const { id } = useParams();
   const [workspace, setWorkspace] = useState(null);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { paginationState, updateFromResponse } = usePagination();
 
   // Function for fetching workspace information
   const getWorkspaceById = async () => {
@@ -65,7 +67,13 @@ export default function WorkspacePage() {
     <ProjectsPaginatedPage workspace_id={workspace.id} />
 
     <h2>Members</h2>
-    <UsersPaginatedList exclude_self={false} workspace={workspace.id} />
+    <UsersPaginatedList
+        paginationState={paginationState}
+        updateFromResponse={updateFromResponse}
+        workspace={workspace.id}
+        exclude_self={false}
+        status={2}
+    />
 
   </div>;
 }
