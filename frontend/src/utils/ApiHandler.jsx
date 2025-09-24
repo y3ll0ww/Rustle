@@ -14,7 +14,7 @@ export const User = {
     me: () => dispatcher.get(`${EP_USER}/me`),
     login: (credentials) => dispatcher.post(`${EP_USER}/login`, credentials, { form: true }),
     logout: () => dispatcher.post(`${EP_USER}/logout`),
-    paginated: ({ exclude_self, status, role, workspace, pagination }) => {
+    paginated: ({ exclude_self, status, role, workspace, paginationState }) => {
         // /user/?<status>&<role>&<workspace>&<exclude_self>
         const params = new URLSearchParams();
         if (status) params.append("status", status);
@@ -22,7 +22,15 @@ export const User = {
         if (workspace) params.append("workspace", workspace);
         params.append("exclude_self", exclude_self);
 
-        return dispatcher.post(`${EP_USER}?${params.toString()}`, pagination || defaultPagination);
+        const pagination = {
+            page: paginationState?.page || defaultPagination.page,
+            limit: paginationState?.limit || defaultPagination.limit,
+            search: paginationState?.search || defaultPagination.search,
+            sort_by: paginationState?.sortBy || deafaultPagination.sort_by,
+            sort_dir: paginationState?.sortOrder || defaultPagination.sort_dir,
+        };
+
+        return dispatcher.post(`${EP_USER}?${params.toString()}`, pagination);
     },
 };
 

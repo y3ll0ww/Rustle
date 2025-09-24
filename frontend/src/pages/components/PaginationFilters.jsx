@@ -1,32 +1,33 @@
 import "../../style/pagination.css";
 import { useEffect, useState } from "react";
 
+const defaultSort = [
+  { "date created": "created_at" },
+  { "date updated": "updated_at" },
+  { "email": "email" },
+  { "last name": "last_name" },
+  { "first name": "first_name" },
+  { "username": "username" },
+  { "role": "role" },
+  { "status": "status" },
+]
+
 export default function PaginationFilters({
   paginationState,
-  onChange,
-  availableSorts = ["created_at", "updated_at", "name"],
+  setFilters,
+  availableSorts = defaultSort,
   perPageOptions = [10, 20, 50, 100],
 }) {
-  const [localFilters, setLocalFilters] = useState(paginationState);
+  const [search, setSearch] = useState("");
 
-  const [filters, setFilters] = useState({
-    search: null,
-    limit: 10,
-    page: 1,
-    sortBy: "created_at",
-    sortOrder: "desc",
-  });
-
-  const handleChange = (field, value) => {
-    const updated = { ...localFilters, [field]: value };
-    setLocalFilters(updated);
-    setFilters({ ...filters, [field]: value });
-    onChange?.(updated); // bubble up changes
-  };
-
+  // Delay for search field
   useEffect(() => {
-    console.log(filters);
-  }, [filters])
+    const handler = setTimeout(() => {
+      setFilters("search", search);
+    }, 1000);
+
+    return () => clearTimeout(handler);
+  }, [search]);
 
   return (
     <div className="pagination-filters">
@@ -34,28 +35,32 @@ export default function PaginationFilters({
       <input
         type="text"
         placeholder="Search..."
-        value={filters.search || ""}
-        onChange={(e) => handleChange("search", e.target.value)}
+        value={search || ""}
+        onChange={(e) => setSearch(e.target.value)}
         className="pf-input"
       />
 
       {/* Sort by field */}
       <select
-        value={filters.sort_by}
-        onChange={(e) => handleChange("sort_by", e.target.value)}
+        value={paginationState.sortBy}
+        onChange={(e) => setFilters("sortBy", e.target.value)}
         className="pf-select"
       >
-        {availableSorts.map((field) => (
-          <option key={field} value={field}>
-            Sort by {field.replace("_", " ")}
-          </option>
-        ))}
+        {availableSorts.map((fieldObj) => {
+          const label = Object.keys(fieldObj)[0];
+          const value = fieldObj[label];
+          return (
+            <option key={value} value={value}>
+              Sort by {label}
+            </option>
+          );
+        })}
       </select>
 
       {/* Sort order */}
       <select
-        value={localFilters.sort_order}
-        onChange={(e) => handleChange("sort_order", e.target.value)}
+        value={paginationState.sortOrder}
+        onChange={(e) => setFilters("sort_order", e.target.value)}
         className="pf-select"
       >
         <option value="asc">Ascending ↑</option>
@@ -64,8 +69,8 @@ export default function PaginationFilters({
 
       {/* Per-page */}
       <select
-        value={localFilters.per_page}
-        onChange={(e) => handleChange("per_page", Number(e.target.value))}
+        value={paginationState.limit}
+        onChange={(e) => setFilters("limit", Number(e.target.value))}
         className="pf-select"
       >
         {perPageOptions.map((n) => (

@@ -1,0 +1,38 @@
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+.users-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.users-list-container {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.5rem;
+  margin: 0.5rem 0;
+  background: var(--card-bg);
+}
+
+
+.users-pagination {
+  flex: 0 0 auto;
+}
+
+.no-records {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.2rem;
+  color: #555;
+  padding: 2rem;
+}

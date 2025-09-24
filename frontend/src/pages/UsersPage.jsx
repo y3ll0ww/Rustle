@@ -1,3 +1,4 @@
+import "../style/users-page.css";
 import UsersPaginatedList from "./components/UsersPaginatedList";
 import PaginationControls from "./components/PaginationControls";
 import { usePagination } from "../hooks/usePagination";
@@ -6,24 +7,31 @@ import PaginationFilters from "./components/PaginationFilters";
 export default function UsersPage() {
   const pagination = usePagination();
 
-  // Return the content of the page
-  return <div className="flex w-screen">
-    <h1>Users</h1>
+  return (
+    <div className="users-page">
+      <h1>Users</h1>
 
-    <PaginationFilters paginationState={pagination.paginationState} />
-    
-    <UsersPaginatedList
+      <PaginationFilters
         paginationState={pagination.paginationState}
-        updateFromResponse={pagination.updateFromResponse}
-        exclude_self={false}
-        status={2}
-    />
+        setFilters={pagination.setFilters}
+      />
 
-    <PaginationControls
-        paginationState={pagination.paginationState}
-        onPrev={pagination.onPrev}
-        onNext={pagination.onNext}
-    />
+      <div className="users-list-container">
+        <UsersPaginatedList
+          paginationState={pagination.paginationState}
+          updateFromResponse={pagination.updateFromResponse}
+          exclude_self={false}
+          status={2}
+        />
+      </div>
 
-  </div>;
+      <div className="users-pagination">
+        <PaginationControls
+          paginationState={pagination.paginationState}
+          onPrev={pagination.onPrev}
+          onNext={pagination.onNext}
+        />
+      </div>
+    </div>
+  );
 }
