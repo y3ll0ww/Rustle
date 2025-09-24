@@ -6,8 +6,15 @@ import LoadingPage from "../LoadingPage";
 import { usePagination } from "../../hooks/usePagination";
 import { Endpoint } from "../../utils/EndPoints";
 import UserListItem from "./UserListItem";
+import { userRoleColor, userType, workspaceMemberType, workspaceRoleColor } from "../../utils/RoleInterpreter";
 
-export default function UsersPaginatedList({ exclude_self, status, role, workspace, pagination }) {
+export default function UsersPaginatedList({
+    exclude_self,
+    status,
+    role,
+    workspace,
+    pagination,
+}) {
     const navigate = useNavigate();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -65,14 +72,23 @@ export default function UsersPaginatedList({ exclude_self, status, role, workspa
         <ul className="member-list">
             {paginationState.records.map((record) => {
                 const index = record.index;
-                const role = record.data.role;
                 const user = record.data.user;
+                const role = record.data.role ?? user.role;
+
+                const role_type = workspace
+                    ? workspaceMemberType(role)
+                    : userType(role);
+
+                const role_color = workspace
+                    ? workspaceRoleColor(role)
+                    : userRoleColor(role);
 
                 return <UserListItem
                     key={index}
                     index={index}
-                    role={role}
                     user={user}
+                    role_type={role_type}
+                    role_color={role_color}
                     handleClick={() => handleClickUser(user.id)}
                 />
             })}

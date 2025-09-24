@@ -1,9 +1,25 @@
+export const UserRoles = {
+  ADMIN: 1000,
+  MANAGER: 5,
+  CONTRIBUTOR: 1,
+  REVIEWER: 0,
+};
+
 export const WorkspaceRoles = {
   MEMBER: 0,
   STAKEHOLDER: 1,
   CONTRIBUTOR: 2,
   MANAGER: 5,
   OWNER: 10,
+};
+
+// Function to resolve role name
+export const userType = (role) => {
+    /// Maximum privileges; only one able to delete a workspace
+  if (role >= UserRoles.ADMIN) return "Admin";
+  if (role >= UserRoles.MANAGER) return "Manager";
+  if (role >= UserRoles.CONTRIBUTOR) return "Contributor";
+  return "Reviewer";
 };
 
 // Function to resolve role name
@@ -18,6 +34,13 @@ export const workspaceMemberType = (role) => {
   if (role >= WorkspaceRoles.STAKEHOLDER) return "Stakeholder";
   /// Limited access, can only view but not interact with content
   return "Member";
+};
+
+// Function to resolve role color
+export const userRoleColor = (role) => {
+  if (role >= UserRoles.ADMIN) return "red";
+  if (role >= UserRoles.MANAGER) return "orange";
+  return "inherit";
 };
 
 // Function to resolve role color

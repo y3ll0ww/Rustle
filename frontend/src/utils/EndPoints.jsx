@@ -4,6 +4,7 @@ import LoginPage from "../pages/LoginPage.jsx";
 import LoadingPage from "../pages/LoadingPage.jsx";
 import WorkspacePage from '../pages/WorkspacePage.jsx';
 import WorkspaceListPage from '../pages/WorkspacesListPage.jsx';
+import UsersPage from "../pages/UsersPage.jsx";
 
 export const Endpoint = {
     home: "/",
@@ -26,6 +27,7 @@ export const sharedRoutes = [
 export const protectedRoutes = [
     { path: Endpoint.dashboard, element: <DashboardPage /> },
     { path: Endpoint.workspaces, element: <WorkspaceListPage /> },
+    { path: Endpoint.users, element: <UsersPage /> },
     { path: `${Endpoint.workspace}/:id`, element: <WorkspacePage /> },
     { path: `${Endpoint.users}/:id`, element: <div>Users</div> },
 ];

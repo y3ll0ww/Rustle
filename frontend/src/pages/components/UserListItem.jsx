@@ -1,8 +1,8 @@
 import "../../style/members.css";
 import { User } from "lucide-react";
-import { workspaceMemberType, workspaceRoleColor } from "../../utils/RoleInterpreter";
+import { workspaceMemberType, userRoleColor, workspaceRoleColor } from "../../utils/RoleInterpreter";
 
-export default function UserListItem({ index, user, role, handleClick }) {
+export default function UserListItem({ index, user, role_type, role_color, handleClick }) {
     const displayName =
         user.first_name && user.last_name
             ? `${user.first_name} ${user.last_name}`
@@ -27,9 +27,9 @@ export default function UserListItem({ index, user, role, handleClick }) {
             <span className="member-name">{displayName}</span>
             <span
                 className="member-role"
-                style={{ color: workspaceRoleColor(role) }}
+                style={{ color: role_color }}
             >
-                {workspaceMemberType(role)}
+                {role_type}
             </span>
         </div>
     }
