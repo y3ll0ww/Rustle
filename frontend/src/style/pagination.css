@@ -6,7 +6,6 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 1rem;
 }
 
 .pagination-filters .pf-input,
@@ -57,7 +56,6 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-top: 1.25rem;
   padding: 0.25rem;
   width: 100%;
   box-sizing: border-box;

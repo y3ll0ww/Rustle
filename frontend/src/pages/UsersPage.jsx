@@ -9,8 +9,6 @@ export default function UsersPage() {
 
   return (
     <div className="users-page">
-      <h1>Users</h1>
-
       <PaginationFilters
         paginationState={pagination.paginationState}
         setFilters={pagination.setFilters}

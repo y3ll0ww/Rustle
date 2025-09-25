@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { defaultPagination } from "../utils/ApiHandler";
 
+export const FIELD_LIMIT = "limit";
+export const FIELD_SORT_BY = "sortBy";
+export const FIELD_SEARCH = "search";
+export const FIELD_SORT_ORDER = "sortOrder";
+
 export function usePagination(initial = {}) {
     const [paginationState, setPaginationState] = useState({
         hasNext: false,

@@ -1,3 +1,4 @@
+import { FIELD_LIMIT, FIELD_SEARCH, FIELD_SORT_BY, FIELD_SORT_ORDER } from "../../hooks/usePagination";
 import "../../style/pagination.css";
 import { useEffect, useState } from "react";
 
@@ -23,7 +24,7 @@ export default function PaginationFilters({
   // Delay for search field
   useEffect(() => {
     const handler = setTimeout(() => {
-      setFilters("search", search);
+      setFilters(FIELD_SEARCH, search);
     }, 1000);
 
     return () => clearTimeout(handler);
@@ -43,7 +44,7 @@ export default function PaginationFilters({
       {/* Sort by field */}
       <select
         value={paginationState.sortBy}
-        onChange={(e) => setFilters("sortBy", e.target.value)}
+        onChange={(e) => setFilters(FIELD_SORT_BY, e.target.value)}
         className="pf-select"
       >
         {availableSorts.map((fieldObj) => {
@@ -60,7 +61,7 @@ export default function PaginationFilters({
       {/* Sort order */}
       <select
         value={paginationState.sortOrder}
-        onChange={(e) => setFilters("sort_order", e.target.value)}
+        onChange={(e) => setFilters(FIELD_SORT_ORDER, e.target.value)}
         className="pf-select"
       >
         <option value="asc">Ascending ↑</option>
@@ -70,7 +71,7 @@ export default function PaginationFilters({
       {/* Per-page */}
       <select
         value={paginationState.limit}
-        onChange={(e) => setFilters("limit", Number(e.target.value))}
+        onChange={(e) => setFilters(FIELD_LIMIT, Number(e.target.value))}
         className="pf-select"
       >
         {perPageOptions.map((n) => (
