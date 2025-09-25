@@ -1,4 +1,4 @@
-import "../style/users-page.css";
+import "../style/page-users.css";
 import UsersPaginatedList from "./components/UsersPaginatedList";
 import PaginationControls from "./components/PaginationControls";
 import { usePagination } from "../hooks/usePagination";

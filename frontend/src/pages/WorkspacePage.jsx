@@ -1,3 +1,5 @@
+import "../style/page-workspace.css"
+import "../style/markdown.css";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Workspaces } from "../utils/ApiHandler";
@@ -7,6 +9,9 @@ import Title from "./components/Title";
 import ProjectsPaginatedPage from "./ProjectsPaginated";
 import UsersPaginatedList from "./components/UsersPaginatedList";
 import { usePagination } from "../hooks/usePagination";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { Pencil, SquarePen } from "lucide-react";
 
 export default function WorkspacePage() {
   const { id } = useParams();
@@ -56,24 +61,40 @@ export default function WorkspacePage() {
   }
 
   // Return the content of the page
-  return <div className="flex w-screen">
-    <Title
-      name={workspace.name}
-      created_at={workspace.created_at}
-      updated_at={workspace.updated_at}
-    />
-    <p>{workspace.description}</p>
-    
-    <ProjectsPaginatedPage workspace_id={workspace.id} />
+  return (
+    <div className="workspace-page">
+      <div className="workspace-main">
+        <header>
+          <Title
+            name={workspace.name}
+            created_at={workspace.created_at}
+            updated_at={workspace.updated_at}
+          />
+          <button className="btn-primary">
+            <Pencil size={16}/>
+            <span> Edit</span>
+          </button>
+        </header>
+        <div className="content-container" style={{ height: "100%" }}>
+          <div className="markdown">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>{workspace.description}</ReactMarkdown>
+          </div>
+        </div>
+      </div>
 
-    <h2>Members</h2>
-    <UsersPaginatedList
-        paginationState={paginationState}
-        updateFromResponse={updateFromResponse}
-        workspace={workspace.id}
-        exclude_self={false}
-        status={2}
-    />
+      <div className="right-sidebar">
+        <h2>Projects</h2>
+        <ProjectsPaginatedPage workspace_id={workspace.id} />
 
-  </div>;
+        <h2>Members</h2>
+        <UsersPaginatedList
+          paginationState={paginationState}
+          updateFromResponse={updateFromResponse}
+          workspace={workspace.id}
+          exclude_self={false}
+          status={2}
+        />
+      </div>
+    </div >
+  );
 }

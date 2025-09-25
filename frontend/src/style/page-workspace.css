@@ -1,0 +1,39 @@
+.workspace-page {
+    display: flex;
+    gap: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.workspace-page header {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+/* Main section takes remaining space */
+.workspace-main {
+    flex: 1;
+}
+
+/* Sidebar on the right */
+.right-sidebar {
+    flex: 0 0 40%;
+    margin-top: 4.3rem;
+    box-sizing: border-box;
+}
+
+/* Responsive: stack into single column */
+@media (max-width: 1300px) {
+    .workspace-page {
+        flex-direction: column;
+    }
+
+    .right-column {
+        flex: 1;
+        border-left: none;
+        padding-left: 0;
+        margin-top: 1rem;
+    }
+}
