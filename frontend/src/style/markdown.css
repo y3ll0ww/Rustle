@@ -1,38 +1,44 @@
 .markdown-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 1rem;
   width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
+  height: calc(100vh - 210px);
+  box-sizing: border-box;
+}
+
+.markdown-input,
+.markdown-preview {
+  flex: 1;
+  min-height: 400px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1rem;
+  overflow-y: auto;
+  background: var(--card-bg);
+  width: 50%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: pre-wrap;
 }
 
 .markdown-input {
-  width: 100%;
-  height: 200px;
-  padding: 0.5rem;
+  background: var(--card-bg);
+  color: var(--text);
+  padding: 1.5rem;
   font-family: monospace;
-  font-size: 1rem;
   resize: none;
-  overflow-y: auto;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  white-space: pre-wrap;
+  resize: none;
 }
 
 .markdown-preview {
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 0.5rem;
-  min-height: 200px;
-  background: #fafafa;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-  white-space: pre-wrap;
+  background-color: var(--bg);
+  padding: 0rem;
+  overflow-x: hidden;
 }
 
 .markdown {
-    padding: 1.5rem;
+  padding: 1.5rem;
 }
 
 .markdown table {
@@ -51,5 +57,4 @@
 
 .markdown th {
   background-color: var(--card-bg);
-
 }
