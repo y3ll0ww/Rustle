@@ -11,12 +11,11 @@ import UsersPaginatedList from "./components/UsersPaginatedList";
 import { usePagination } from "../hooks/usePagination";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Pencil, SquarePen } from "lucide-react";
+import { Pencil } from "lucide-react";
 
 export default function WorkspacePage() {
   const { id } = useParams();
   const [workspace, setWorkspace] = useState(null);
-  const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const { paginationState, updateFromResponse } = usePagination();
 
@@ -25,10 +24,8 @@ export default function WorkspacePage() {
     try {
       const data = await Workspaces.by_id(id);
       setWorkspace(data.workspace || null);
-      setMembers(data.members || []);
     } catch {
       setWorkspace(null);
-      setMembers([]);
     } finally {
       setLoading(false);
     }
@@ -75,7 +72,7 @@ export default function WorkspacePage() {
             <span> Edit</span>
           </button>
         </header>
-        <div className="content-container" style={{ height: "100%" }}>
+        <div className="content-container" style={{ minHeight: "400px" }}>
           <div className="markdown">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{workspace.description}</ReactMarkdown>
           </div>

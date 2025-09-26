@@ -4,8 +4,8 @@ import { Projects } from "../utils/ApiHandler";
 import NoWorkspacesPage from "./NoWorkspacePage";
 import LoadingPage from "./LoadingPage";
 import { usePagination } from "../hooks/usePagination";
-import ItemCard from "./components/ItemCard";
 import { Endpoint } from "../utils/EndPoints";
+import ProjectListItem from "./components/ProjectListItem";
 
 export default function ProjectsPaginatedPage({ workspace_id }) {
     const navigate = useNavigate();
@@ -63,11 +63,11 @@ export default function ProjectsPaginatedPage({ workspace_id }) {
     return <div className="flex w-screen">
         {paginationState.records.map((record) => {
             const project = record.data;
-            return <ItemCard
+            return <ProjectListItem 
                 key={project.id}
-                type="Project"
-                item={project}
-                handleOpen={handleOpenProject}
+                index={record.index}
+                project={project}
+                handleClick={handleOpenProject}
             />
         })}
     </div>;

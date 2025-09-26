@@ -1,0 +1,57 @@
+.project-item {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  gap: 1rem;
+  background: var(--card-bg);
+  margin-bottom: 0.2em;
+  padding: 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  transition: border-color 0.3s ease;
+}
+
+.project-item:hover {
+  border: 2px solid var(--primary);
+}
+
+.project-index {
+  font-weight: bold;
+  margin: 0 1rem;
+}
+
+.project-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.project-name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text);
+  margin-bottom: 0.3rem;
+}
+
+.project-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: gray;
+  margin-bottom: 0.25rem;
+}
+
+.project-description {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.project-members {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: auto;
+  padding-right: 1rem;
+  font-size: 0.9rem;
+  color: var(--text);
+}
