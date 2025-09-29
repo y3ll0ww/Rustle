@@ -98,69 +98,64 @@ export default function WorkspacePage() {
   // Return the content of the page
   return (
     <div className="workspace-page">
-      <div className="workspace-main">
-        <header>
-          <Title
-            name={title}
-            onChange={setTitle}
-            created_at={workspace.created_at}
-            updated_at={workspace.updated_at}
-            isEditing={isEditing}
-          />
-          {isEditing
-            ? <div>
-              <button
-                className="btn-primary"
-                onClick={() => saveEditing()}
-              >
-                <Save size={16} />
-                <span> Save</span>
-              </button>
-              <button
-                className="btn-primary"
-                onClick={cancelEditing}
-              >
-                <Ban size={16} />
-                <span> Cancel</span>
-              </button>
-            </div>
-            : <button
-              className="btn-primary"
-              onClick={() => setIsEditing(true)}
-            >
-              <Pencil size={16} />
-              <span> Edit</span>
+      {/* Full width header */}
+      <header className="workspace-header">
+        <Title
+          name={title}
+          onChange={setTitle}
+          created_at={workspace.created_at}
+          updated_at={workspace.updated_at}
+          isEditing={isEditing}
+        />
+        {isEditing ? (
+          <div className="workspace-header">
+            <button className="btn-primary" onClick={saveEditing}>
+              <Save size={16} />
+              <span> Save</span>
             </button>
-          }
-        </header>
-
-        {isEditing
-          ?
-          <MarkdownEditor value={description} onChange={setDescription} />
-          : <div className="content-container" style={{ height: "calc(100vh - 220px)" }}>
-            <div className="markdown">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{description}</ReactMarkdown>
-            </div>
+            <button className="btn-primary" onClick={cancelEditing}>
+              <Ban size={16} />
+              <span> Cancel</span>
+            </button>
           </div>
-        }
-      </div>
+        ) : (
+          <button className="btn-primary" onClick={() => setIsEditing(true)}>
+            <Pencil size={16} />
+            <span> Edit</span>
+          </button>
+        )}
+      </header>
 
-      {!isEditing && (
-        <div className="right-sidebar">
-          <h2>Projects</h2>
-          <ProjectsPaginatedPage workspace_id={workspace.id} />
-
-          <h2>Members</h2>
-          <UsersPaginatedList
-            paginationState={paginationState}
-            updateFromResponse={updateFromResponse}
-            workspace={workspace.id}
-            exclude_self={false}
-            status={2}
-          />
+      {/* Two column layout */}
+      <div className="workspace-body">
+        <div className="workspace-main">
+          {isEditing ? (
+            <MarkdownEditor value={description} onChange={setDescription} />
+          ) : (
+            <div className="content-container" style={{ height: "calc(100vh - 220px)" }}>
+              <div className="markdown">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{description}</ReactMarkdown>
+              </div>
+            </div>
+          )}
         </div>
-      )}
 
-    </div >
+        {!isEditing && (
+          <div className="right-sidebar">
+            <h2>Projects</h2>
+            <ProjectsPaginatedPage workspace_id={workspace.id} />
+
+            <h2>Members</h2>
+            <UsersPaginatedList
+              paginationState={paginationState}
+              updateFromResponse={updateFromResponse}
+              workspace={workspace.id}
+              exclude_self={false}
+              status={2}
+            />
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
