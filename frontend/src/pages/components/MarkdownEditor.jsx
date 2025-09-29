@@ -3,8 +3,7 @@ import { useState, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-export default function MarkdownEditor({ value }) {
-  const [newValue, setNewValue] = useState(value || "");
+export default function MarkdownEditor({ value, onChange }) {
   const inputRef = useRef(null);
   const previewRef = useRef(null);
 
@@ -27,8 +26,8 @@ export default function MarkdownEditor({ value }) {
       <textarea
         ref={inputRef}
         className="markdown-input"
-        value={newValue}
-        onChange={(e) => setNewValue(e.target.value)}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         onScroll={handleScroll}
         placeholder="Write your markdown here..."
       />
@@ -36,7 +35,7 @@ export default function MarkdownEditor({ value }) {
       {/* Preview */}
       <div ref={previewRef} className="markdown-preview markdown">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>
-          {newValue}
+          {value}
         </ReactMarkdown>
       </div>
     </div>

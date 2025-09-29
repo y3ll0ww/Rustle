@@ -20,6 +20,7 @@ export default function WorkspacePage() {
   const [loading, setLoading] = useState(true);
   const { paginationState, updateFromResponse } = usePagination();
   const [isEditing, setIsEditing] = useState(false);
+  const [title, setTitle] = useState(null);
   const [description, setDescription] = useState(null);
 
   // Function for fetching workspace information
@@ -27,14 +28,44 @@ export default function WorkspacePage() {
     try {
       const data = await Workspaces.by_id(id);
       setWorkspace(data.workspace || null);
+      setTitle(data.workspace?.name || null);
       setDescription(data.workspace?.description || null);
     } catch {
       setWorkspace(null);
+      setTitle(null);
       setDescription(null);
     } finally {
       setLoading(false);
     }
   };
+
+  const saveEditing = async () => {
+    setLoading(true);
+    try {
+      const data = await Workspaces.update_information({
+        id: id,
+        updated_info: {
+          name: title,
+          description: description,
+        }
+      });
+      console.log("DATA:");
+      console.log(data);
+      setIsEditing(false);
+    } catch {
+      setTitle(workspace?.name);
+      setDescription(workspace?.description);
+      setIsEditing(false);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function cancelEditing() {
+    setTitle(workspace.name);
+    setDescription(workspace.description);
+    setIsEditing(false);
+  }
 
   // Get user's workspaces via API
   useEffect(() => {
@@ -43,7 +74,9 @@ export default function WorkspacePage() {
 
     // Poll every 30s
     const interval = setInterval(() => {
-      getWorkspaceById();
+      if (isEditing) {
+        getWorkspaceById();
+      }
     }, 30000);
 
     // Cleanup interval on unmount
@@ -68,22 +101,24 @@ export default function WorkspacePage() {
       <div className="workspace-main">
         <header>
           <Title
-            name={workspace.name}
+            name={title}
+            onChange={setTitle}
             created_at={workspace.created_at}
             updated_at={workspace.updated_at}
+            isEditing={isEditing}
           />
           {isEditing
             ? <div>
               <button
                 className="btn-primary"
-                onClick={() => setIsEditing(false)}
+                onClick={() => saveEditing()}
               >
                 <Save size={16} />
                 <span> Save</span>
               </button>
               <button
                 className="btn-primary"
-                onClick={() => setIsEditing(false)}
+                onClick={cancelEditing}
               >
                 <Ban size={16} />
                 <span> Cancel</span>
@@ -101,10 +136,10 @@ export default function WorkspacePage() {
 
         {isEditing
           ?
-          <MarkdownEditor value={workspace.description} />
+          <MarkdownEditor value={description} onChange={setDescription} />
           : <div className="content-container" style={{ height: "calc(100vh - 220px)" }}>
             <div className="markdown">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{workspace.description}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>{description}</ReactMarkdown>
             </div>
           </div>
         }

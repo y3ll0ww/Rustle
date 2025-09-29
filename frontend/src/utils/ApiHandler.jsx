@@ -38,6 +38,7 @@ export const Workspaces = {
     from_user: () => dispatcher.get(`${EP_WORKSPACES}`),
     by_id: (id) => dispatcher.get(`${EP_WORKSPACES}/${id}`),
     new_project: ({ id, project_form }) => dispatcher.post(`${EP_WORKSPACES}/${id}`, project_form, { form: true }),
+    update_information: ({ id, updated_info }) => dispatcher.put(`${EP_WORKSPACES}/${id}/update`, updated_info)
 }
 
 export const Projects = {

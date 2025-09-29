@@ -1,3 +1,23 @@
+.page-title-input {
+  all: unset;
+  border-radius: 8px;
+  margin-right: 10rem;
+  display: block;
+  width: 90%;
+  padding: 0.5rem;
+  font-size: 3.2em;
+  line-height: 1.1;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+  background: transparent;
+  border: 2px solid var(--border-color);
+}
+
+.page-title-input:focus {
+  border-color: var(--primary);
+}
+
 /* Dates under title */
 .dates {
   display: flex;

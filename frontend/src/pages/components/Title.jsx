@@ -2,10 +2,25 @@ import "../../style/title.css";
 import { TimeAgo } from "../../utils/TimeAgo";
 import { Calendar, RotateCcw } from "lucide-react";
 
-export default function Title({ name, created_at, updated_at }) {
+export default function Title({
+    name,
+    onChange,
+    created_at,
+    updated_at,
+    isEditing,
+}) {
     return (
         <div>
-            <h1 style={{ marginBottom: "0.5rem" }}>{name}</h1>
+            {isEditing
+                ? <input
+                    type="text"
+                    className="page-title-input"
+                    onChange={(e) => onChange(e.target.value)}
+                    defaultValue={name}
+                />
+                : <h1 style={{ marginBottom: "0.5rem" }}>{name}</h1>
+            }
+
             <div className="dates">
                 <div className="created">
                     <Calendar size={20} />
