@@ -1,6 +1,6 @@
 import "../style/page-workspace.css"
 import "../style/markdown.css";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Workspaces } from "../utils/ApiHandler";
 import NoWorkspacesPage from "./NoWorkspacePage";
@@ -11,8 +11,9 @@ import UsersPaginatedList from "./components/UsersPaginatedList";
 import { usePagination } from "../hooks/usePagination";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Ban, Pencil, Save } from "lucide-react";
+import { Ban, EllipsisVertical, Hamburger, Pencil, Save } from "lucide-react";
 import MarkdownEditor from "./components/MarkdownEditor";
+import WorkspaceDropDown from "./components/ModalWorkspace";
 
 export default function WorkspacePage() {
   const { id } = useParams();
@@ -22,6 +23,8 @@ export default function WorkspacePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(null);
   const [description, setDescription] = useState(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   // Function for fetching workspace information
   const getWorkspaceById = async () => {
@@ -39,7 +42,7 @@ export default function WorkspacePage() {
     }
   };
 
-  const saveEditing = async () => {
+  const handleSave = async () => {
     setLoading(true);
     try {
       const data = await Workspaces.update_information({
@@ -49,8 +52,7 @@ export default function WorkspacePage() {
           description: description,
         }
       });
-      console.log("DATA:");
-      console.log(data);
+      setWorkspace(data);
       setIsEditing(false);
     } catch {
       setTitle(workspace?.name);
@@ -61,11 +63,35 @@ export default function WorkspacePage() {
     }
   }
 
-  function cancelEditing() {
+  function handleCancel() {
     setTitle(workspace.name);
     setDescription(workspace.description);
     setIsEditing(false);
   }
+
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        setDropdownOpen(false);
+      }
+    }
+
+    function handleEscape(e) {
+      if (e.key === "Escape") setDropdownOpen(false);
+    }
+  
+    if (dropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleEscape);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    }
+  }, [dropdownOpen]);
 
   // Get user's workspaces via API
   useEffect(() => {
@@ -107,30 +133,28 @@ export default function WorkspacePage() {
           updated_at={workspace.updated_at}
           isEditing={isEditing}
         />
-        {isEditing ? (
-          <div className="workspace-header">
-            <button className="btn-primary" onClick={saveEditing}>
-              <Save size={16} />
-              <span> Save</span>
-            </button>
-            <button className="btn-primary" onClick={cancelEditing}>
-              <Ban size={16} />
-              <span> Cancel</span>
-            </button>
-          </div>
-        ) : (
-          <button className="btn-primary" onClick={() => setIsEditing(true)}>
-            <Pencil size={16} />
-            <span> Edit</span>
-          </button>
-        )}
       </header>
+
+      {!isEditing &&
+        <button
+          ref={dropdownRef}
+          className="edit-ws-button"
+          onClick={() => setDropdownOpen(!dropdownOpen)}
+        >
+        <EllipsisVertical size={22} />
+        {dropdownOpen && <WorkspaceDropDown handleEdit={() => setIsEditing(true)} />}
+      </button>}
 
       {/* Two column layout */}
       <div className="workspace-body">
         <div className="workspace-main">
           {isEditing ? (
-            <MarkdownEditor value={description} onChange={setDescription} />
+            <MarkdownEditor
+              value={description}
+              onChange={setDescription}
+              onSave={handleSave}
+              onCancel={handleCancel}
+            />
           ) : (
             <div className="content-container" style={{ height: "calc(100vh - 220px)" }}>
               <div className="markdown">

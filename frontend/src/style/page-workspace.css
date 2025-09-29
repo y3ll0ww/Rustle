@@ -1,9 +1,10 @@
 .workspace-page {
   display: flex;
-  flex-direction: column; /* stack header on top */
+  flex-direction: column;
   gap: 1.5rem;
   width: 100%;
   box-sizing: border-box;
+  position: relative;
 }
 
 .workspace-header {
@@ -42,4 +43,11 @@
     margin-top: 1rem;
     margin-bottom: 0;
   }
+}
+
+.edit-ws-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9;
 }

@@ -18,10 +18,10 @@ export default function Title({
                     onChange={(e) => onChange(e.target.value)}
                     defaultValue={name}
                 />
-                : <h1 style={{ marginBottom: "0.5rem" }}>{name}</h1>
+                : <h1 style={{ margin: "1rem 1rem 1rem" }}>{name}</h1>
             }
 
-            <div className="dates">
+            <div className="dates" style={{ marginLeft: "1rem" }}>
                 <div className="created">
                     <Calendar size={20} />
                     <span>{new Date(created_at).toLocaleDateString()}</span>
