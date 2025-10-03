@@ -36,6 +36,7 @@ export const User = {
 
 export const Workspaces = {
     create: (workspace_form) => dispatcher.post(`${EP_WORKSPACES}/new`, workspace_form, { form: true }),
+    delete: (id) => dispatcher.del(`${EP_WORKSPACES}/${id}/delete`),
     from_user: () => dispatcher.get(`${EP_WORKSPACES}`),
     by_id: (id) => dispatcher.get(`${EP_WORKSPACES}/${id}`),
     new_project: ({ id, project_form }) => dispatcher.post(`${EP_WORKSPACES}/${id}`, project_form, { form: true }),
