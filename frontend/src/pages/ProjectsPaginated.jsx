@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Projects } from "../utils/ApiHandler";
-import NoWorkspacesPage from "./NoWorkspacePage";
 import LoadingPage from "./LoadingPage";
 import { usePagination } from "../hooks/usePagination";
 import { Endpoint } from "../utils/EndPoints";
 import ProjectListItem from "./components/ProjectListItem";
+import { PackagePlusIcon } from "lucide-react";
 
 export default function ProjectsPaginatedPage({ workspace_id }) {
     const navigate = useNavigate();
@@ -52,7 +52,14 @@ export default function ProjectsPaginatedPage({ workspace_id }) {
 
     // Return no content page if user is not part of any workspace
     if (projects.length === 0) {
-        return <NoWorkspacesPage />;
+        return (
+            <div className="content-container hoverable">
+                <div className="no-records">
+                    <PackagePlusIcon style={{ marginRight: "0.5rem" }}/>
+                    Add a Project
+                </div>
+            </div>
+        )
     }
 
     const handleOpenProject = async (id) => {

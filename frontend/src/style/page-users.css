@@ -26,13 +26,3 @@ html, body, #root {
 .users-pagination {
   flex: 0 0 auto;
 }
-
-.no-records {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 1.2rem;
-  color: #555;
-  padding: 2rem;
-}

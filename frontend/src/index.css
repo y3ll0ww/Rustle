@@ -136,6 +136,12 @@ button.btn-secondary:hover {
   background: var(--topbar-bg);
 }
 
+.content-container.hoverable:hover {
+  cursor: pointer;
+  color: var(--primary) !important;
+  border: 2px solid var(--primary);
+}
+
 .dropdown-menu {
   position: absolute;
   right: 0;
@@ -172,4 +178,18 @@ button.btn-secondary:hover {
   justify-content: center;
   background-color: var(--border-color);
   opacity: 0.6;
+}
+
+.no-records {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.2rem;
+  color: #555;
+  padding: 2rem;
+}
+
+.content-container.hoverable:hover .no-records {
+  color: var(--primary);
 }
