@@ -11,7 +11,7 @@ import UsersPaginatedList from "./components/UsersPaginatedList";
 import { usePagination } from "../hooks/usePagination";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Ban, EllipsisVertical, Hamburger, Pencil, Save } from "lucide-react";
+import { EllipsisVertical } from "lucide-react";
 import MarkdownEditor from "./components/MarkdownEditor";
 import WorkspaceDropDown from "./components/ModalWorkspace";
 
