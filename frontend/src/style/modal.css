@@ -11,13 +11,11 @@
   z-index: 9999;
 }
 
-.modal-container {
-  background-color: #fff;
+.modal-overlay .content-container {
+  position: relative;
+  max-width: 50%;
   padding: 2rem;
-  border-radius: 10px;
-  width: 100%;
-  max-width: 400px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  text-align: left;
 }
 
 .modal-input {
@@ -28,19 +26,20 @@
   border: 1px solid #ccc;
 }
 
-.modal-button-primary {
-  background-color: var(--primary);
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 0px;
+  background: transparent;
   border: none;
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
+  font-size: 1.5rem;
   cursor: pointer;
+  line-height: 1;
 }
 
-.modal-button-secondary {
-  background-color: #eee;
-  color: #333;
-  border: none;
-  border-radius: 6px;
-  padding: 0.5rem 1rem;
-  cursor: pointer;
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+  gap: 0.5rem;
 }
