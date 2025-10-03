@@ -1,18 +1,12 @@
 import BgImg from "../assets/20945431.png";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
-import { Endpoint } from "../utils/EndPoints";
 import { Plus } from "lucide-react";
+import CreateWorkspaceModal from "./components/ModalNewWorkspace";
 
 export default function NoWorkspacesPage() {
-    const navigate = useNavigate();
-    const { user, logout } = useAuth();
-
-    const handleClick = async (e) => {
-        e.preventDefault();
-        await logout();
-        navigate(Endpoint.home);
-    };
+    const { user } = useAuth();
+    const [modalOpen, setModalOpen] = useState(false);
 
     return (
         <div
@@ -43,7 +37,7 @@ export default function NoWorkspacesPage() {
                         You don't have any workspaces right now. Create one to get started.
                     </p>
                     <button
-                        onClick={handleClick}
+                        onClick={() => setModalOpen(true)}
                         className="btn-primary"
                     >
                         <Plus size={18} />
@@ -56,6 +50,12 @@ export default function NoWorkspacesPage() {
                     invited to join one.
                 </p>
             )}
+
+            <CreateWorkspaceModal
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+                //onCreate={handleCreate}
+            />
         </div>
 
     )
