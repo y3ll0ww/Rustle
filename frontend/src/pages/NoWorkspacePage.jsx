@@ -15,34 +15,48 @@ export default function NoWorkspacesPage() {
     };
 
     return (
-        <div className="flex flex-col items-center h-screen">
+        <div
+            style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                height: "100vh",
+                textAlign: "center",
+                padding: "1rem",
+            }}
+        >
             <img
-              src={BgImg}
-              width="600px"
-              alt="illustration"
-              className="grayscale"
+                src={BgImg}
+                alt="illustration"
+                style={{
+                    width: "800px",
+                    maxWidth: "70%",
+                    filter: "grayscale(100%)",
+                    marginBottom: "1rem",
+                }}
             />
             <h1>No workspaces found</h1>
 
             {user?.role >= 100 ? (
                 <>
-                    <p style={{ marginTop: "2em", marginBottom: "2em" }}>
+                    <p style={{ margin: "2em 0" }}>
                         You don't have any workspaces right now. Create one to get started.
                     </p>
                     <button
                         onClick={handleClick}
-                        className="btn-primary flex items-center gap-2"
+                        className="btn-primary"
                     >
                         <Plus size={18} />
                         <span>Create Workspace</span>
                     </button>
                 </>
             ) : (
-                <p style={{ marginTop: "2em", marginBottom: "2em" }}>
+                <p style={{ margin: "2em 0" }}>
                     You don't have access to create workspaces. Please wait until you're
                     invited to join one.
                 </p>
             )}
         </div>
+
     )
 }
