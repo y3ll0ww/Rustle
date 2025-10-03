@@ -11,6 +11,7 @@ import { Endpoint, publicRoutes, sharedRoutes, protectedRoutes } from "./utils/E
 import DashboardLayout from "./layouts/DashboardLayout.jsx";
 import ConditionalLayout from "./layouts/ConditionalLayout.jsx";
 import { ThemeProvider } from "./context/ThemeContext.jsx";
+import { AlertProvider } from './context/AlertContext.jsx';
 
 const homeRoute = <Route
   path={Endpoint.home}
@@ -31,38 +32,40 @@ ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <AuthProvider>
       <ThemeProvider>
-        <BrowserRouter>
-          <Routes>
-            {homeRoute}
+        <AlertProvider>
+          <BrowserRouter>
+            <Routes>
+              {homeRoute}
 
-            {publicRoutes.map((route) => (
-              <Route
-                key={route.path}
-                path={route.path}
-                element={<PublicRoute>{route.element}</PublicRoute>}
-              />
-            ))}
-
-            {sharedRoutes.map((route) => (
-              <Route
-                key={route.path}
-                path={route.path}
-                element={route.element}
-              />
-            ))}
-
-            <Route element={<DashboardLayout />}>
-              {protectedRoutes.map((route) => (
+              {publicRoutes.map((route) => (
                 <Route
                   key={route.path}
                   path={route.path}
-                  element={<ProtectedRoute>{route.element}</ProtectedRoute>}
+                  element={<PublicRoute>{route.element}</PublicRoute>}
                 />
               ))}
-            </Route>
 
-          </Routes>
-        </BrowserRouter>
+              {sharedRoutes.map((route) => (
+                <Route
+                  key={route.path}
+                  path={route.path}
+                  element={route.element}
+                />
+              ))}
+
+              <Route element={<DashboardLayout />}>
+                {protectedRoutes.map((route) => (
+                  <Route
+                    key={route.path}
+                    path={route.path}
+                    element={<ProtectedRoute>{route.element}</ProtectedRoute>}
+                  />
+                ))}
+              </Route>
+
+            </Routes>
+          </BrowserRouter>
+        </AlertProvider>
       </ThemeProvider>
     </AuthProvider>
   </React.StrictMode >

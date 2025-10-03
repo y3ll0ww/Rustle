@@ -14,6 +14,7 @@ import remarkGfm from "remark-gfm";
 import { EllipsisVertical } from "lucide-react";
 import MarkdownEditor from "./components/MarkdownEditor";
 import WorkspaceDropDown from "./components/ModalWorkspace";
+import { useAlert } from "../context/AlertContext";
 
 export default function WorkspacePage() {
   const { id } = useParams();
@@ -25,6 +26,7 @@ export default function WorkspacePage() {
   const [description, setDescription] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const { alertInfo, alertError } = useAlert();
 
   // Function for fetching workspace information
   const getWorkspaceById = async () => {
@@ -54,10 +56,12 @@ export default function WorkspacePage() {
       });
       setWorkspace(data);
       setIsEditing(false);
+      alertInfo(`${workspace.name} updated`, `Information for workspace has been updated.`);
     } catch {
       setTitle(workspace?.name);
       setDescription(workspace?.description);
       setIsEditing(false);
+      alertError("Error updating workspace");
     } finally {
       setLoading(false);
     }
@@ -79,7 +83,7 @@ export default function WorkspacePage() {
     function handleEscape(e) {
       if (e.key === "Escape") setDropdownOpen(false);
     }
-  
+
     if (dropdownOpen) {
       document.addEventListener("mousedown", handleClickOutside);
       document.addEventListener("keydown", handleEscape);
@@ -136,14 +140,15 @@ export default function WorkspacePage() {
       </header>
 
       {!isEditing &&
-        <button
+        <div
           ref={dropdownRef}
+          style={{ cursor: "pointer" }}
           className="edit-ws-button"
           onClick={() => setDropdownOpen(!dropdownOpen)}
         >
-        <EllipsisVertical size={22} />
-        {dropdownOpen && <WorkspaceDropDown handleEdit={() => setIsEditing(true)} />}
-      </button>}
+          <EllipsisVertical size={22} />
+          {dropdownOpen && <WorkspaceDropDown handleEdit={() => setIsEditing(true)} />}
+        </div>}
 
       {/* Two column layout */}
       <div className="workspace-body">

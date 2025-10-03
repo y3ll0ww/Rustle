@@ -1,10 +1,12 @@
-import { BanIcon, SaveIcon, XIcon } from "lucide-react";
 import "../../style/modal.css";
+import { BanIcon, SaveIcon, XIcon } from "lucide-react";
 import { useState } from "react";
+import { useAlert } from "../../context/AlertContext";
 import { Workspaces } from "../../utils/ApiHandler";
 
 export default function CreateWorkspaceModal({ isOpen, onClose, onCreate }) {
     const [workspaceName, setWorkspaceName] = useState("");
+    const { alertSuccess, alertError } = useAlert();
 
     if (!isOpen) return null;
 
@@ -13,9 +15,9 @@ export default function CreateWorkspaceModal({ isOpen, onClose, onCreate }) {
 
         try {
             await Workspaces.create({ name: workspaceName });
+            alertSuccess("Workspace created successfully!");
         } catch (err) {
-            console.error("Error creating workspace:", err);
-            alert("Error creating workspace.");
+            alertError("Failed to create workspace.");
         }
 
         onClose();

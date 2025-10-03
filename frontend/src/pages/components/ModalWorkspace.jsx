@@ -1,11 +1,13 @@
 import { PackageIcon, PackagePlus, Pencil, Trash, UserRoundPlusIcon, UsersRoundIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useParams } from "react-router-dom";
+import { useAlert } from "../../context/AlertContext";
 import { Workspaces } from "../../utils/ApiHandler";
 import { Endpoint } from "../../utils/EndPoints";
 
 export default function WorkspaceDropDown({ handleEdit }) {
     const { id } = useParams();
+    const { alertSuccess, alertError } = useAlert();
     const navigate = useNavigate();
 
     const ListItem = ({ icon: Icon, text, onClick, ...props }) => {
@@ -21,9 +23,9 @@ export default function WorkspaceDropDown({ handleEdit }) {
         try {
             await Workspaces.delete(id);
             navigate(Endpoint.workspaces);
+            alertSuccess("Workspace deleted successfully!")
         } catch (err) {
-            console.error("Error deleting workspace:", err);
-            alert("Error deleting workspace:", err);
+            alertError("Error deleting workspace", "Lorem ipsum was conceived as filler text, formatted in a certain way to enable the presentation of graphic elements in documents, without the need for formal ...");
         }
     };
 
