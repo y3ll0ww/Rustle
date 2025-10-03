@@ -4,7 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { Plus } from "lucide-react";
 import CreateWorkspaceModal from "./components/ModalNewWorkspace";
 
-export default function NoWorkspacesPage() {
+export default function NoWorkspacesPage({ getWorkspaces }) {
     const { user } = useAuth();
     const [modalOpen, setModalOpen] = useState(false);
 
@@ -54,7 +54,7 @@ export default function NoWorkspacesPage() {
             <CreateWorkspaceModal
                 isOpen={modalOpen}
                 onClose={() => setModalOpen(false)}
-                //onCreate={handleCreate}
+                onCreate={getWorkspaces}
             />
         </div>
 

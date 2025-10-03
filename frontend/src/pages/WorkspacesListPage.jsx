@@ -46,7 +46,7 @@ export default function WorkspaceListPage({ cap, isSection }) {
 
     // Return no content page if user is not part of any workspace
     if (workspaces.length === 0) {
-        return <NoWorkspacesPage />;
+        return <NoWorkspacesPage getWorkspaces={getWorkspaces}/>;
     }
 
     const handleOpenWorkspace = async (id) => {
