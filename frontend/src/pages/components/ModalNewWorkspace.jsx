@@ -1,18 +1,26 @@
 import { BanIcon, SaveIcon, XIcon } from "lucide-react";
 import "../../style/modal.css";
 import { useState } from "react";
+import { Workspaces } from "../../utils/ApiHandler";
 
 export default function CreateWorkspaceModal({ isOpen, onClose, onCreate }) {
     const [workspaceName, setWorkspaceName] = useState("");
 
     if (!isOpen) return null;
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!workspaceName.trim()) return;
-        onCreate(workspaceName.trim());
-        setWorkspaceName("");
+
+        try {
+            await Workspaces.create({ name: workspaceName });
+        } catch (err) {
+            console.error("Error creating workspace:", err);
+            alert("Error creating workspace.");
+        }
+
         onClose();
+        setWorkspaceName("");
+        onCreate();
     };
 
     // Prevent closing when clicking inside the modal
