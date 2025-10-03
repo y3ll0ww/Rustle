@@ -29,6 +29,10 @@ Before running Rustle, ensure you have installed the following **prerequisites**
 # 2. Usage
 > TODO
 
+Run `docker run --rm -v ${PWD}/frontend:/app -w /app node:22 npm install` to install new `node_modules`
+
+Update all `.env` files.
+
 ---
 # 3. API
 > TODO

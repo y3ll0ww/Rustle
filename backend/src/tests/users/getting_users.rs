@@ -1,7 +1,7 @@
 use rocket::http::ContentType;
 use uuid::Uuid;
 
-use super::{login, DEFAULT_LOGIN, DEFAULT_USERNAME};
+use super::{login, DEFAULT_LOGIN, DEFAULT_USERNAME, ADMIN_USERNAME};
 use crate::{
     database::pagination::{request::PaginationRequest, sort::UserField},
     tests::{
@@ -45,6 +45,6 @@ fn browse_users() {
 #[test]
 fn get_user_by_username() {
     let client = test_client();
-    login(&client, DEFAULT_LOGIN);
-    response_ok(client.get(route_users_by_name(DEFAULT_USERNAME)));
+    login(&client, ADMIN_LOGIN);
+    response_ok(client.get(route_users_by_name(ADMIN_USERNAME)));
 }
