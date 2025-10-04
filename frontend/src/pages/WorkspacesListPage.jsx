@@ -5,10 +5,13 @@ import NoWorkspacesPage from "./NoWorkspacePage";
 import LoadingPage from "./LoadingPage";
 import ItemCard from "./components/ItemCard";
 import { Endpoint } from "../utils/EndPoints";
+import { PlusCircleIcon } from "lucide-react";
+import CreateWorkspaceModal from "./components/ModalNewWorkspace";
 
 export default function WorkspaceListPage({ cap, isSection }) {
     const navigate = useNavigate();
     const [workspaces, setWorkspaces] = useState([]);
+    const [modalOpen, setModalOpen] = useState(false);
     const [loading, setLoading] = useState(true);
 
     // Function for fetching workspaces of user
@@ -46,7 +49,7 @@ export default function WorkspaceListPage({ cap, isSection }) {
 
     // Return no content page if user is not part of any workspace
     if (workspaces.length === 0) {
-        return <NoWorkspacesPage getWorkspaces={getWorkspaces}/>;
+        return <NoWorkspacesPage getWorkspaces={getWorkspaces} />;
     }
 
     const handleOpenWorkspace = async (id) => {
@@ -56,18 +59,28 @@ export default function WorkspaceListPage({ cap, isSection }) {
     // Return the content of the page
     const max = cap === undefined ? workspaces.length : cap;
     return <div className="flex w-screen">
-        <div>
-            {isSection ? <h2>Workspaces</h2> : <h1>Workspaces</h1>}
-            <div className="card-grid">
-                {workspaces.slice(0, max).map((workspace) => (
-                    <ItemCard
-                        key={workspace.id}
-                        type="Workspace"
-                        item={workspace}
-                        handleOpen={handleOpenWorkspace}
-                    />
-                ))}
+        {isSection ? <h2>Workspaces</h2> : <h1>Workspaces</h1>}
+        <div className="card-grid">
+            {workspaces.slice(0, max).map((workspace) => (
+                <ItemCard
+                    key={workspace.id}
+                    type="Workspace"
+                    item={workspace}
+                    handleOpen={handleOpenWorkspace}
+                />
+            ))}
+            <div className="content-container hoverable" style={{ display: "flex", padding: "0", margin: "0", maxWidth: "500px" }}>
+                <div className="no-records" style={{ alignItems: "center" }} onClick={() => setModalOpen(true)}>
+                    <PlusCircleIcon style={{ marginRight: "0.5rem" }} />
+                    Add a Workspace
+                </div>
             </div>
+
+            <CreateWorkspaceModal
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+                onCreate={getWorkspaces}
+            />
         </div>
     </div>;
 }
