@@ -1,15 +1,14 @@
 .card-grid {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: start;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
   gap: 1.5rem;
   padding: 1rem;
+  justify-items: stretch;
 }
 
 .card {
-  flex: 1 1 30%;
-  min-width: 500px;
-  max-width: 500px;
+  width: 100%;
+  max-width: 800px;
   background-color: var(--card-bg);
   border: 2px solid var(--border-color);
   border-radius: 8px;
