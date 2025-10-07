@@ -2,7 +2,7 @@ import BgImg from "../assets/20945431.png";
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { Plus } from "lucide-react";
-import CreateWorkspaceModal from "./components/ModalNewWorkspace";
+import NewWorkspaceModal from "./components/modal/NewWorkspaceModal";
 
 export default function NoWorkspacesPage({ getWorkspaces }) {
     const { user } = useAuth();
@@ -51,7 +51,7 @@ export default function NoWorkspacesPage({ getWorkspaces }) {
                 </p>
             )}
 
-            <CreateWorkspaceModal
+            <NewWorkspaceModal
                 isOpen={modalOpen}
                 onClose={() => setModalOpen(false)}
                 onCreate={getWorkspaces}

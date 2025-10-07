@@ -1,7 +1,7 @@
 import "../style/page-workspace.css"
 import "../style/markdown.css";
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { Workspaces } from "../utils/ApiHandler";
 import NoWorkspacesPage from "./NoWorkspacePage";
 import LoadingPage from "./LoadingPage";
@@ -15,9 +15,12 @@ import { EllipsisVertical } from "lucide-react";
 import MarkdownEditor from "./components/MarkdownEditor";
 import WorkspaceDropDown from "./components/ModalWorkspace";
 import { useAlert } from "../context/AlertContext";
+import DeleteWorkspaceModal from "./components/modal/DeleteWorkspaceModal";
+import { Endpoint } from "../utils/EndPoints";
 
 export default function WorkspacePage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [workspace, setWorkspace] = useState(null);
   const [loading, setLoading] = useState(true);
   const { paginationState, updateFromResponse } = usePagination();
@@ -25,8 +28,9 @@ export default function WorkspacePage() {
   const [title, setTitle] = useState(null);
   const [description, setDescription] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const dropdownRef = useRef(null);
-  const { alertInfo, alertError } = useAlert();
+  const { alertSuccess, alertInfo, alertError } = useAlert();
 
   // Function for fetching workspace information
   const getWorkspaceById = async () => {
@@ -97,6 +101,19 @@ export default function WorkspacePage() {
     }
   }, [dropdownOpen]);
 
+  // Handle deleting a workspace
+  const handleDelete = async (e) => {
+    e.preventDefault();
+
+    try {
+      await Workspaces.delete(id);
+      navigate(Endpoint.workspaces);
+      alertInfo("Workspace deleted", `Deleted workspace '${id}' and all of its contents.`)
+    } catch (err) {
+      alertError("Error deleting workspace", "Something went wrong. Try contacting your administrator.");
+    }
+  };
+
   // Get user's workspaces via API
   useEffect(() => {
     // Initial fetch
@@ -147,7 +164,10 @@ export default function WorkspacePage() {
           onClick={() => setDropdownOpen(!dropdownOpen)}
         >
           <EllipsisVertical size={22} />
-          {dropdownOpen && <WorkspaceDropDown handleEdit={() => setIsEditing(true)} />}
+          {dropdownOpen && <WorkspaceDropDown
+            handleEdit={() => setIsEditing(true)}
+            handleDelete={() => setDeleteModalOpen(true)}
+          />}
         </div>}
 
       {/* Two column layout */}
@@ -185,6 +205,12 @@ export default function WorkspacePage() {
           </div>
         )}
       </div>
-    </div>
+
+      <DeleteWorkspaceModal
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onSubmit={handleDelete}
+      />
+    </div >
   );
 }

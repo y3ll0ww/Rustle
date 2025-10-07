@@ -1,3 +1,4 @@
+import "../style/cardgrid.css";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Workspaces } from "../utils/ApiHandler";
@@ -6,7 +7,7 @@ import LoadingPage from "./LoadingPage";
 import ItemCard from "./components/ItemCard";
 import { Endpoint } from "../utils/EndPoints";
 import { PlusCircleIcon } from "lucide-react";
-import CreateWorkspaceModal from "./components/ModalNewWorkspace";
+import NewWorkspaceModal from "./components/modal/NewWorkspaceModal";
 
 export default function WorkspaceListPage({ cap, isSection }) {
     const navigate = useNavigate();
@@ -69,18 +70,19 @@ export default function WorkspaceListPage({ cap, isSection }) {
                     handleOpen={handleOpenWorkspace}
                 />
             ))}
-            <div className="content-container hoverable" style={{ display: "flex", padding: "0", margin: "0", maxWidth: "500px" }}>
+            <div className="card content-container hoverable" style={{ padding: "0", margin: "0" }}>
                 <div className="no-records" style={{ alignItems: "center" }} onClick={() => setModalOpen(true)}>
                     <PlusCircleIcon style={{ marginRight: "0.5rem" }} />
                     Add a Workspace
                 </div>
             </div>
-
-            <CreateWorkspaceModal
-                isOpen={modalOpen}
-                onClose={() => setModalOpen(false)}
-                onCreate={getWorkspaces}
-            />
         </div>
+
+        <NewWorkspaceModal
+            isOpen={modalOpen}
+            onClose={() => setModalOpen(false)}
+            onSubmit={getWorkspaces}
+        />
+
     </div>;
 }
