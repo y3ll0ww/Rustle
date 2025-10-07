@@ -1,8 +1,8 @@
 import "../../style/cardgrid.css";
-import { Users, RotateCcw, Calendar, Image } from "lucide-react";
+import { Users, RotateCcw, Calendar, Image, BrainCircuitIcon } from "lucide-react";
 import { TimeAgo } from "../../utils/TimeAgo";
 
-export default function ItemCard({ item, type, handleOpen }) {
+export default function ItemCard({ Icon, item, type, handleOpen }) {
     function Avatar({ image_url }) {
         if (image_url) {
             return <img src={image_url} alt="Avatar" />
@@ -36,6 +36,12 @@ export default function ItemCard({ item, type, handleOpen }) {
         </div>
     }
 
+    function Icon() {
+        if (type === "Workspace") {
+            return <BrainCircuitIcon size={20} />;
+        }
+    }
+
     return (
         <div className="card">
             <div className="card-header">
@@ -54,7 +60,12 @@ export default function ItemCard({ item, type, handleOpen }) {
             </div>
 
             {/* Button */}
-            <button className="btn-primary" onClick={() => handleOpen(item.id)}>
+            <button
+                className="btn-primary"
+                onClick={() => handleOpen(item.id)}
+                style={{ justifyContent: "center" }}
+            >
+                <Icon />
                 Open {type}
             </button>
         </div>

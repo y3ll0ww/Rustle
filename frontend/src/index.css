@@ -90,6 +90,7 @@ button {
 }
 
 button.btn-secondary,
+button.btn-abort,
 button.btn-primary {
   display: inline-flex;
   align-items: center;
@@ -108,6 +109,11 @@ button.btn-secondary {
   border-color: var(--text);
 }
 
+button.btn-abort {
+  color: var(--error);
+  border-color: var(--error);
+}
+
 button.btn-primary svg {
   display: inline-block;
   vertical-align: middle;
@@ -122,6 +128,11 @@ button.btn-primary:hover {
 button.btn-secondary:hover {
   background-color: var(--text);
   color: var(--bg)
+}
+
+button.btn-abort:hover {
+  background-color: var(--error);
+  color: #fff;
 }
 
 /* Common components */

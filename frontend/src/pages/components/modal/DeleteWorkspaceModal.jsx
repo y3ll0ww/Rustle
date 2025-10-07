@@ -1,4 +1,4 @@
-import { BanIcon, SaveIcon } from "lucide-react";
+import { BanIcon, TrashIcon } from "lucide-react";
 import Modal from "./Modal";
 
 export default function DeleteWorkspaceModal({ isOpen, onClose, onSubmit }) {
@@ -10,8 +10,8 @@ export default function DeleteWorkspaceModal({ isOpen, onClose, onSubmit }) {
                     <BanIcon />
                     Cancel
                 </button>
-                <button className="btn-primary" onClick={onSubmit}>
-                    <SaveIcon />
+                <button className="btn-abort" onClick={onSubmit}>
+                    <TrashIcon />
                     Delete
                 </button>
             </div>
