@@ -3,11 +3,13 @@ import { useEffect, useState, useRef } from "react";
 import { ChevronDown, LogOut, Search, SunMoon } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
+import LogoutModal from "./ModalLogout";
 
 export default function Topbar() {
   const { user, logout } = useAuth();
   const { toggleTheme } = useTheme();
   const [profileOpen, setProfileOpen] = useState(false);
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -20,7 +22,7 @@ export default function Topbar() {
     function handleEscape(e) {
       if (e.key === "Escape") setProfileOpen(false);
     }
-  
+
     if (profileOpen) {
       document.addEventListener("mousedown", handleClickOutside);
       document.addEventListener("keydown", handleEscape);
@@ -56,12 +58,18 @@ export default function Topbar() {
   }
 
   function DropdownMenu() {
-    return <div className="dropdown-menu">
+    return <div
+      className="dropdown-menu"
+      onClick={() => setProfileOpen(!profileOpen)}
+    >
       <button onClick={toggleTheme}>
         <SunMoon size={22} />
         <span>Toggle Theme</span>
       </button>
-      <button onClick={logout}>
+      <button 
+        className="logout-btn"
+        onClick={() => setLogoutModalOpen(true)}
+      >
         <LogOut size={22} />
         <span>Logout</span>
       </button>
@@ -75,6 +83,10 @@ export default function Topbar() {
         <ProfileButton />
         {profileOpen && <DropdownMenu />}
       </div>
+      <LogoutModal
+        isOpen={logoutModalOpen}
+        onClose={() => setLogoutModalOpen(false)}
+      />
     </header>
   );
 }

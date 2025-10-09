@@ -1,5 +1,5 @@
 import { BanIcon, TrashIcon } from "lucide-react";
-import Modal from "./Modal";
+import Modal from "../../../components/Modal";
 
 export default function DeleteWorkspaceModal({ isOpen, onClose, onSubmit }) {
     function ModalContent() {

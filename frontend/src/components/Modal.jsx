@@ -1,4 +1,4 @@
-import "../../../style/modal.css";
+import "../style/modal.css";
 import { XIcon } from "lucide-react";
 import { useEffect } from "react";
 

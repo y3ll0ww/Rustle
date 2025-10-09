@@ -13,7 +13,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { EllipsisVertical } from "lucide-react";
 import MarkdownEditor from "./components/MarkdownEditor";
-import WorkspaceDropDown from "./components/ModalWorkspace";
+import WorkspaceDropDown from "./components/WorkspaceDropdown";
 import { useAlert } from "../context/AlertContext";
 import DeleteWorkspaceModal from "./components/modal/DeleteWorkspaceModal";
 import { Endpoint } from "../utils/EndPoints";

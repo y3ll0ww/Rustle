@@ -2,13 +2,13 @@ import "../../style/sidebar.css";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { BrainCircuit, Menu, LogOut, Home, Settings, Users } from "lucide-react";
-import { useAuth } from "../../context/AuthContext";
 import { Endpoint } from "../../utils/EndPoints";
 import { useTheme } from "../../context/ThemeContext";
+import LogoutModal from "./ModalLogout";
 
 export default function Sidebar() {
-  const { logout } = useAuth();
   const { logo, logoIcon } = useTheme();
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   function Header() {
@@ -64,10 +64,18 @@ export default function Sidebar() {
   function Footer() {
     return (
       <div className="sidebar-footer">
-        <button onClick={logout} className="logout-btn">
+        <button
+          className="logout-btn"
+          onClick={() => setLogoutModalOpen(true)}
+        >
           <LogOut size={18} />
           {sidebarOpen && <span>Logout</span>}
         </button>
+
+        <LogoutModal
+          isOpen={logoutModalOpen}
+          onClose={() => setLogoutModalOpen(false)}
+        />
       </div>
     )
   }

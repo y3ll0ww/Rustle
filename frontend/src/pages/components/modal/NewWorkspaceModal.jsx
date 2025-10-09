@@ -4,7 +4,7 @@ import { useAlert } from "../../../context/AlertContext";
 import { Workspaces } from "../../../utils/ApiHandler";
 import { useNavigate } from "react-router-dom";
 import { Endpoint } from "../../../utils/EndPoints";
-import Modal from "./Modal";
+import Modal from "../../../components/Modal";
 
 export default function NewWorkspaceModal({ isOpen, onClose, onSubmit }) {
     const navigate = useNavigate();
