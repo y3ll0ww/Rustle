@@ -1,16 +1,43 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { Endpoint } from "./utils/EndPoints";
+import { LogInIcon } from "lucide-react";
+import { useTheme } from "./context/ThemeContext";
 
 function App() {
+  const { logo } = useTheme();
+  const navigate = useNavigate();
+
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold">Welcome to Rustle</h1>
-      <p className="mt-4">This is your main landing page.</p>
-      <Link
-        to="/login"
-        className="inline-block mt-6 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-      >
-        Go to Login
-      </Link>
+    <div style={{
+      height: "100vh",
+      width: "100vw",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      textAlign: "center",
+      animation: "fadeIn 0.6s ease",
+    }}>
+      <div style={{
+        padding: "3rem 4rem",
+        maxWidth: "600px",
+        width: "90%",
+      }}>
+        <img
+          src={logo()}
+          alt="Logo"
+          style={{ width: "300px" }}
+        />
+        <h1>Welcome to Rustle</h1>
+        <p style={{ margin: "1rem 0rem 2rem 0rem" }}>This is your main landing page.</p>
+        <button
+          className="btn-primary"
+          onClick={() => navigate(Endpoint.login)}
+          style={{ padding: "0.5rem 2rem 0.5rem 2rem" }}
+        >
+          <LogInIcon />
+          <span>Go to Login</span>
+        </button>
+      </div>
     </div>
   );
 }
