@@ -45,3 +45,7 @@
   height: 32px;
   border-radius: 50%;
 }
+
+.logout-btn:hover {
+  background-color: var(--error) !important;
+}
