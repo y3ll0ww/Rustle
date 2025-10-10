@@ -21,6 +21,11 @@
   --border-color: #333;
   --error: #950000;
   --primary: hsl(210, 90%, 50%);
+  --primary1: color-mix(in srgb, var(--primary) 90%, white);
+  --primary2: color-mix(in srgb, var(--primary) 70%, white);
+  --primary3: color-mix(in srgb, var(--primary) 70%, black);
+  --primary4: color-mix(in srgb, var(--primary) 90%, black);
+  --trans-dur: 0.3s;
   ;
 
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;

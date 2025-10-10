@@ -3,11 +3,11 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Workspaces } from "../utils/ApiHandler";
 import NoWorkspacesPage from "./NoWorkspacePage";
-import LoadingPage from "./LoadingPage";
 import ItemCard from "./components/ItemCard";
 import { Endpoint } from "../utils/EndPoints";
 import { PlusCircleIcon } from "lucide-react";
 import NewWorkspaceModal from "./components/modal/NewWorkspaceModal";
+import Loading from "../components/Loading";
 
 export default function WorkspaceListPage({ cap, isSection }) {
     const navigate = useNavigate();
@@ -43,9 +43,7 @@ export default function WorkspaceListPage({ cap, isSection }) {
 
     // Return loading screen when the workspaces are being fetched
     if (loading) {
-        return <div className="flex items-center justify-center h-full">
-            <LoadingPage />
-        </div>;
+        return <Loading size="large" />;
     }
 
     // Return no content page if user is not part of any workspace

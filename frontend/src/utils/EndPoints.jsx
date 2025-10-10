@@ -1,10 +1,10 @@
 
 import DashboardPage from "../pages/DashboardPage.jsx";
 import LoginPage from "../pages/LoginPage.jsx";
-import LoadingPage from "../pages/LoadingPage.jsx";
 import WorkspacePage from '../pages/WorkspacePage.jsx';
 import WorkspaceListPage from '../pages/WorkspacesListPage.jsx';
 import UsersPage from "../pages/UsersPage.jsx";
+import Loading from "../components/Loading.jsx";
 
 export const Endpoint = {
     home: "/",
@@ -21,7 +21,7 @@ export const publicRoutes = [
 ]
 
 export const sharedRoutes = [
-    { path: "/loading-preview", element: <LoadingPage /> },
+    { path: "/loading-preview", element: <Loading /> },
 ]
 
 export const protectedRoutes = [

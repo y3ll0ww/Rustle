@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Workspaces } from "../utils/ApiHandler";
 import NoWorkspacesPage from "./NoWorkspacePage";
-import LoadingPage from "./LoadingPage";
 import Title from "./components/Title";
 import ProjectsPaginatedPage from "./ProjectsPaginated";
 import UsersPaginatedList from "./components/UsersPaginatedList";
@@ -17,6 +16,7 @@ import WorkspaceDropDown from "./components/WorkspaceDropdown";
 import { useAlert } from "../context/AlertContext";
 import DeleteWorkspaceModal from "./components/modal/DeleteWorkspaceModal";
 import { Endpoint } from "../utils/EndPoints";
+import Loading from "../components/Loading";
 
 export default function WorkspacePage() {
   const { id } = useParams();
@@ -132,9 +132,7 @@ export default function WorkspacePage() {
 
   // Return loading screen when the workspaces are being fetched
   if (loading) {
-    return <div className="flex items-center justify-center h-full">
-      <LoadingPage />
-    </div>;
+    return <Loading size="large" />;
   }
 
   // Return no content page if user is not part of any workspace

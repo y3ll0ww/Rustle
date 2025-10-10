@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Projects } from "../utils/ApiHandler";
-import LoadingPage from "./LoadingPage";
 import { usePagination } from "../hooks/usePagination";
 import { Endpoint } from "../utils/EndPoints";
 import ProjectListItem from "./components/ProjectListItem";
 import { PackagePlusIcon } from "lucide-react";
+import Loading from "../components/Loading";
 
 export default function ProjectsPaginatedPage({ workspace_id }) {
     const navigate = useNavigate();
@@ -45,8 +45,8 @@ export default function ProjectsPaginatedPage({ workspace_id }) {
 
     // Return loading screen when the workspaces are being fetched
     if (loading) {
-        return <div className="flex items-center justify-center h-full">
-            <LoadingPage />
+        return <div>
+            <Loading />
         </div>;
     }
 

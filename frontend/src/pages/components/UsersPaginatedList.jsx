@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { User } from "../../utils/ApiHandler";
-import LoadingPage from "../LoadingPage";
 import { Endpoint } from "../../utils/EndPoints";
 import UserListItem from "./UserListItem";
 import { userRoleColor, userType, workspaceMemberType, workspaceRoleColor } from "../../utils/RoleInterpreter";
+import Loading from "../../components/Loading";
 
 export default function UsersPaginatedList({
     paginationState,
@@ -47,9 +47,7 @@ export default function UsersPaginatedList({
 
     // Return loading screen when the workspaces are being fetched
     if (loading) {
-        return <div className="flex items-center justify-center h-full">
-            <LoadingPage />
-        </div>;
+        return <Loading size="large" />;
     }
 
     const handleClickUser = async (id) => {
