@@ -1,7 +1,8 @@
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Endpoint } from "./utils/EndPoints";
 import { LogInIcon } from "lucide-react";
 import { useTheme } from "./context/ThemeContext";
+import { APP_NAME } from "./hooks/usePageTitle";
 
 function App() {
   const { logo } = useTheme();
@@ -27,7 +28,7 @@ function App() {
           alt="Logo"
           style={{ width: "300px" }}
         />
-        <h1>Welcome to Rustle</h1>
+        <h1>Welcome to ${APP_NAME}</h1>
         <p style={{ margin: "1rem 0rem 2rem 0rem" }}>This is your main landing page.</p>
         <button
           className="btn-primary"

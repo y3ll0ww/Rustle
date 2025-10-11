@@ -12,6 +12,7 @@ import DashboardLayout from "./layouts/DashboardLayout.jsx";
 import ConditionalLayout from "./layouts/ConditionalLayout.jsx";
 import { ThemeProvider } from "./context/ThemeContext.jsx";
 import { AlertProvider } from './context/AlertContext.jsx';
+import SharedRoute from './context/SharedRoute.jsx';
 
 const homeRoute = <Route
   path={Endpoint.home}
@@ -23,10 +24,6 @@ const homeRoute = <Route
     element={<ProtectedRoute><DashboardPage /></ProtectedRoute>}
   />
 </Route>;
-
-export default function SharedRoute({ children }) {
-  return children;
-}
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -41,7 +38,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                 <Route
                   key={route.path}
                   path={route.path}
-                  element={<PublicRoute>{route.element}</PublicRoute>}
+                  element={<PublicRoute title={route.title}>{route.element}</PublicRoute>}
                 />
               ))}
 
@@ -49,7 +46,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                 <Route
                   key={route.path}
                   path={route.path}
-                  element={route.element}
+                  element={<SharedRoute title={route.title}>{route.element}</SharedRoute>}
                 />
               ))}
 
@@ -58,7 +55,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
                   <Route
                     key={route.path}
                     path={route.path}
-                    element={<ProtectedRoute>{route.element}</ProtectedRoute>}
+                    element={<ProtectedRoute title={route.title}>{route.element}</ProtectedRoute>}
                   />
                 ))}
               </Route>

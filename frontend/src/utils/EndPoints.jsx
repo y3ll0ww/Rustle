@@ -17,17 +17,17 @@ export const Endpoint = {
 };
 
 export const publicRoutes = [
-    { path: Endpoint.login, element: <LoginPage /> },
+    { title: "Login", path: Endpoint.login, element: <LoginPage /> },
 ]
 
 export const sharedRoutes = [
-    { path: "/loading-preview", element: <Loading /> },
+    { title: "Loading Preview", path: "/loading-preview", element: <Loading /> },
 ]
 
 export const protectedRoutes = [
-    { path: Endpoint.dashboard, element: <DashboardPage /> },
-    { path: Endpoint.workspaces, element: <WorkspaceListPage /> },
-    { path: Endpoint.users, element: <UsersPage /> },
-    { path: `${Endpoint.workspace}/:id`, element: <WorkspacePage /> },
-    { path: `${Endpoint.users}/:id`, element: <div>Users</div> },
+    { title: "Dashboard", path: Endpoint.dashboard, element: <DashboardPage /> },
+    { title: "Workspaces", path: Endpoint.workspaces, element: <WorkspaceListPage /> },
+    { title: "Users", path: Endpoint.users, element: <UsersPage /> },
+    { title: "Workspace", path: `${Endpoint.workspace}/:id`, element: <WorkspacePage /> },
+    { title: "User", path: `${Endpoint.users}/:id`, element: <div>Users</div> },
 ];
