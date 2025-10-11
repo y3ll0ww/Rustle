@@ -179,8 +179,8 @@ export default function WorkspacePage() {
               onCancel={handleCancel}
             />
           ) : (
-            <div className="content-container" style={{ height: "calc(100vh - 220px)" }}>
-              <div className="markdown">
+            <div className="markdown-final markdown">
+              <div className="">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{description}</ReactMarkdown>
               </div>
             </div>

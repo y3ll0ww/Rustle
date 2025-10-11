@@ -1,5 +1,5 @@
-import { Ban, Save } from "lucide-react";
 import "../../style/markdown.css";
+import { Ban, Save } from "lucide-react";
 import { useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -24,13 +24,13 @@ export default function MarkdownEditor({ value, onChange, onSave, onCancel, }) {
   return (
     <div>
       <div className="markdown-tools">
+        <button className="btn-secondary" onClick={onCancel}>
+          <Ban size={16} />
+          <span> Cancel</span>
+        </button>
         <button className="btn-primary" onClick={onSave}>
           <Save size={16} />
           <span> Save</span>
-        </button>
-        <button className="btn-primary" onClick={onCancel}>
-          <Ban size={16} />
-          <span> Cancel</span>
         </button>
       </div>
       <div className="markdown-container">

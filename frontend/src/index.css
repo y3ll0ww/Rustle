@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Parkinsans:wght@300..800&display=swap');
+
 /* Root app container */
 #root {
   min-height: 100vh;
@@ -27,12 +29,12 @@
   --primary4: color-mix(in srgb, var(--primary) 90%, black);
   --trans-dur: 0.3s;
   ;
+  
+  font-family: "Parkinsans", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
 
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
 
-  font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -59,9 +61,6 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
   background-color: var(--bg);
   color: var(--text);
 }
@@ -77,7 +76,7 @@ a:hover {
 }
 
 h1 {
-  font-size: 3.2em;
+  font-size: 2.5em;
   line-height: 1.1;
 }
 
