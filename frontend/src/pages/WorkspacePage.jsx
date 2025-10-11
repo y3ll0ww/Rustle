@@ -1,7 +1,7 @@
-import "../style/page-workspace.css"
 import "../style/markdown.css";
+import "../style/page-workspace.css";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Workspaces } from "../utils/ApiHandler";
 import NoWorkspacesPage from "./NoWorkspacePage";
 import Title from "./components/Title";
@@ -17,10 +17,12 @@ import { useAlert } from "../context/AlertContext";
 import DeleteWorkspaceModal from "./components/modal/DeleteWorkspaceModal";
 import { Endpoint } from "../utils/EndPoints";
 import Loading from "../components/Loading";
+import WorkspaceUsersPage from "./components/WorkspaceUsers";
 
 export default function WorkspacePage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [workspace, setWorkspace] = useState(null);
   const [loading, setLoading] = useState(true);
   const { paginationState, updateFromResponse } = usePagination();
@@ -32,7 +34,11 @@ export default function WorkspacePage() {
   const dropdownRef = useRef(null);
   const { alertSuccess, alertInfo, alertError } = useAlert();
 
-  // Function for fetching workspace information
+  // Determine which tab to show from URL
+  const tab = searchParams.get("tab");
+  const showUsers = tab === "users";
+
+  // Fetch workspace data
   const getWorkspaceById = async () => {
     try {
       const data = await Workspaces.by_id(id);
@@ -53,14 +59,11 @@ export default function WorkspacePage() {
     try {
       const data = await Workspaces.update_information({
         id: id,
-        updated_info: {
-          name: title,
-          description: description,
-        }
+        updated_info: { name: title, description: description },
       });
       setWorkspace(data);
       setIsEditing(false);
-      alertInfo(`${workspace.name} updated`, `Information for workspace has been updated.`);
+      alertSuccess(`${workspace.name} updated`, "Workspace info updated.");
     } catch {
       setTitle(workspace?.name);
       setDescription(workspace?.description);
@@ -69,7 +72,7 @@ export default function WorkspacePage() {
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   function handleCancel() {
     setTitle(workspace.name);
@@ -83,11 +86,9 @@ export default function WorkspacePage() {
         setDropdownOpen(false);
       }
     }
-
     function handleEscape(e) {
       if (e.key === "Escape") setDropdownOpen(false);
     }
-
     if (dropdownOpen) {
       document.addEventListener("mousedown", handleClickOutside);
       document.addEventListener("keydown", handleEscape);
@@ -98,49 +99,36 @@ export default function WorkspacePage() {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEscape);
-    }
+    };
   }, [dropdownOpen]);
 
   // Handle deleting a workspace
   const handleDelete = async (e) => {
     e.preventDefault();
-
     try {
       await Workspaces.delete(id);
       navigate(Endpoint.workspaces);
-      alertInfo("Workspace deleted", `Deleted workspace '${id}' and all of its contents.`)
-    } catch (err) {
-      alertError("Error deleting workspace", "Something went wrong. Try contacting your administrator.");
+      alertInfo("Workspace deleted", `Deleted workspace '${id}'`);
+    } catch {
+      alertError("Error deleting workspace", "Try contacting your administrator.");
     }
   };
 
-  // Get user's workspaces via API
+  // Show Users (updates URL)
+  const handleShowUsers = () => setSearchParams({ tab: "users" });
+  const handleBackFromUsers = () => setSearchParams({}); // remove tab
+
   useEffect(() => {
-    // Initial fetch
     getWorkspaceById();
-
-    // Poll every 30s
     const interval = setInterval(() => {
-      if (isEditing) {
-        getWorkspaceById();
-      }
+      if (isEditing) getWorkspaceById();
     }, 30000);
-
-    // Cleanup interval on unmount
     return () => clearInterval(interval);
   }, []);
 
-  // Return loading screen when the workspaces are being fetched
-  if (loading) {
-    return <Loading size="large" />;
-  }
+  if (loading) return <Loading size="large" />;
+  if (!workspace) return <NoWorkspacesPage />;
 
-  // Return no content page if user is not part of any workspace
-  if (!workspace) {
-    return <NoWorkspacesPage />;
-  }
-
-  // Return the content of the page
   return (
     <div className="workspace-page">
       {/* Full width header */}
@@ -154,7 +142,8 @@ export default function WorkspacePage() {
         />
       </header>
 
-      {!isEditing &&
+      {/* Dropdown menu */}
+      {!isEditing && (
         <div
           ref={dropdownRef}
           style={{ cursor: "pointer" }}
@@ -162,11 +151,15 @@ export default function WorkspacePage() {
           onClick={() => setDropdownOpen(!dropdownOpen)}
         >
           <EllipsisVertical size={22} />
-          {dropdownOpen && <WorkspaceDropDown
-            handleEdit={() => setIsEditing(true)}
-            handleDelete={() => setDeleteModalOpen(true)}
-          />}
-        </div>}
+          {dropdownOpen && (
+            <WorkspaceDropDown
+              handleEdit={() => setIsEditing(true)}
+              handleDelete={() => setDeleteModalOpen(true)}
+              handleShowUsers={handleShowUsers}
+            />
+          )}
+        </div>
+      )}
 
       {/* Two column layout */}
       <div className="workspace-body">
@@ -178,16 +171,21 @@ export default function WorkspacePage() {
               onSave={handleSave}
               onCancel={handleCancel}
             />
+          ) : showUsers ? (
+            <div style={{ height: "100%" }}>
+              <WorkspaceUsersPage handleBack={handleBackFromUsers} />
+            </div>
           ) : (
             <div className="markdown-final markdown">
-              <div className="">
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>{description}</ReactMarkdown>
-              </div>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {description}
+              </ReactMarkdown>
             </div>
           )}
         </div>
 
-        {!isEditing && (
+        {/* Right sidebar */}
+        {!isEditing && !showUsers && (
           <div className="right-sidebar">
             <h2>Projects</h2>
             <ProjectsPaginatedPage workspace_id={workspace.id} />
@@ -204,11 +202,12 @@ export default function WorkspacePage() {
         )}
       </div>
 
+      {/* Delete Modal */}
       <DeleteWorkspaceModal
         isOpen={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
         onSubmit={handleDelete}
       />
-    </div >
+    </div>
   );
 }

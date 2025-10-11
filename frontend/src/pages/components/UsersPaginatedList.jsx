@@ -9,8 +9,8 @@ import Loading from "../../components/Loading";
 export default function UsersPaginatedList({
     paginationState,
     updateFromResponse,
-    exclude_self,
-    status,
+    exclude_self=false,
+    status=2,
     role,
     workspace,
 }) {

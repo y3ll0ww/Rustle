@@ -1,6 +1,8 @@
 import { PackageIcon, PackagePlus, Pencil, Trash, UserRoundPlusIcon, UsersRoundIcon } from "lucide-react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Endpoint } from "../../utils/EndPoints";
 
-export default function WorkspaceDropDown({ handleEdit, handleDelete }) {
+export default function WorkspaceDropDown({ handleEdit, handleDelete, handleShowUsers }) {
     const ListItem = ({ icon: Icon, text, onClick, ...props }) => {
         return <button onClick={onClick} {...props}>
             <Icon size={22} />
@@ -31,6 +33,7 @@ export default function WorkspaceDropDown({ handleEdit, handleDelete }) {
         <ListItem
             icon={UsersRoundIcon}
             text="Show members"
+            onClick={handleShowUsers}
         />
         <ListItem
             icon={UserRoundPlusIcon}

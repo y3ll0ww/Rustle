@@ -18,8 +18,7 @@ export default function UsersPage() {
         <UsersPaginatedList
           paginationState={pagination.paginationState}
           updateFromResponse={pagination.updateFromResponse}
-          exclude_self={false}
-          status={2}
+          exclude_self={true}
         />
       </div>
 
