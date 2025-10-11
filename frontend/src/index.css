@@ -148,6 +148,7 @@ button.btn-abort:hover {
   padding: 0.5rem;
   margin: 0.5rem 0 2rem;
   background: var(--topbar-bg);
+  transition: border-color 0.25s;
 }
 
 .content-container.hoverable:hover {
@@ -202,6 +203,7 @@ button.btn-abort:hover {
   font-size: 1.2rem;
   color: #555;
   padding: 2rem;
+  transition: color 0.25s;
 }
 
 .content-container.hoverable:hover .no-records {
@@ -221,8 +223,21 @@ button.btn-abort:hover {
 }
 
 .avatar.placeholder {
-  background: #ccc;
+  background: var(--card-bg);
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 2px solid var(--border-color);
+  transition: border-color 0.3s ease;
+}
+
+.inline-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pill {
+  height: 1.5rem;
+  border-radius: 10px;
 }

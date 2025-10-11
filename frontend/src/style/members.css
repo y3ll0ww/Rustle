@@ -23,9 +23,13 @@
   border: 2px solid var(--primary);
 }
 
+.member-item:hover .avatar.placeholder {
+  border-color: var(--primary);
+}
+
 .member-index {
   font-weight: bold;
-  margin-right: 1rem;
+  margin-right: 0.3rem;
   margin-left: 1rem;
 }
 

@@ -10,7 +10,7 @@ import UsersPaginatedList from "./components/UsersPaginatedList";
 import { usePagination } from "../hooks/usePagination";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { EllipsisVertical } from "lucide-react";
+import { EllipsisVertical, PackageSearchIcon, UserRoundSearchIcon } from "lucide-react";
 import MarkdownEditor from "./components/MarkdownEditor";
 import WorkspaceDropDown from "./components/WorkspaceDropdown";
 import { useAlert } from "../context/AlertContext";
@@ -191,10 +191,26 @@ export default function WorkspacePage() {
         {/* Right sidebar */}
         {!isEditing && !showUsers && (
           <div className="right-sidebar">
-            <h2>Projects</h2>
+            <div className="inline-pill">
+              <h2>Projects</h2>
+              <button
+                className="btn-secondary pill"
+              >
+                <PackageSearchIcon size={20} />
+              </button>
+            </div>
             <ProjectsPaginatedPage workspace_id={workspace.id} />
 
-            <h2>Members</h2>
+            <div className="inline-pill">
+              <h2>Members</h2>
+              <button
+                className="btn-secondary pill"
+                onClick={handleShowUsers}
+              >
+                  <UserRoundSearchIcon size={20} />
+              </button>
+            </div>
+
             <UsersPaginatedList
               paginationState={paginationState}
               updateFromResponse={updateFromResponse}

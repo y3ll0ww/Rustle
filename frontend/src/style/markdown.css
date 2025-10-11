@@ -1,3 +1,6 @@
+/* ------------------------------ */
+/* Markdown Container Layout */
+/* ------------------------------ */
 .markdown-container {
   display: flex;
   flex-direction: row;
@@ -8,6 +11,7 @@
   position: relative;
 }
 
+/* Tools inside the container */
 .markdown-tools {
   position: absolute;
   top: 1rem;
@@ -15,6 +19,7 @@
   z-index: 0;
 }
 
+/* Input / Preview / Final */
 .markdown-input,
 .markdown-preview,
 .markdown-final {
@@ -30,74 +35,89 @@
   white-space: pre-wrap;
 }
 
+/* Input and Preview share width */
 .markdown-input,
 .markdown-preview {
   width: 50%;
 }
 
+/* Full height final preview */
 .markdown-final {
   height: calc(100vh - 220px);
 }
 
+/* Input specific */
 .markdown-input {
   background: var(--topbar-bg);
   color: var(--text);
   padding: 1.5rem;
   font-family: monospace;
   resize: none;
-  resize: none;
 }
 
+/* Preview styling */
 .markdown-preview {
-  background-color: var(---card-bg);
-  padding: 0rem;
+  background-color: var(--card-bg);
+  padding: 0;
   overflow-x: hidden;
 }
 
+/* Final rendered markdown */
 .markdown {
   padding: 1.5rem;
 }
 
+/* ------------------------------ */
+/* Tables */
+/* ------------------------------ */
 .markdown table {
   width: 100%;
-  border-collapse: collapse;
-  margin: 1rem 0;
+  border-collapse: separate; /* must be separate for radius */
+  border-spacing: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+/* Table cells */
+.markdown th {
+  background-color: var(--card-bg);
 }
 
 .markdown th,
 .markdown td {
-  border: 2px solid var(--border-color);
   padding: 0.5rem 1rem;
   text-align: left;
-  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
 }
 
-.markdown th {
-  background-color: var(--bg);
+/* Table selective rounded corners */
+.markdown table th:first-child {
+  border-top-left-radius: 8px;
 }
 
+.markdown table th:last-child {
+  border-top-right-radius: 8px;
+}
+
+.markdown table tr:last-child td:first-child {
+  border-bottom-left-radius: 8px;
+}
+
+.markdown table tr:last-child td:last-child {
+  border-bottom-right-radius: 8px;
+}
+
+/* ------------------------------ */
+/* Lists */
+/* ------------------------------ */
 .markdown li {
   margin-left: 1rem;
 }
 
-/* Stack input and preview on smaller screens */
-@media (max-width: 1300px) {
-  .markdown-container {
-    flex-direction: column;
-  }
-
-  .markdown-input,
-  .markdown-preview {
-    width: 100%;
-    min-height: 600px;
-  }
-
-  .markdown-preview {
-    margin-bottom: 2rem;
-  }
-}
-
-/* Inline code (backticks in markdown) */
+/* ------------------------------ */
+/* Inline code and code blocks */
+/* ------------------------------ */
 .markdown code {
   background: var(--card-bg);
   color: var(--accent);
@@ -108,7 +128,6 @@
   font-size: 0.95em;
 }
 
-/* Code blocks (``` fenced code ```) */
 .markdown pre {
   background: var(--card-bg);
   border: 2px solid var(--border-color);
@@ -124,4 +143,23 @@
   color: var(--text);
   font-size: 0.9em;
   line-height: 1.5;
+}
+
+/* ------------------------------ */
+/* Responsive: stack input & preview */
+/* ------------------------------ */
+@media (max-width: 1300px) {
+  .markdown-container {
+    flex-direction: column;
+  }
+
+  .markdown-input,
+  .markdown-preview {
+    width: 100%;
+    min-height: 600px;
+  }
+
+  .markdown-preview {
+    margin-bottom: 2rem;
+  }
 }
