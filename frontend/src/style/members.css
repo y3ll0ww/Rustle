@@ -29,20 +29,6 @@
   margin-left: 1rem;
 }
 
-.avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.avatar.placeholder {
-  background: #ccc;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 .member-info {
   flex: 1;
 }

@@ -18,6 +18,7 @@ import DeleteWorkspaceModal from "./components/modal/DeleteWorkspaceModal";
 import { Endpoint } from "../utils/EndPoints";
 import Loading from "../components/Loading";
 import WorkspaceUsersPage from "./components/WorkspaceUsers";
+import { usePageTitle } from "../hooks/usePageTitle";
 
 export default function WorkspacePage() {
   const { id } = useParams();
@@ -33,6 +34,8 @@ export default function WorkspacePage() {
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const dropdownRef = useRef(null);
   const { alertSuccess, alertInfo, alertError } = useAlert();
+
+  usePageTitle(title);
 
   // Determine which tab to show from URL
   const tab = searchParams.get("tab");
@@ -136,6 +139,7 @@ export default function WorkspacePage() {
         <Title
           name={title}
           onChange={setTitle}
+          image_url={workspace.image_url}
           created_at={workspace.created_at}
           updated_at={workspace.updated_at}
           isEditing={isEditing}

@@ -11,7 +11,7 @@
 .pagination-filters .pf-input,
 .pagination-filters .pf-select {
   padding: 0.4rem 0.65rem;
-  border: 1px solid var(--border-color);
+  border: 2px solid var(--border-color);
   border-radius: 6px;
   font-size: 0.9rem;
   color: var(--text);
@@ -68,7 +68,7 @@
   gap: 0.5rem;
   padding: 0.45rem 0.75rem;
   border-radius: 6px;
-  border: 1px solid var(--border-color);
+  border: 2px solid var(--border-color);
   background-color: var(--card-bg);
   color: var(--text);
   font-size: 0.9rem;
@@ -140,8 +140,7 @@
 
 .btn-actions {
   flex: 0 0 auto;
-  height: 1.85rem;
+  height: 2rem;
   width: 3.5rem;
-  border-width: 1px !important;
   margin: 0px !important;
 }
